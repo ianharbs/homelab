@@ -4,11 +4,11 @@ Configurações Docker Compose do homelab rodando em Proxmox VE (cluster `iHomeC
 
 ## Cluster
 ```
-Proxmox VE 9.1.x · https://pve.ihome.dev.br/ · cluster iHomeCluster (3 nós)
+Proxmox VE 9.1.x · cluster iHomeCluster (3 nós)
 │
 ├── pve  · 192.168.10.1 · Intel i5-14600K · 32 GB · iGPU Intel
 ├── pve2 · 192.168.10.2 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
-└── pve3 · 192.168.10.3 · sem GPU
+└── pve3 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · sem GPU
 ```
 
 - **GPU:** transcodificação por hardware via `/dev/dri` (iGPU do `pve` e Arc A310 do `pve2`) nos serviços que precisam (`jellyfin`, `dispatcharr_web`, `frigate`).
@@ -24,58 +24,62 @@ Proxmox VE 9.1.x · https://pve.ihome.dev.br/ · cluster iHomeCluster (3 nós)
 
 ## Guests e stacks
 ```
-├── lxc101 · srv-gateway · 192.168.10.10
-│    ├── gateway-db         → npm-db
-│    ├── gateway-dns        → adguard, adguard-sync
-│    ├── gateway-network    → wg-easy, netalertx
-│    ├── gateway-proxy      → cloudflared, npm
-│    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
-│
-├── lxc102 · srv-media · 192.168.10.20
-│    ├── media-download     → qbittorrent, sabnzbd, prowlarr, cleanuparr, flaresolverr, torrent-indexer (+ redis)   [gluetun: a instalar]
-│    ├── media-editing      → bazarr, lingarr, profilarr, seerr
-│    ├── media-music        → navidrome, octo-fiesta, audiomuse-ai (flask, worker, redis), droppedneedle, slskd, musicbrainz-picard
-│    ├── media-others       → stash, whisparr
-│    ├── media-reading      → audiobookshelf, kavita, suwayomi, shelfarr, shelfarr-libation
-│    ├── media-tv           → dispatcharr_web, dispatcharr_celery
-│    ├── media-video        → jellyfin, radarr, sonarr
-│    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
-│
-├── lxc103 · srv-apps · 192.168.10.30
-│    ├── apps-automation    → n8n, n8n-runner
-│    ├── apps-finances      → actual_budget
-│    ├── apps-habits        → wingfit, wger (web, nginx, celery-worker, celery-beat)
-│    ├── apps-housing       → mealie, bar-assistant, salt-rim
-│    ├── apps-travel        → adventurelog-backend, adventurelog-frontend, adventurelog-db
-│    ├── apps-utilities     → bentopdf, marreta, sftpgo
-│    ├── stack-agents       → cadvisor, docker-socket-proxy, promtail, wud
-│    ├── stack-meilisearch  → meilisearch
-│    ├── stack-postgres     → postgres, pgadmin
-│    ├── stack-redis        → redis
-│    └── tools-hub          → tools-nginx, tools-proxy
-│
-├── lxc104 · srv-security · 192.168.10.40
-│    ├── security-nvr       → frigate
-│    ├── security-pwd       → vaultwarden
-│    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
-│
-├── lxc105 · srv-monitor · 192.168.10.50
-│    ├── adguard-secundary  → adguard-secondary
-│    ├── monitor-home       → homepage
-│    ├── monitor-media      → jellystat
-│    ├── monitor-server     → grafana, loki, prometheus, blackbox, pve-exporter, scrutiny (+ influxdb)
-│    └── stack-agents       → cadvisor, docker-socket-proxy, promtail, speedtest-exporter
-│
-├── vm106 · Home Assistant OS · 192.168.10.60
-│    └── Home Assistant
-│
-├── lxc107 · srv-games · 192.168.10.70
-│    ├── games-library      → gameyfin
-│    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
-│
-└── lxc108 · srv-ai · 192.168.10.80
-     ├── ai-llm             → ollama, open-webui
-     └── stack-agents       → cadvisor, docker-socket-proxy, promtail
+pve · 192.168.10.1 · Intel i5-14600K · 32 GB · iGPU Intel
+  ├── lxc101 · srv-gateway · 192.168.10.10
+  │    ├── gateway-db         → npm-db
+  │    ├── gateway-dns        → adguard, adguard-sync
+  │    ├── gateway-network    → wg-easy, netalertx
+  │    ├── gateway-proxy      → cloudflared, npm
+  │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
+  │
+  └── lxc102 · srv-media · 192.168.10.20
+       ├── media-download     → qbittorrent, sabnzbd, prowlarr, cleanuparr, flaresolverr, torrent-indexer (+ redis)   [gluetun: a instalar]
+       ├── media-editing      → bazarr, lingarr, profilarr, seerr
+       ├── media-music        → navidrome, octo-fiesta, audiomuse-ai (flask, worker, redis), droppedneedle, slskd, musicbrainz-picard
+       ├── media-others       → stash, whisparr
+       ├── media-reading      → audiobookshelf, kavita, suwayomi, shelfarr, shelfarr-libation
+       ├── media-tv           → dispatcharr_web, dispatcharr_celery
+       ├── media-video        → jellyfin, radarr, sonarr
+       └── stack-agents       → cadvisor, docker-socket-proxy, promtail
+
+pve2 · 192.168.10.2 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
+  │
+  ├── lxc104 · srv-security · 192.168.10.40
+  │    ├── security-nvr       → frigate
+  │    ├── security-pwd       → vaultwarden
+  │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
+  │
+  ├── lxc107 · srv-games · 192.168.10.70
+  │    ├── games-library      → gameyfin
+  │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
+  │
+  └── lxc108 · srv-ai · 192.168.10.80
+      ├── ai-llm             → ollama, open-webui
+      └── stack-agents       → cadvisor, docker-socket-proxy, promtail
+
+pve3 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · sem GPU
+  ├── lxc103 · srv-apps · 192.168.10.30
+  │    ├── apps-automation    → n8n, n8n-runner
+  │    ├── apps-finances      → actual_budget
+  │    ├── apps-habits        → wingfit, wger (web, nginx, celery-worker, celery-beat)
+  │    ├── apps-housing       → mealie, bar-assistant, salt-rim
+  │    ├── apps-travel        → adventurelog-backend, adventurelog-frontend, adventurelog-db
+  │    ├── apps-utilities     → bentopdf, marreta, sftpgo
+  │    ├── stack-agents       → cadvisor, docker-socket-proxy, promtail, wud
+  │    ├── stack-meilisearch  → meilisearch
+  │    ├── stack-postgres     → postgres, pgadmin
+  │    ├── stack-redis        → redis
+  │    └── tools-hub          → tools-nginx, tools-proxy
+  │
+  ├── lxc105 · srv-monitor · 192.168.10.50
+  │    ├── adguard-secundary  → adguard-secondary
+  │    ├── monitor-home       → homepage
+  │    ├── monitor-media      → jellystat
+  │    ├── monitor-server     → grafana, loki, prometheus, blackbox, pve-exporter, scrutiny (+ influxdb)
+  │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail, speedtest-exporter
+  │
+  └── vm106 · Home Assistant OS · 192.168.10.60
+       └── Home Assistant
 ```
 
 
@@ -87,16 +91,18 @@ cp .env.example .env
 ```
 
 ### Deploy por LXC (padrão)
-Em cada LXC, clone o repositório, crie o `.env` e rode o script com a pasta daquele LXC:
+Os comandos são iguais em todos os LXCs: o `deploy.sh` descobre a pasta pela hostname do LXC (`srv-apps` → `lxc103-apps`, `srv-gateway` → `lxc101-gateway`, etc.).
 ```bash
-git clone <URL-DO-REPO> /root/homelab
+git clone https://github.com/ianharbs/homelab.git /root/homelab
 nano /root/homelab/.env
 chmod +x /root/homelab/deploy.sh
-/root/homelab/deploy.sh lxc103-apps      # ou lxc101-gateway, lxc102-media, ...
+/root/homelab/deploy.sh
 ```
-O script cria as redes externas que faltarem, sobe as stacks na ordem (bancos primeiro, `stack-agents` por último) com `docker compose up -d`.
+Se a hostname não seguir o padrão `srv-<nome>`, passe a pasta: `/root/homelab/deploy.sh lxc103-apps`.
 
-Para atualizar depois de uma mudança: `git pull` e `./deploy.sh <pasta>` de novo. O `up -d` só recria o que mudou.
+O script cria as redes externas que faltarem (`gateway_net` com a sub-rede fixa), sobe as stacks na ordem (bancos primeiro, `stack-agents` por último) com `docker compose up -d` e avisa quais falharam. Use `RECREATE=1 ./deploy.sh` para forçar a recriação dos containers.
+
+Para atualizar depois de uma mudança: `cd /root/homelab && git pull && ./deploy.sh`. O `up -d` só recria o que mudou.
 
 > O deploy é feito direto por `docker compose`; as stacks deste repositório são a fonte da verdade.
 
@@ -119,7 +125,7 @@ Excludes configurados: `var/lib/containerd`, `var/lib/docker/overlay2`, `var/lib
   - **lxc103:** descomentar o `wud` (What's Up Docker), que atualiza os containers dos demais LXCs via `docker-socket-proxy`
   - **lxc105:** descomentar a linha `name: monitor_net` e o `speedtest-exporter`.
 - **`apps-travel`** usa banco próprio (`adventurelog-db` com postgis) — não depende do PostgreSQL centralizado.
-- **Hardware transcoding** (iGPU Intel i5-14600K) habilitado em: `jellyfin`, `dispatcharr_web`, `frigate`.
+- **Hardware transcoding** (iGPU Intel i5-14600K/Intel Arc A310) habilitado em: `jellyfin`, `dispatcharr_web`, `frigate`.
 - **SFTPGo** acessa `/opt/docker` de todos os LXCs via SFTP com virtual folders. Permissões gerenciadas via ACL (`setfacl`) em cada LXC.
 - **Secrets** são únicos por serviço — não reutilizar entre serviços distintos. Gere com `openssl rand -hex 32`.
 - **Acesso externo:** os serviços passam pelo Nginx Proxy Manager (lxc101) + Cloudflare Tunnel. A lista de domínios e destinos está em `.ignore/Proxies.txt`.
