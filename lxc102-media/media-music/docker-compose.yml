@@ -1,0 +1,152 @@
+networks:
+  media_net:
+    external: true
+
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    ports:
+      - 4533:4533
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - ND_SPOTIFY_ID=${SPOTIFY_ID}      
+      - ND_SPOTIFY_SECRET=${SPOTIFY_SECRET}  
+      - ND_LASTFM_APIKEY=${LASTFM_APIKEY}         
+      - ND_LASTFM_SECRET=${LASTFM_SECRET}
+      - ND_LYRICSPRIORITY=".lrc,nd-lyrics"
+      - ND_PLUGINS_ENABLED=true
+      - ND_PLUGINS_AUTORELOAD=true
+      - ND_AGENTS=audiomuseai,lastfm,deezer,apple-music
+      - ND_DEVARTISTINFOTIMETOLIVE=1s
+    volumes:
+      - ${CONFIG_PATH}/navidrome:/data
+      - ${DATA_PATH}/data/music:/music:ro
+    networks:
+      - media_net
+    restart: unless-stopped
+ 
+  octo-fiesta:
+    image: ghcr.io/v1ck3s/octo-fiesta:latest
+    container_name: octo-fiesta
+    restart: unless-stopped
+    ports:
+      - "5274:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # Porta interna de escuta (precisa bater com a porta mapeada acima)
+      - ASPNETCORE_URLS=http://+:${INTERNAL_PORT:-8080}
+      # Caminho de download dentro do container
+      - Library__DownloadPath=/music
+      - Subsonic__Url=${SUBSONIC_URL}
+      - Subsonic__AdminUsername=${SUBSONIC_USER}
+      - Subsonic__AdminPassword=${SUBSONIC_PASSWORD}
+      - Subsonic__MusicService=Deezer
+      - Subsonic__StorageMode=Cache
+      - Subsonic__CacheDurationHours=1
+      - Subsonic__EnableExternalPlaylists=true
+      - Subsonic__PlaylistsDirectory=playlists
+      - Subsonic__ExplicitFilter=All
+      - Subsonic__DownloadMode=Track
+      - Subsonic__AutoUpgradeQuality=false
+      - Subsonic__FolderTemplate={artist}/{album} ({year})/{artist} - {title}
+      - Deezer__Arl=${DEEZER_ARL}
+      - Deezer__Quality=FLAC
+    volumes:
+      - ${DATA_PATH}/data/music:/music
+
+  audiomuse-redis:
+    image: redis:7-alpine
+    container_name: audiomuse-redis
+    networks:
+      - media_net
+    volumes:
+      - ${CONFIG_PATH}/audiomuse/redis-data:/data
+    restart: unless-stopped
+
+  audiomuse-ai-flask:
+    image: ghcr.io/neptunehub/audiomuse-ai:latest
+    container_name: audiomuse-ai-flask-app
+    networks:
+      - media_net
+    ports:
+      - 8020:8000   
+    environment:
+      - SERVICE_TYPE=flask
+      - TZ=${TZ}
+      - POSTGRES_HOST=192.168.10.30
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=audiomuse
+      - REDIS_URL=redis://audiomuse-redis:6379/0
+      - TEMP_DIR=/app/temp_audio
+    volumes:
+      - ${CONFIG_PATH}/audiomuse/temp-flask:/app/temp_audio
+      - ${CONFIG_PATH}/audiomuse/plugins:/app/plugins
+    depends_on:
+      - audiomuse-redis
+    restart: unless-stopped
+
+  audiomuse-ai-worker:
+    image: ghcr.io/neptunehub/audiomuse-ai:latest
+    container_name: audiomuse-ai-worker-instance
+    networks:
+      - media_net
+    environment:
+      - SERVICE_TYPE=worker
+      - TZ=${TZ}
+      - POSTGRES_HOST=192.168.10.30
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=audiomuse
+      - REDIS_URL=redis://audiomuse-redis:6379/0
+      - TEMP_DIR=/app/temp_audio
+    volumes:
+      - ${CONFIG_PATH}/audiomuse/temp-worker:/app/temp_audio
+      - ${CONFIG_PATH}/audiomuse/plugins:/app/plugins
+    depends_on:
+      - audiomuse-redis
+    restart: unless-stopped
+
+  droppedneedle:
+    image: ghcr.io/droppedneedle/droppedneedle:latest
+    container_name: droppedneedle
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - SECRET_KEY=${JWT_SECRET}
+      - SLSKD_DOWNLOADS_PATH=/slskd-downloads
+    volumes:
+      - ${CONFIG_PATH}/droppedneedle/config:/app/config
+      - ${CONFIG_PATH}/droppedneedle/cache:/app/cache
+      - ${CONFIG_PATH}/droppedneedle/plugins:/app/plugin
+      - ${DATA_PATH}/data/downloads/completos:/slskd-downloads:rw
+      - ${DATA_PATH}/data:/data
+      - ${DATA_PATH}/data/music:/music
+    ports:
+      - "8688:8688"
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  slskd:
+    image: slskd/slskd
+    container_name: slskd
+    ports:
+      - "5030:5030"
+      - "5031:5031"
+      - "50300:50300"
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - SLSKD_REMOTE_CONFIGURATION=true
+    volumes:
+      - ${CONFIG_PATH}/slskd:/app
+      - ${DATA_PATH}/data:/data
+    restart: unless-stopped

@@ -1,0 +1,125 @@
+networks:
+  monitor_net:
+    external: true
+
+services:
+  blackbox:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/blackbox/blackbox.yml'
+    volumes:
+      - ${CONFIG_PATH}/blackbox:/etc/blackbox
+    ports:
+      - "9115:9115"
+    networks:
+      - monitor_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SERVER_ROOT_URL=https://grafana.ihome.dev.br
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    volumes:
+      - ${CONFIG_PATH}/grafana/data:/var/lib/grafana
+      - ${CONFIG_PATH}/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3010:3000"
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - monitor_net
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ${CONFIG_PATH}/loki/config:/etc/loki
+      - ${CONFIG_PATH}/loki/data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - monitor_net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ${CONFIG_PATH}/prometheus/config:/etc/prometheus
+      - ${CONFIG_PATH}/prometheus/data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitor_net
+
+  pve-exporter:
+    image: prompve/prometheus-pve-exporter:latest
+    container_name: pve-exporter
+    restart: unless-stopped
+    ports:
+      - "9221:9221"
+    volumes:
+      - ${CONFIG_PATH}/pve-exporter/pve.yml:/etc/prometheus/pve.yml
+    networks:
+      - monitor_net
+
+  scrutiny:
+    image: ghcr.io/starosdev/scrutiny:latest-web
+    container_name: scrutiny
+    restart: unless-stopped
+    ports:
+      - "8480:8080"
+    environment:
+      - SCRUTINY_WEB_INFLUXDB_HOST=scrutiny-influxdb
+      - SCRUTINY_WEB_INFLUXDB_PORT=8086
+      - SCRUTINY_WEB_INFLUXDB_TOKEN=${SCRUTINY_INFLUXDB_TOKEN}
+      - SCRUTINY_WEB_INFLUXDB_ORG=scrutiny
+      - SCRUTINY_WEB_INFLUXDB_BUCKET=metrics
+      - SCRUTINY_WEB_INFLUXDB_INIT_USERNAME=admin
+      - SCRUTINY_WEB_INFLUXDB_INIT_PASSWORD=${SCRUTINY_INFLUXDB_PASSWORD}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/scrutiny:/opt/scrutiny/config
+    depends_on:
+      scrutiny-influxdb:
+        condition: service_healthy
+    networks:
+      - monitor_net
+
+  scrutiny-influxdb:
+    image: influxdb:2.2
+    container_name: scrutiny-influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${SCRUTINY_INFLUXDB_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=scrutiny
+      - DOCKER_INFLUXDB_INIT_BUCKET=metrics
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${SCRUTINY_INFLUXDB_TOKEN}
+    volumes:
+      - ${CONFIG_PATH}/scrutiny/influxdb:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - monitor_net

@@ -1,0 +1,17 @@
+networks:
+  security_net:
+    external: true
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      DOMAIN: "https://vw.ihome.dev.br"
+    volumes:
+      - ${CONFIG_PATH}/vaultwarden/vw-data/:/data/
+    networks:
+      - security_net
+    ports:
+      - 8181:80

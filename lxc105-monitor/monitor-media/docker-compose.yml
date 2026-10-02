@@ -1,0 +1,21 @@
+networks:
+  monitor_net:
+    external: true
+
+services:
+  jellystat:
+    image: cyfershepard/jellystat:latest
+    container_name: jellystat
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+      - POSTGRES_IP=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=jellystat_main
+      - JWT_SECRET=${JELLYSTAT_JWT_SECRET}
+    ports:
+      - 3005:3000
+    networks:
+      - monitor_net

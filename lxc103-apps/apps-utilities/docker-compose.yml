@@ -1,0 +1,58 @@
+networks:
+  apps_net:
+    external: true
+
+services:
+  bentopdf:
+    image: ghcr.io/alam00000/bentopdf:latest
+    container_name: bentopdf
+    ports:
+      - "3035:8080"
+    networks:
+      - apps_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  marreta:
+    container_name: marreta
+    image: ghcr.io/manualdousuario/marreta:latest
+    restart: unless-stopped
+    ports:
+      - "8484:80"
+    networks:
+      - apps_net
+    environment:
+      - SITE_NAME=${MARRETA_SITE_NAME}
+      - SITE_DESCRIPTION=${MARRETA_SITE_DESCRIPTION}
+      - SITE_URL=${MARRETA_SITE_URL}
+      - LANGUAGE=pt-br
+
+  sftpgo:
+    image: drakkan/sftpgo:latest
+    container_name: sftpgo
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+      - "9090:9090"
+      - "2022:2022"
+    environment:
+      - SFTPGO_WEBDAVD__BINDINGS__0__PORT=9090
+      - SFTPGO_HTTPD__BINDINGS__0__PORT=8080
+      - SFTPGO_DATA_PROVIDER__DRIVER=postgresql
+      - SFTPGO_DATA_PROVIDER__NAME=sftpgo
+      - SFTPGO_DATA_PROVIDER__HOST=${POSTGRES_HOST}
+      - SFTPGO_DATA_PROVIDER__PORT=${POSTGRES_PORT}
+      - SFTPGO_DATA_PROVIDER__USERNAME=${POSTGRES_USER}
+      - SFTPGO_DATA_PROVIDER__PASSWORD=${POSTGRES_PASSWORD}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/sftpgo/config:/etc/sftpgo
+      - ${CONFIG_PATH}/sftpgo/sshkey:/etc/sftpgo/id_ed25519:ro
+      - ${CONFIG_PATH}:/opt/docker
+    networks:
+      - apps_net

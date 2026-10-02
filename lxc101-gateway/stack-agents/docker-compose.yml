@@ -1,0 +1,113 @@
+networks:
+  monitoring_net:
+    external: true
+    # name: monitor_net 
+    # (descomentar a linha acima se estiver no lxc105 - srv-monitor)
+
+services:
+  # ---------------------------------------------------------------------------
+  # cADVISOR — métricas de containers Docker
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro
+    ports:
+      - "8082:8080"
+    networks:
+      - monitoring_net
+
+  # ---------------------------------------------------------------------------
+  # DOCKER SOCKET PROXY — expõe Docker API de forma restrita para o Homepage
+  # ---------------------------------------------------------------------------
+  docker-socket-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:master
+    container_name: docker-socket-proxy
+    restart: unless-stopped
+    privileged: true
+    environment:
+      - CONTAINERS=1 # Necessário para status dos containers
+      - IMAGES=1     # Necessário para info geral
+      - INFO=1
+      - VERSION=1    # Necessário para a checagem inicial de versão do daemon
+      - EVENTS=1     # Necessário para o WUD escutar eventos em tempo real
+      - NETWORKS=0
+      - VOLUMES=0
+      - SERVICES=0
+      - TASKS=0
+      - POST=0         # bloqueia qualquer escrita
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "2375:2375"
+    networks:
+      - monitoring_net
+      
+  # ---------------------------------------------------------------------------
+  # PROMTAIL — coleta logs dos containers e envia pro Loki (lxc105)
+  # ---------------------------------------------------------------------------
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: unless-stopped
+    user: root
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ${CONFIG_PATH}/promtail:/etc/promtail
+    networks:
+      - monitoring_net
+
+  # ---------------------------------------------------------------------------
+  # SPEEDTEST-EXPORTER — coleta informações da rede
+  # (ativar no lxc105 - srv-monitor) 
+  # ---------------------------------------------------------------------------
+  # speedtest-exporter:
+  #   image: miguelndecarvalho/speedtest-exporter:latest
+  #   container_name: speedtest-exporter
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9798:9798"
+  #   healthcheck:
+  #     disable: true
+  #   networks:
+  #     - monitoring_net
+
+  # ---------------------------------------------------------------------------
+  # WUD — atualiza containers automaticamente
+  # (ativar no lxc103 - srv-apps)
+  # ---------------------------------------------------------------------------     
+  # wud:
+  #   image: fmartinou/whats-up-docker:latest
+  #   container_name: wud
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - WUD_WATCHER_LOCAL_WATCHBYDEFAULT=true
+  #     - WUD_TRIGGER_DOCKER_LOCAL_ACTION=update
+  #     - WUD_WATCHER_LXC1_HOST=192.168.10.10
+  #     - WUD_WATCHER_LXC1_PORT=2375
+  #     - WUD_WATCHER_LXC2_HOST=192.168.10.20
+  #     - WUD_WATCHER_LXC2_PORT=2375
+  #     - WUD_WATCHER_LXC3_HOST=192.168.10.40
+  #     - WUD_WATCHER_LXC3_PORT=2375
+  #     - WUD_WATCHER_LXC4_HOST=192.168.10.50
+  #     - WUD_WATCHER_LXC4_PORT=2375
+  #     - WUD_WATCHER_LXC5_HOST=192.168.10.70
+  #     - WUD_WATCHER_LXC5_PORT=2375
+  #     - WUD_WATCHER_LXC6_HOST=192.168.10.80
+  #     - WUD_WATCHER_LXC6_PORT=2375
+  #   restart: always

@@ -1,0 +1,67 @@
+networks:
+  apps_net:
+    external: true
+
+services:
+  adventurelog-db:
+    image: postgis/postgis:16-3.5
+    container_name: adventurelog-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=adventurelog
+      - POSTGRES_USER=adventure
+      - POSTGRES_PASSWORD=${ADVENTURELOG_DB_PASSWORD}
+    volumes:
+      - ${CONFIG_PATH}/adventurelog/db:/var/lib/postgresql/data
+    networks:
+      - apps_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adventure -d adventurelog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  adventurelog-backend:
+    image: ghcr.io/seanmorley15/adventurelog-backend:latest
+    container_name: adventurelog-backend
+    restart: unless-stopped
+    depends_on:
+      adventurelog-db:
+        condition: service_healthy
+    environment:
+      - PGHOST=adventurelog-db
+      - POSTGRES_DB=adventurelog
+      - POSTGRES_USER=adventure
+      - POSTGRES_PASSWORD=${ADVENTURELOG_DB_PASSWORD}
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - SESSION_ENGINE=django.contrib.sessions.backends.db
+      - DJANGO_ADMIN_USERNAME=${DJANGO_ADMIN_USERNAME}
+      - DJANGO_ADMIN_PASSWORD=${DJANGO_ADMIN_PASSWORD}
+      - DJANGO_ADMIN_EMAIL=${DJANGO_ADMIN_EMAIL}
+      - PUBLIC_URL=https://travel-api.ihome.dev.br
+      - CSRF_TRUSTED_ORIGINS=https://travel-api.ihome.dev.br,https://travel.ihome.dev.br
+      - FRONTEND_URL=https://travel.ihome.dev.br
+      - DEBUG=False
+      - DISABLE_REGISTRATION=False
+    volumes:
+      - ${CONFIG_PATH}/adventurelog/media:/code/media
+    ports:
+      - "8016:80"
+    networks:
+      - apps_net
+
+  adventurelog-frontend:
+    image: ghcr.io/seanmorley15/adventurelog-frontend:latest
+    container_name: adventurelog-frontend
+    restart: unless-stopped
+    depends_on:
+      - adventurelog-backend
+    environment:
+      - PUBLIC_SERVER_URL=http://adventurelog-backend:8000
+      - ORIGIN=https://travel.ihome.dev.br
+      - BODY_SIZE_LIMIT=Infinity
+    ports:
+      - "8015:3000"
+    networks:
+      - apps_net

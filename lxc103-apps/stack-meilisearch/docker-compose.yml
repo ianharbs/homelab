@@ -1,0 +1,19 @@
+networks:
+  db_net:
+    external: true
+
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    container_name: meilisearch
+    environment:
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - MEILI_ENV=production
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH}/meilisearch_data:/meili_data
+    ports:
+      - 7700:7700
+    networks:
+      - db_net

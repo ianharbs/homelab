@@ -1,0 +1,18 @@
+networks:
+  monitor_net:
+    external: true
+
+services:
+  adguard-secondary:
+    image: adguard/adguardhome
+    container_name: adguard-secondary
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "3001:3000"
+    volumes:
+      - ${CONFIG_PATH}/adguard-secondary/work:/opt/adguardhome/work
+      - ${CONFIG_PATH}/adguard-secondary/conf:/opt/adguardhome/conf
+    restart: unless-stopped
+    networks:
+      - monitor_net

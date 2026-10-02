@@ -1,0 +1,48 @@
+networks:
+  media_net:
+    external: true
+
+services:
+  stash:
+    image: stashapp/stash:latest
+    container_name: stash
+    environment:
+      - STASH_STDOUT_LOG_LEVEL=info
+      - STASH_DB_TYPE=postgres
+      - STASH_DB_HOST=${POSTGRES_HOST}
+      - STASH_DB_PORT=${POSTGRES_PORT}
+      - STASH_DB_USER=${POSTGRES_USER}
+      - STASH_DB_PASSWORD=${POSTGRES_PASSWORD}
+      - STASH_DB_DATABASE=stash
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/stash:/root/.stash
+      - ${DATA_PATH}/data:/data
+    networks:
+      - media_net
+    ports:
+      - 9999:9999
+    restart: unless-stopped
+
+  whisparr:
+    image: ghcr.io/hotio/whisparr:v3
+    container_name: whisparr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK=002
+      - WHISPARR__POSTGRES__HOST=${POSTGRES_HOST}
+      - WHISPARR__POSTGRES__PORT=${POSTGRES_PORT}
+      - WHISPARR__POSTGRES__USER=${POSTGRES_USER}
+      - WHISPARR__POSTGRES__PASSWORD=${POSTGRES_PASSWORD}
+      - WHISPARR__POSTGRES__MAINDB=whisparr_main
+      - WHISPARR__POSTGRES__LOGDB=whisparr_log
+    volumes:
+      - ${CONFIG_PATH}/whisparr:/config
+      - ${DATA_PATH}/data:/data
+    networks:
+      - media_net
+    ports:
+      - 6969:6969
+    restart: unless-stopped

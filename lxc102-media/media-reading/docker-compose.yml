@@ -1,0 +1,120 @@
+networks:
+  media_net:
+    external: true
+
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    ports:
+      - 13378:80
+    volumes:
+      - ${DATA_PATH}/data:/data
+      - ${CONFIG_PATH}/audiobookshelf:/config
+      - ${CONFIG_PATH}/audiobookshelf:/metadata
+    environment:
+      - TZ=${TZ}
+    networks:
+      - media_net
+    restart: unless-stopped
+  
+  kavita:
+    image: lscr.io/linuxserver/kavita:latest
+    container_name: kavita
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/kavita/config:/config
+      - ${DATA_PATH}/data:/data
+    ports:
+      - 5000:5000
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  suwayomi:
+    image: ghcr.io/suwayomi/suwayomi-server:preview
+    container_name: suwayomi
+    user: 0:0
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - FLARESOLVERR_ENABLED=true
+      - FLARESOLVERR_URL=http://flaresolverr:8191
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/suwayomi:/home/suwayomi/.local/share/Tachidesk
+      - ${DATA_PATH}/data:/data
+    ports:
+      - 4567:4567
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  shelfarr:
+    image: ghcr.io/pedro-revez-silva/shelfarr:latest
+    container_name: shelfarr
+    restart: unless-stopped
+    ports:
+      - 5056:80
+    volumes:
+      - ${CONFIG_PATH}/shelfarr/data:/rails/storage
+      - ${DATA_PATH}/data/reading/audiobooks:/audiobooks
+      - ${DATA_PATH}/data/reading/books:/ebooks
+      - ${DATA_PATH}/data/reading/comics:/comics
+      - ${DATA_PATH}/data/reading/manga:/manga
+      - ${DATA_PATH}/data/downloads:/downloads
+      - ${CONFIG_PATH}/shelfarr/libation_books:/imports/libation:ro
+      - ${CONFIG_PATH}/shelfarr/libation_control:/run/shelfarr-libation:ro
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - SOLID_QUEUE_IN_PUMA=1
+      - SHELFARR_LIBATION_URL=http://shelfarr-libation:8080
+      - SHELFARR_LIBATION_TOKEN_FILE=/run/shelfarr-libation/token
+      - SHELFARR_LIBATION_IMPORT_ROOT=/imports/libation
+      - CHOWN_ON_START=auto
+    networks:
+      - media_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${HTTP_PORT:-80}/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  shelfarr-libation:
+    image: ghcr.io/pedro-revez-silva/shelfarr-libation:latest
+    container_name: shelfarr-libation
+    restart: unless-stopped
+    expose:
+      - 8080
+    volumes:
+      - ${CONFIG_PATH}/shelfarr/libation_config:/config
+      - ${CONFIG_PATH}/shelfarr/libation_books:/data
+      - ${CONFIG_PATH}/shelfarr/libation_control:/control
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - CHOWN_ON_START=auto
+      - TZ=${TZ}
+      - LIBATION_FILES_DIR=/config
+      - LIBATION_BOOKS_DIR=/data
+      - LIBATION_IN_PROGRESS_DIR=/config/in-progress
+      - COMPANION_STATE_DIR=/config/shelfarr-companion
+      - COMPANION_TOKEN_FILE=/control/token
+      - COMPANION_MAX_ACTIVE_JOBS=500
+      - COMPANION_MAX_TERMINAL_JOBS=5000
+      - COMPANION_TERMINAL_JOB_RETENTION_DAYS=30
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+    networks:
+      - media_net
+    healthcheck:
+      test: ["CMD", "/companion/Shelfarr.Libation.Companion", "--healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

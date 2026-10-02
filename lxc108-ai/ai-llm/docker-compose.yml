@@ -1,0 +1,37 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:11434:11434"
+    environment:
+      - TZ=${TZ}
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_HOST=0.0.0.0  # Adicione esta linha
+    volumes:
+      - ${CONFIG_PATH}/ollama:/root/.ollama
+    networks:
+      - ai_net
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      - TZ=${TZ}
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET}
+    volumes:
+      - ${CONFIG_PATH}/open-webui:/app/backend/data
+    depends_on:
+      - ollama
+    networks:
+      - ai_net
+
+networks:
+  ai_net:
+    external: true

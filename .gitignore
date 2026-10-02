@@ -1,0 +1,16 @@
+# Segredos — NUNCA commitar
+.env
+
+# Dados persistentes locais
+data/
+config/
+.ignore/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp

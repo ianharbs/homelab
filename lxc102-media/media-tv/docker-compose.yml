@@ -1,0 +1,64 @@
+networks:
+  media_net:
+    external: true
+
+services:
+  web:
+    image: ghcr.io/dispatcharr/dispatcharr:latest
+    container_name: dispatcharr_web
+    restart: unless-stopped
+    networks:
+      - media_net
+    ports:
+      - 9191:9191
+    volumes:
+      - ${CONFIG_PATH}/dispatcharr:/data
+    environment:
+      - DISPATCHARR_ENV=modular
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=dispatcharr
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - DISPATCHARR_LOG_LEVEL=info
+    cap_add:
+      - SYS_NICE
+    group_add:
+      - "993"
+      - "44"
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card1:/dev/dri/card1
+
+  celery:
+    image: ghcr.io/dispatcharr/dispatcharr:latest
+    container_name: dispatcharr_celery
+    restart: unless-stopped
+    networks:
+      - media_net
+    depends_on:
+      - web
+    volumes:
+      - ${CONFIG_PATH}/dispatcharr/celery/data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: ["/app/docker/entrypoint.celery.sh"]
+    environment:
+      - DISPATCHARR_ENV=modular
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=dispatcharr
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - DISPATCHARR_LOG_LEVEL=info
+      - CELERY_NICE_LEVEL=5
+      - DJANGO_SETTINGS_MODULE=dispatcharr.settings
+      - PYTHONUNBUFFERED=1
+    cap_add:
+      - SYS_NICE

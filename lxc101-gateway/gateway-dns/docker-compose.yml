@@ -1,0 +1,35 @@
+networks:
+  gateway_net:
+    external: true
+
+services:
+  adguard:
+    image: adguard/adguardhome
+    container_name: adguard
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "3000:3000"
+    volumes:
+      - ${CONFIG_PATH}/adguard/work:/opt/adguardhome/work
+      - ${CONFIG_PATH}/adguard/conf:/opt/adguardhome/conf
+    restart: unless-stopped
+    networks:
+      gateway_net:
+        ipv4_address: 172.20.0.10
+  
+  adguard-sync:
+    image: ghcr.io/bakito/adguardhome-sync:latest
+    container_name: adguard-sync
+    restart: unless-stopped
+    environment:
+      - ORIGIN_URL=http://192.168.10.10:3000
+      - ORIGIN_USERNAME=${ADGUARD_USER}
+      - ORIGIN_PASSWORD=${ADGUARD_PASSWORD}
+      - REPLICA1_URL=http://192.168.10.50:3001
+      - REPLICA1_USERNAME=${ADGUARD_USER}
+      - REPLICA1_PASSWORD=${ADGUARD_PASSWORD}
+      - CRON=*/30 * * * *
+      - RUNONSTART=true
+    networks:
+      - gateway_net

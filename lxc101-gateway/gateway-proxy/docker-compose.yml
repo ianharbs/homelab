@@ -1,0 +1,36 @@
+networks:
+  gateway_net:
+    external: true
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: always
+    networks:
+      - gateway_net
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN}
+
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: npm
+    restart: always
+    networks:
+      - gateway_net
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    environment:
+      TZ: ${TZ}
+      DB_MYSQL_HOST: "npm-db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm"
+      DB_MYSQL_PASSWORD: ${MARIADB_PASSWORD}
+      DB_MYSQL_NAME: "npm"
+    volumes:
+      - ${CONFIG_PATH}/npm/data:/data
+      - ${CONFIG_PATH}/npm/letsencrypt:/etc/letsencrypt
+      - ${CONFIG_PATH}/npm/static:/static

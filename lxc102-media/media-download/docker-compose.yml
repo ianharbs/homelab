@@ -1,0 +1,120 @@
+networks:
+  media_net:
+    external: true
+
+services:
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    container_name: cleanuparr
+    restart: unless-stopped
+    ports:
+      - "11011:11011"
+    volumes:
+      - ${CONFIG_PATH}/cleanuparr:/config
+      - ${DOWNLOAD_PATH}:/downloads
+    environment:
+      - PORT=11011
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=022
+      - TZ=${TZ}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11011/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    networks:
+      - media_net
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:v3.4.4
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+      - TZ=${TZ}
+    ports:
+      - "${PORT:-8191}:8191"
+    restart: unless-stopped
+    networks:
+      - media_net
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - PROWLARR__POSTGRES__HOST=${POSTGRES_HOST}
+      - PROWLARR__POSTGRES__PORT=${POSTGRES_PORT}
+      - PROWLARR__POSTGRES__USER=${POSTGRES_USER}
+      - PROWLARR__POSTGRES__PASSWORD=${POSTGRES_PASSWORD}
+      - PROWLARR__POSTGRES__MAINDB=prowlarr_main
+      - PROWLARR__POSTGRES__LOGDB=prowlarr_log
+    ports:
+      - 9696:9696
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${CONFIG_PATH}/prowlarr:/config
+    restart: unless-stopped
+    networks:
+      - media_net
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    labels:
+      - deunhealth.restart.on.unhealthy=true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=54321
+    ports:
+      - 8080:8080
+    volumes:
+      - ${CONFIG_PATH}/qbittorrent:/config
+      - ${DATA_PATH}/data:/data
+      - ${DOWNLOAD_PATH}:/downloads
+    networks:
+      - media_net
+
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/sabnzbd:/config
+      - ${DATA_PATH}/data:/data
+      - ${DATA_PATH}/data/downloads:/downloads
+    ports:
+      - 8085:8080
+    restart: unless-stopped
+
+  torrent-indexer:
+    image: felipemarinho97/torrent-indexer:latest
+    container_name: torrent-indexer
+    restart: unless-stopped
+    ports:
+      - 7006:7006
+    networks:
+      - media_net
+    environment:
+      - LOG_LEVEL=0 # 0=debug, 1=info, 2=warn, 3=error
+      - REDIS_HOST=redis
+      - FLARESOLVERR_ADDRESS=http://flaresolverr:8191
+
+  redis:
+    image: redis:alpine
+    container_name: torrent-indexer_redis
+    restart: unless-stopped
+    networks:
+      - media_net

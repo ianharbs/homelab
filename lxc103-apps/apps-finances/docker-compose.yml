@@ -1,0 +1,15 @@
+networks:
+  apps_net:
+    external: true
+
+services:
+  actual_budget:
+    image: docker.io/actualbudget/actual-server:latest
+    container_name: actual_budget
+    restart: unless-stopped
+    ports:
+      - "5006:5006"
+    volumes:
+      - ${CONFIG_PATH}/actual_budget:/data
+    networks:
+      - apps_net

@@ -1,0 +1,25 @@
+networks:
+  games_net:
+    external: true
+
+services:
+  gameyfin:
+    image: ghcr.io/gameyfin/gameyfin:2
+    container_name: gameyfin
+    restart: unless-stopped
+    environment:
+      - APP_KEY=${GAMEYFIN_APP_KEY}
+      - APP_URL=https://games.ihome.dev.br
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/gameyfin/db:/opt/gameyfin/db
+      - ${CONFIG_PATH}/gameyfin/data:/opt/gameyfin/data
+      - ${CONFIG_PATH}/gameyfin/plugindata:/opt/gameyfin/plugindata
+      - ${CONFIG_PATH}/gameyfin/logs:/opt/gameyfin/logs
+    networks:
+      - games_net
+    ports:
+      - "8181:8080"
+      - "6969:6969"
+      - "6881:6881"

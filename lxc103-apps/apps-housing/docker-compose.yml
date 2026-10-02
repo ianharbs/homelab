@@ -1,0 +1,65 @@
+networks:
+  apps_net:
+    external: true
+
+services:
+  bar-assistant:
+    image: barassistant/server:v5
+    container_name: bar-assistant
+    environment:
+      - APP_URL=http://${BAR_ASSISTANT_HOST}:9092
+      - MEILISEARCH_KEY=${MEILI_MASTER_KEY}
+      - MEILISEARCH_HOST=http://${MEILI_HOST}:${MEILI_PORT}
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - ALLOW_REGISTRATION=true
+    restart: unless-stopped
+    ports:
+      - "9092:8080"
+    volumes:
+      - ${CONFIG_PATH}/barassistant:/var/www/html/storage
+    networks:
+      - apps_net
+
+  salt-rim:
+    image: barassistant/salt-rim:v4
+    container_name: salt-rim
+    depends_on:
+      - bar-assistant
+    environment:
+      - API_URL=http://${BAR_ASSISTANT_HOST}:9092
+      - MEILISEARCH_URL=http://${MEILI_HOST}:${MEILI_PORT}
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - apps_net
+
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:v3.9.2
+    container_name: mealie
+    restart: unless-stopped
+    ports:
+      - 9925:9000
+    deploy:
+      resources:
+        limits:
+          memory: 1000M
+    volumes:
+      - ${CONFIG_PATH}/mealie-data:/app/data/
+    environment:
+      - ALLOW_SIGNUP=false
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - BASE_URL=https://mealie.ihome.dev.br
+      - DB_ENGINE=postgres
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_SERVER=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=mealie
+    networks:
+      - apps_net
