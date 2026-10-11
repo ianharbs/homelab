@@ -6,9 +6,9 @@ Configurações Docker Compose do homelab rodando em Proxmox VE (cluster `iHomeC
 ```
 Proxmox VE 9.1.x · cluster iHomeCluster (3 nós)
 │
-├── pve  · 192.168.10.1 · Intel i5-14600K · 32 GB · iGPU Intel
-├── pve2 · 192.168.10.2 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
-└── pve3 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · sem GPU
+├── pve  · 192.168.10.2 · Intel i5-14600K · 32 GB · iGPU Intel
+├── pve2 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
+└── pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
 ```
 
 - **GPU:** transcodificação por hardware via `/dev/dri` (iGPU do `pve` e Arc A310 do `pve2`) nos serviços que precisam (`jellyfin`, `dispatcharr_web`, `frigate`).
@@ -24,7 +24,7 @@ Proxmox VE 9.1.x · cluster iHomeCluster (3 nós)
 
 ## Guests e stacks
 ```
-pve · 192.168.10.1 · Intel i5-14600K · 32 GB · iGPU Intel
+pve · 192.168.10.2 · Intel i5-14600K · 32 GB · iGPU Intel
   ├── lxc101 · srv-gateway · 192.168.10.10
   │    ├── gateway-db         → npm-db
   │    ├── gateway-dns        → adguard, adguard-sync
@@ -42,7 +42,7 @@ pve · 192.168.10.1 · Intel i5-14600K · 32 GB · iGPU Intel
        ├── media-video        → jellyfin, radarr, sonarr
        └── stack-agents       → cadvisor, docker-socket-proxy, promtail
 
-pve2 · 192.168.10.2 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
+pve2 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
   │
   ├── lxc104 · srv-security · 192.168.10.40
   │    ├── security-nvr       → frigate
@@ -57,7 +57,7 @@ pve2 · 192.168.10.2 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
       ├── ai-llm             → ollama, open-webui
       └── stack-agents       → cadvisor, docker-socket-proxy, promtail
 
-pve3 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · sem GPU
+pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   ├── lxc103 · srv-apps · 192.168.10.30
   │    ├── apps-automation    → n8n, n8n-runner
   │    ├── apps-finances      → actual_budget

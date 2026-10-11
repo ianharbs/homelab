@@ -9,7 +9,6 @@ services:
     restart: unless-stopped
     devices:
       - /dev/dri/renderD128:/dev/dri/renderD128
-      - /dev/dri/card1:/dev/dri/card1
     group_add:
       - "993"
       - "44"
