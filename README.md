@@ -130,9 +130,11 @@ Backups automáticos via **Proxmox VE** (vzdump, `zstd`, modo snapshot) rodam di
 |---|---|---|
 | `pve` | 101, 102 | `scratch_disk` |
 | `pve2` | 104, 107, 108 | `frigate_store` (HD USB do pve2) |
-| `pve3` | 103, 105, 106 | `media` → no pve3 é uma pasta no **disco do sistema** (o HD de mídia fica no pve) |
+| `pve3` | 103, 105, 106 | `backup-pve3` → NFS em `frigate_store/backup-pve3` no HD USB do **pve2** (export só para o IP do pve3) |
 
-Excludes configurados (`/etc/vzdump.conf`): `var/lib/containerd`, `var/lib/docker/overlay2`, `var/lib/docker/volumes`, `data/compose`.
+Excludes configurados (`/etc/vzdump.conf`): `var/lib/containerd`, `var/lib/docker/overlay2`, `var/lib/docker/volumes`, `data/compose`. O `/etc/vzdump.conf` é **local de cada nó** (não fica em `/etc/pve`): os três precisam ter esses excludes, senão o backup de LXC com Docker falha com `Permission denied` no `tar` (foi o que derrubou todos os backups do pve3 entre 02/10 e 14/10/2026).
+
+> O NFS do pve2 só sobe com o HD montado (`RequiresMountsFor=/mnt/pve/frigate_store` em `nfs-server.service.d`), para não gravar backups no disco do sistema se o USB falhar.
 
 > `lxc101` e `lxc103` também têm replicação ZFS entre nós (ver HA acima), que **não** substitui o backup.
 
