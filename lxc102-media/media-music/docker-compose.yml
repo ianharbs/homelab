@@ -51,7 +51,7 @@ services:
       - Subsonic__ExplicitFilter=All
       - Subsonic__DownloadMode=Track
       - Subsonic__AutoUpgradeQuality=false
-      - Subsonic__FolderTemplate={artist}/{album} ({year})/{artist} - {title}
+      - Subsonic__FolderTemplate={artist}/{album} ({year})/{track}. {title}
       - Deezer__Arl=${DEEZER_ARL}
       - Deezer__Quality=FLAC
     volumes:
@@ -124,7 +124,7 @@ services:
     volumes:
       - ${CONFIG_PATH}/droppedneedle/config:/app/config
       - ${CONFIG_PATH}/droppedneedle/cache:/app/cache
-      - ${CONFIG_PATH}/droppedneedle/plugins:/app/plugin
+      - ${CONFIG_PATH}/droppedneedle/plugins:/app/plugins
       - ${DATA_PATH}/data/downloads/completos:/slskd-downloads:rw
       - ${DATA_PATH}/data:/data
       - ${DATA_PATH}/data/music:/music

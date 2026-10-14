@@ -1,0 +1,42 @@
+# Atualização automática das imagens: stacks com auto_update=true são recriados se houver digest novo;
+# os com poll_for_updates=true (tag "critico") só ficam marcados como "update disponível".
+[[procedure]]
+name = "Global Auto Update"
+description = "Atualiza imagens dos stacks com auto_update; os críticos só notificam."
+tags = ["system"]
+[procedure.config]
+schedule_format = "Cron"
+schedule = "0 0 4 * * *"
+schedule_timezone = "America/Sao_Paulo"
+schedule_enabled = true
+schedule_alert = false
+failure_alert = true
+
+[[procedure.config.stage]]
+name = "Atualizar"
+enabled = true
+executions = [
+  { execution.type = "GlobalAutoUpdate", execution.params = {}, enabled = true }
+]
+
+##
+
+# Conexão com o GitHub sem expor o Komodo: a cada 5 min, reimplanta só os stacks cujo compose mudou no repo.
+[[procedure]]
+name = "Deploy on git change"
+description = "Puxa o repo e reimplanta stacks cujo compose/env mudou."
+tags = ["system"]
+[procedure.config]
+schedule_format = "Cron"
+schedule = "0 */5 * * * *"
+schedule_timezone = "America/Sao_Paulo"
+schedule_enabled = true
+schedule_alert = false
+failure_alert = true
+
+[[procedure.config.stage]]
+name = "Deploy"
+enabled = true
+executions = [
+  { execution.type = "BatchDeployStackIfChanged", execution.params.pattern = "*", enabled = true }
+]

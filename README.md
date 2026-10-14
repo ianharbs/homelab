@@ -25,6 +25,10 @@ Proxmox VE 9.1.x · cluster iHomeCluster (3 nós)
 ## Guests e stacks
 ```
 pve · 192.168.10.2 · Intel i5-14600K · 32 GB · iGPU Intel
+  ├── lxc100 · srv-omada · 192.168.10.5
+  │    ├── omada-controller   → omada-controller
+  │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
+  │
   ├── lxc101 · srv-gateway · 192.168.10.10
   │    ├── gateway-db         → npm-db
   │    ├── gateway-dns        → adguard, adguard-sync
@@ -35,7 +39,7 @@ pve · 192.168.10.2 · Intel i5-14600K · 32 GB · iGPU Intel
   └── lxc102 · srv-media · 192.168.10.20
        ├── media-download     → qbittorrent, sabnzbd, prowlarr, cleanuparr, flaresolverr, torrent-indexer (+ redis)   [gluetun: a instalar]
        ├── media-editing      → bazarr, lingarr, profilarr, seerr
-       ├── media-music        → navidrome, octo-fiesta, audiomuse-ai (flask, worker, redis), droppedneedle, slskd, musicbrainz-picard
+       ├── media-music        → navidrome, octo-fiesta, audiomuse-ai (flask, worker, redis), droppedneedle, slskd
        ├── media-others       → stash, whisparr
        ├── media-reading      → audiobookshelf, kavita, suwayomi, shelfarr, shelfarr-libation
        ├── media-tv           → dispatcharr_web, dispatcharr_celery
@@ -65,7 +69,7 @@ pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   │    ├── apps-housing       → mealie, bar-assistant, salt-rim
   │    ├── apps-travel        → adventurelog-backend, adventurelog-frontend, adventurelog-db
   │    ├── apps-utilities     → bentopdf, marreta, sftpgo
-  │    ├── stack-agents       → cadvisor, docker-socket-proxy, promtail, wud
+  │    ├── stack-agents       → cadvisor, docker-socket-proxy, promtail
   │    ├── stack-meilisearch  → meilisearch
   │    ├── stack-postgres     → postgres, pgadmin
   │    ├── stack-redis        → redis
@@ -73,6 +77,7 @@ pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   │
   ├── lxc105 · srv-monitor · 192.168.10.50
   │    ├── adguard-secundary  → adguard-secondary
+  │    ├── komodo             → komodo-core, komodo-ferretdb, komodo-postgres
   │    ├── monitor-home       → homepage
   │    ├── monitor-media      → jellystat
   │    ├── monitor-server     → grafana, loki, prometheus, blackbox, pve-exporter, scrutiny (+ influxdb)
@@ -90,7 +95,15 @@ cp .env.example .env
 # Gere secrets com: openssl rand -hex 32
 ```
 
-### Deploy por LXC (padrão)
+### Deploy pelo Komodo (padrão)
+O **Komodo** (`lxc105-monitor/komodo`, UI em `http://192.168.10.50:9120`) gerencia todas as stacks a partir deste repositório:
+- Cada LXC roda o agente **Periphery** (systemd, `/etc/komodo/periphery.config.toml`) conectando de saída no Core; o servidor no Komodo tem o nome da hostname (`srv-apps`, ...).
+- As stacks são declaradas em [`komodo/stacks.toml`](komodo/stacks.toml) e aplicadas por um **Resource Sync** apontando para a pasta `komodo/`. O `project_name` de cada stack é o nome da pasta, igual ao `deploy.sh`.
+- **Deploy por git:** o procedimento `Deploy on git change` roda a cada 5 min e reimplanta só as stacks cujo compose mudou (`BatchDeployStackIfChanged`). Não precisa de webhook nem de expor o Komodo.
+- **Segredos:** ficam no `[secrets]` de `${CONFIG_PATH}/komodo/core.config.toml` no srv-monitor (fora do git). As stacks referenciam `CHAVE=[[CHAVE]]` no `environment`. Variável nova → adicionar no `core.config.toml`, reiniciar o `komodo-core` e incluir a linha na stack em `komodo/stacks.toml`.
+- **Atualização automática:** o procedimento `Global Auto Update` roda todo dia às **04:00** (após o backup das 00:00). Stacks com `auto_update = true` são recriadas quando sai uma imagem nova na mesma tag; as marcadas `critico` (bancos, NPM, Vaultwarden, Omada, monitor-server, o próprio Komodo) têm só `poll_for_updates` e aparecem como "update disponível" para aplicar manualmente.
+
+### Deploy manual por LXC (fallback, sem Komodo)
 Os comandos são iguais em todos os LXCs: o `deploy.sh` descobre a pasta pela hostname do LXC (`srv-apps` → `lxc103-apps`, `srv-gateway` → `lxc101-gateway`, etc.).
 ```bash
 git clone https://github.com/ianharbs/homelab.git /root/homelab
@@ -122,7 +135,6 @@ Excludes configurados: `var/lib/containerd`, `var/lib/docker/overlay2`, `var/lib
 
 ## Notas importantes
 - **`stack-agents`** usa o mesmo template em todos os LXCs: `cadvisor`, `docker-socket-proxy` (expõe a API Docker de forma restrita na porta 2375) e `promtail`. Ajustes por LXC:
-  - **lxc103:** descomentar o `wud` (What's Up Docker), que atualiza os containers dos demais LXCs via `docker-socket-proxy`
   - **lxc105:** descomentar a linha `name: monitor_net` e o `speedtest-exporter`.
 - **`apps-travel`** usa banco próprio (`adventurelog-db` com postgis) — não depende do PostgreSQL centralizado.
 - **Hardware transcoding** (iGPU Intel i5-14600K/Intel Arc A310) habilitado em: `jellyfin`, `dispatcharr_web`, `frigate`.
@@ -134,4 +146,5 @@ Excludes configurados: `var/lib/containerd`, `var/lib/docker/overlay2`, `var/lib
 ## Operação e recuperação
 - **Desligar com cuidado:** desligamentos sujos do Docker já causaram `docker0 ... networks have same bridge name` (entrada duplicada em `/var/lib/docker/network/files/local-kv.db`). Antes de desligar um nó, pare os guests. No Proxmox, defina *shutdown timeout* de 120 s nos LXCs `101` e `103` e `TimeoutStopSec=120` no serviço do Docker.
 - **Correção do `docker0`** (console do LXC): parar o Docker, apagar `local-kv.db`, subir o Docker, recriar as redes externas (`gateway_net` 172.20.0.0/24 gw 172.20.0.1 no lxc101; `apps_net`, `db_net`, `monitoring_net` no lxc103) e rodar o `deploy.sh` com `--force-recreate`. Se containers na mesma sub-rede passarem a dar `ETIMEDOUT`, reiniciar o Docker (e, se preciso, o LXC) para limpar pontes antigas.
-- **Variáveis novas:** o `.env` não vem pelo Git; ao adicionar uma variável, atualize o `.env` em cada LXC afetado antes do `deploy.sh`.
+- **Variáveis novas:** o `.env` não vem pelo Git; ao adicionar uma variável, atualize o `core.config.toml` do Komodo (e o `.env` dos LXCs afetados, se usar o `deploy.sh`).
+- **Scrutiny:** cada nó Proxmox roda o coletor (`/opt/scrutiny`, cron em `/etc/cron.d/scrutiny`, a cada 6 h, log em `/var/log/scrutiny-collector.log`). Os HDs USB Seagate precisam do UAS desativado (`/etc/modprobe.d/usb-storage-quirks.conf`) para o SMART funcionar.

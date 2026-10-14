@@ -1,0 +1,771 @@
+# Stacks gerenciados pelo Komodo (Resource Sync aponta para a pasta komodo/).
+# Gerado a partir das pastas lxc*/<stack>/docker-compose.yml. project_name = nome da pasta (igual ao deploy.sh).
+# Segredos: [[CHAVE]] vem do [secrets] do core.config.toml no srv-monitor.
+
+[[stack]]
+name = "omada-controller"
+tags = ["srv-omada", "critico"]
+[stack.config]
+server = "srv-omada"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc100-omada/omada-controller"
+file_paths = ["docker-compose.yml"]
+project_name = "omada-controller"
+poll_for_updates = true
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "stack-agents-omada"
+tags = ["srv-omada"]
+[stack.config]
+server = "srv-omada"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc100-omada/stack-agents"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-agents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "gateway-db"
+tags = ["srv-gateway", "critico"]
+[stack.config]
+server = "srv-gateway"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc101-gateway/gateway-db"
+file_paths = ["docker-compose.yml"]
+project_name = "gateway-db"
+poll_for_updates = true
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+MARIADB_PASSWORD=[[MARIADB_PASSWORD]]
+"""
+
+[[stack]]
+name = "gateway-dns"
+tags = ["srv-gateway"]
+[stack.config]
+server = "srv-gateway"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc101-gateway/gateway-dns"
+file_paths = ["docker-compose.yml"]
+project_name = "gateway-dns"
+poll_for_updates = false
+auto_update = true
+environment = """
+ADGUARD_PASSWORD=[[ADGUARD_PASSWORD]]
+ADGUARD_USER=[[ADGUARD_USER]]
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "gateway-network"
+tags = ["srv-gateway"]
+[stack.config]
+server = "srv-gateway"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc101-gateway/gateway-network"
+file_paths = ["docker-compose.yml"]
+project_name = "gateway-network"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+TZ=[[TZ]]
+WG_HOST=[[WG_HOST]]
+WG_PASSWORD_HASH=[[WG_PASSWORD_HASH]]
+"""
+
+[[stack]]
+name = "gateway-proxy"
+tags = ["srv-gateway", "critico"]
+[stack.config]
+server = "srv-gateway"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc101-gateway/gateway-proxy"
+file_paths = ["docker-compose.yml"]
+project_name = "gateway-proxy"
+poll_for_updates = true
+auto_update = false
+environment = """
+CLOUDFLARE_TOKEN=[[CLOUDFLARE_TOKEN]]
+CONFIG_PATH=[[CONFIG_PATH]]
+MARIADB_PASSWORD=[[MARIADB_PASSWORD]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "stack-agents-gateway"
+tags = ["srv-gateway"]
+[stack.config]
+server = "srv-gateway"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc101-gateway/stack-agents"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-agents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "media-download"
+tags = ["srv-media"]
+[stack.config]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/media-download"
+file_paths = ["docker-compose.yml"]
+project_name = "media-download"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
+DOWNLOAD_PATH=[[DOWNLOAD_PATH]]
+PGID=[[PGID]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "media-editing"
+tags = ["srv-media"]
+[stack.config]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/media-editing"
+file_paths = ["docker-compose.yml"]
+project_name = "media-editing"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
+PGID=[[PGID]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "media-music"
+tags = ["srv-media"]
+[stack.config]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/media-music"
+file_paths = ["docker-compose.yml"]
+project_name = "media-music"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
+DEEZER_ARL=[[DEEZER_ARL]]
+JWT_SECRET=[[JWT_SECRET]]
+LASTFM_APIKEY=[[LASTFM_APIKEY]]
+LASTFM_SECRET=[[LASTFM_SECRET]]
+PGID=[[PGID]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_USER=[[POSTGRES_USER]]
+PUID=[[PUID]]
+SPOTIFY_ID=[[SPOTIFY_ID]]
+SPOTIFY_SECRET=[[SPOTIFY_SECRET]]
+SUBSONIC_PASSWORD=[[SUBSONIC_PASSWORD]]
+SUBSONIC_URL=[[SUBSONIC_URL]]
+SUBSONIC_USER=[[SUBSONIC_USER]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "media-others"
+tags = ["srv-media"]
+[stack.config]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/media-others"
+file_paths = ["docker-compose.yml"]
+project_name = "media-others"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
+PGID=[[PGID]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "media-reading"
+tags = ["srv-media"]
+[stack.config]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/media-reading"
+file_paths = ["docker-compose.yml"]
+project_name = "media-reading"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
+PGID=[[PGID]]
+PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "media-tv"
+tags = ["srv-media"]
+[stack.config]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/media-tv"
+file_paths = ["docker-compose.yml"]
+project_name = "media-tv"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+REDIS_HOST=[[REDIS_HOST]]
+REDIS_PASSWORD=[[REDIS_PASSWORD]]
+REDIS_PORT=[[REDIS_PORT]]
+"""
+
+[[stack]]
+name = "media-video"
+tags = ["srv-media"]
+[stack.config]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/media-video"
+file_paths = ["docker-compose.yml"]
+project_name = "media-video"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
+PGID=[[PGID]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "stack-agents-media"
+tags = ["srv-media"]
+[stack.config]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/stack-agents"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-agents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "apps-automation"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/apps-automation"
+file_paths = ["docker-compose.yml"]
+project_name = "apps-automation"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+N8N_ENCRYPTION_KEY=[[N8N_ENCRYPTION_KEY]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "apps-finances"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/apps-finances"
+file_paths = ["docker-compose.yml"]
+project_name = "apps-finances"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "apps-habits"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/apps-habits"
+file_paths = ["docker-compose.yml"]
+project_name = "apps-habits"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DJANGO_SECRET_KEY=[[DJANGO_SECRET_KEY]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+REDIS_HOST=[[REDIS_HOST]]
+REDIS_PASSWORD=[[REDIS_PASSWORD]]
+REDIS_PORT=[[REDIS_PORT]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "apps-housing"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/apps-housing"
+file_paths = ["docker-compose.yml"]
+project_name = "apps-housing"
+poll_for_updates = false
+auto_update = true
+environment = """
+BAR_ASSISTANT_HOST=[[BAR_ASSISTANT_HOST]]
+CONFIG_PATH=[[CONFIG_PATH]]
+MEILI_HOST=[[MEILI_HOST]]
+MEILI_MASTER_KEY=[[MEILI_MASTER_KEY]]
+MEILI_PORT=[[MEILI_PORT]]
+PGID=[[PGID]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+PUID=[[PUID]]
+REDIS_HOST=[[REDIS_HOST]]
+REDIS_PASSWORD=[[REDIS_PASSWORD]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "apps-travel"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/apps-travel"
+file_paths = ["docker-compose.yml"]
+project_name = "apps-travel"
+poll_for_updates = false
+auto_update = true
+environment = """
+ADVENTURELOG_DB_PASSWORD=[[ADVENTURELOG_DB_PASSWORD]]
+CONFIG_PATH=[[CONFIG_PATH]]
+DJANGO_ADMIN_EMAIL=[[DJANGO_ADMIN_EMAIL]]
+DJANGO_ADMIN_PASSWORD=[[DJANGO_ADMIN_PASSWORD]]
+DJANGO_ADMIN_USERNAME=[[DJANGO_ADMIN_USERNAME]]
+DJANGO_SECRET_KEY=[[DJANGO_SECRET_KEY]]
+"""
+
+[[stack]]
+name = "apps-utilities"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/apps-utilities"
+file_paths = ["docker-compose.yml"]
+project_name = "apps-utilities"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+MARRETA_SITE_DESCRIPTION=[[MARRETA_SITE_DESCRIPTION]]
+MARRETA_SITE_NAME=[[MARRETA_SITE_NAME]]
+MARRETA_SITE_URL=[[MARRETA_SITE_URL]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "stack-agents-apps"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/stack-agents"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-agents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "stack-meilisearch"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/stack-meilisearch"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-meilisearch"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+MEILI_MASTER_KEY=[[MEILI_MASTER_KEY]]
+"""
+
+[[stack]]
+name = "stack-postgres"
+tags = ["srv-apps", "critico"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/stack-postgres"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-postgres"
+poll_for_updates = true
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+PGADMIN_EMAIL=[[PGADMIN_EMAIL]]
+PGADMIN_PASSWORD=[[PGADMIN_PASSWORD]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_USER=[[POSTGRES_USER]]
+"""
+
+[[stack]]
+name = "stack-redis"
+tags = ["srv-apps", "critico"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/stack-redis"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-redis"
+poll_for_updates = true
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+REDIS_PASSWORD=[[REDIS_PASSWORD]]
+"""
+
+[[stack]]
+name = "tools-hub"
+tags = ["srv-apps"]
+[stack.config]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/tools-hub"
+file_paths = ["docker-compose.yml"]
+project_name = "tools-hub"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DEEPSEEK_API_KEY=[[DEEPSEEK_API_KEY]]
+GEMINI_API_KEY=[[GEMINI_API_KEY]]
+MEALIE_TOKEN=[[MEALIE_TOKEN]]
+TOOLS_PASSWORD=[[TOOLS_PASSWORD]]
+TOOLS_USER=[[TOOLS_USER]]
+"""
+
+[[stack]]
+name = "security-nvr"
+tags = ["srv-security"]
+[stack.config]
+server = "srv-security"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc104-security/security-nvr"
+file_paths = ["docker-compose.yml"]
+project_name = "security-nvr"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+FRIGATE_RTSP_PASSWORD=[[FRIGATE_RTSP_PASSWORD]]
+"""
+
+[[stack]]
+name = "security-pwd"
+tags = ["srv-security", "critico"]
+[stack.config]
+server = "srv-security"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc104-security/security-pwd"
+file_paths = ["docker-compose.yml"]
+project_name = "security-pwd"
+poll_for_updates = true
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "stack-agents-security"
+tags = ["srv-security"]
+[stack.config]
+server = "srv-security"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc104-security/stack-agents"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-agents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "adguard-secundary"
+tags = ["srv-monitor"]
+[stack.config]
+server = "srv-monitor"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc105-monitor/adguard-secundary"
+file_paths = ["docker-compose.yml"]
+project_name = "adguard-secundary"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "komodo"
+tags = ["srv-monitor", "critico"]
+[stack.config]
+server = "srv-monitor"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc105-monitor/komodo"
+file_paths = ["docker-compose.yml"]
+project_name = "komodo"
+poll_for_updates = true
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+KOMODO_ADMIN_PASSWORD=[[KOMODO_ADMIN_PASSWORD]]
+KOMODO_DB_PASSWORD=[[KOMODO_DB_PASSWORD]]
+KOMODO_JWT_SECRET=[[KOMODO_JWT_SECRET]]
+KOMODO_WEBHOOK_SECRET=[[KOMODO_WEBHOOK_SECRET]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "monitor-home"
+tags = ["srv-monitor"]
+[stack.config]
+server = "srv-monitor"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc105-monitor/monitor-home"
+file_paths = ["docker-compose.yml"]
+project_name = "monitor-home"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+HOMEPAGE_ALLOWED_HOSTS=[[HOMEPAGE_ALLOWED_HOSTS]]
+PGID=[[PGID]]
+PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "monitor-media"
+tags = ["srv-monitor"]
+[stack.config]
+server = "srv-monitor"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc105-monitor/monitor-media"
+file_paths = ["docker-compose.yml"]
+project_name = "monitor-media"
+poll_for_updates = false
+auto_update = true
+environment = """
+JELLYSTAT_JWT_SECRET=[[JELLYSTAT_JWT_SECRET]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "monitor-server"
+tags = ["srv-monitor", "critico"]
+[stack.config]
+server = "srv-monitor"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc105-monitor/monitor-server"
+file_paths = ["docker-compose.yml"]
+project_name = "monitor-server"
+poll_for_updates = true
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+GRAFANA_ADMIN_PASSWORD=[[GRAFANA_ADMIN_PASSWORD]]
+SCRUTINY_INFLUXDB_PASSWORD=[[SCRUTINY_INFLUXDB_PASSWORD]]
+SCRUTINY_INFLUXDB_TOKEN=[[SCRUTINY_INFLUXDB_TOKEN]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "stack-agents-monitor"
+tags = ["srv-monitor"]
+[stack.config]
+server = "srv-monitor"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc105-monitor/stack-agents"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-agents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "games-library"
+tags = ["srv-games"]
+[stack.config]
+server = "srv-games"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc107-games/games-library"
+file_paths = ["docker-compose.yml"]
+project_name = "games-library"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+GAMEYFIN_APP_KEY=[[GAMEYFIN_APP_KEY]]
+PGID=[[PGID]]
+PUID=[[PUID]]
+"""
+
+[[stack]]
+name = "stack-agents-games"
+tags = ["srv-games"]
+[stack.config]
+server = "srv-games"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc107-games/stack-agents"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-agents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""
+
+[[stack]]
+name = "ai-llm"
+tags = ["srv-ai"]
+[stack.config]
+server = "srv-ai"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc108-ai/ai-llm"
+file_paths = ["docker-compose.yml"]
+project_name = "ai-llm"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "stack-agents-ai"
+tags = ["srv-ai"]
+[stack.config]
+server = "srv-ai"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc108-ai/stack-agents"
+file_paths = ["docker-compose.yml"]
+project_name = "stack-agents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+"""

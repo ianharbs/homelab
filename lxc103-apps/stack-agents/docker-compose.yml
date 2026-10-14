@@ -83,31 +83,3 @@ services:
   #     disable: true
   #   networks:
   #     - monitoring_net
-
-  # ---------------------------------------------------------------------------
-  # WUD — atualiza containers automaticamente
-  # (ativar no lxc103 - srv-apps)
-  # ---------------------------------------------------------------------------     
-  wud:
-    image: ghcr.io/getwud/wud
-    container_name: wud
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "3000:3000"
-    environment:
-      - WUD_WATCHER_LOCAL_WATCHBYDEFAULT=true
-      - WUD_TRIGGER_DOCKER_LOCAL_ACTION=update
-      - WUD_WATCHER_LXC1_HOST=192.168.10.10
-      - WUD_WATCHER_LXC1_PORT=2375
-      - WUD_WATCHER_LXC2_HOST=192.168.10.20
-      - WUD_WATCHER_LXC2_PORT=2375
-      - WUD_WATCHER_LXC3_HOST=192.168.10.40
-      - WUD_WATCHER_LXC3_PORT=2375
-      - WUD_WATCHER_LXC4_HOST=192.168.10.50
-      - WUD_WATCHER_LXC4_PORT=2375
-      - WUD_WATCHER_LXC5_HOST=192.168.10.70
-      - WUD_WATCHER_LXC5_PORT=2375
-      - WUD_WATCHER_LXC6_HOST=192.168.10.80
-      - WUD_WATCHER_LXC6_PORT=2375
-    restart: always
