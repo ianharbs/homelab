@@ -124,8 +124,15 @@ Todas as stacks consomem o mesmo `.env`. Veja `.env.example` para a lista comple
 
 
 ## Backups
-Backups automáticos via **Proxmox VE** rodam diariamente às 00:00, cobrindo todos os LXCs e VMs com retenção de 2 cópias. 
-Excludes configurados: `var/lib/containerd`, `var/lib/docker/overlay2`, `var/lib/docker/volumes`, `data/compose`.
+Backups automáticos via **Proxmox VE** (vzdump, `zstd`, modo snapshot) rodam diariamente às **03:00**, um job por nó, com retenção de 2 cópias:
+
+| Nó | Guests | Storage de destino |
+|---|---|---|
+| `pve` | 101, 102 | `scratch_disk` |
+| `pve2` | 104, 107, 108 | `frigate_store` (HD USB do pve2) |
+| `pve3` | 103, 105, 106 | `media` → no pve3 é uma pasta no **disco do sistema** (o HD de mídia fica no pve) |
+
+Excludes configurados (`/etc/vzdump.conf`): `var/lib/containerd`, `var/lib/docker/overlay2`, `var/lib/docker/volumes`, `data/compose`.
 
 > `lxc101` e `lxc103` também têm replicação ZFS entre nós (ver HA acima), que **não** substitui o backup.
 
@@ -146,4 +153,5 @@ Excludes configurados: `var/lib/containerd`, `var/lib/docker/overlay2`, `var/lib
 - **Desligar com cuidado:** desligamentos sujos do Docker já causaram `docker0 ... networks have same bridge name` (entrada duplicada em `/var/lib/docker/network/files/local-kv.db`). Antes de desligar um nó, pare os guests. No Proxmox, defina *shutdown timeout* de 120 s nos LXCs `101` e `103` e `TimeoutStopSec=120` no serviço do Docker.
 - **Correção do `docker0`** (console do LXC): parar o Docker, apagar `local-kv.db`, subir o Docker, recriar as redes externas (`gateway_net` 172.20.0.0/24 gw 172.20.0.1 no lxc101; `apps_net`, `db_net`, `monitoring_net` no lxc103) e rodar o `deploy.sh` com `--force-recreate`. Se containers na mesma sub-rede passarem a dar `ETIMEDOUT`, reiniciar o Docker (e, se preciso, o LXC) para limpar pontes antigas.
 - **Variáveis novas:** o `.env` não vem pelo Git; ao adicionar uma variável, atualize o `core.config.toml` do Komodo (e o `.env` dos LXCs afetados, se usar o `deploy.sh`).
+- **Monitoramento versionado:** cópias de referência em `lxc105-monitor/monitor-server/` — `prometheus/prometheus.yml`, `blackbox/blackbox.yml` e os dashboards do Grafana em `grafana/dashboards/*.json`. A config ativa continua em `/opt/docker/prometheus/config` e `/opt/docker/blackbox` no srv-monitor: ao mudar uma, atualize a outra. Para restaurar: copiar o arquivo para `/opt/docker/...` e `curl -XPOST localhost:9090/-/reload` (ou `:9115/-/reload` no blackbox); dashboards via *Dashboards → New → Import* (o `uid` é preservado, então links entre eles continuam funcionando).
 - **Scrutiny:** cada nó Proxmox roda o coletor (`/opt/scrutiny`, cron em `/etc/cron.d/scrutiny`, a cada 6 h, log em `/var/log/scrutiny-collector.log`). Os HDs USB Seagate precisam do UAS desativado (`/etc/modprobe.d/usb-storage-quirks.conf`) para o SMART funcionar.

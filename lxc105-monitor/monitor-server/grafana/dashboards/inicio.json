@@ -1,0 +1,2126 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "apps",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Dashboards",
+      "tooltip": "",
+      "type": "dashboards"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## 🏠&nbsp; iHome · Homelab\n<sub>**iHomeCluster** &nbsp;·&nbsp; 3 servidores Proxmox &nbsp;·&nbsp; 8 LXCs &nbsp;·&nbsp; 1 VM &nbsp;&nbsp;</sub>",
+        "mode": "markdown"
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [],
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "id": 23,
+      "title": "📊  Dashboards",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Visão geral por servidor físico: status, CPU, RAM, temperatura e guests.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#3D71D9",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Abrir",
+              "url": "/d/cluster-overview/cluster-visao-geral"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3D71D9",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "suffix: / 3 online"
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 4
+      },
+      "id": 3,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 16,
+          "valueSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "count(up{job=~\"servidor.*\"} == 1)",
+          "instant": false,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "🌐  Cluster",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Detalhes completos (node_exporter) de um nó ou LXC. Valor: maior temperatura de CPU do cluster.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Abrir",
+              "url": "/d/rYdddlPWk"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#8E44AD",
+                "value": 0
+              },
+              {
+                "color": "#E67E22",
+                "value": 80
+              },
+              {
+                "color": "#E02F44",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "celsius"
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 4
+      },
+      "id": 4,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 16,
+          "valueSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "max(node_hwmon_temp_celsius{job=~\"servidor.*\",chip=~\".*coretemp.*\"})",
+          "instant": false,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "🖥️  Especificações",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "CPU, memória, rede e disco por container (cAdvisor).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#16A085",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Abrir",
+              "url": "/d/pMEd7m0Mz"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#16A085",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "suffix: containers"
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 4
+      },
+      "id": 5,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 16,
+          "valueSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "count(count by(instance,name)(container_last_seen{name!=\"\"} > time() - 120))",
+          "instant": false,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "📦  Containers",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "efkaloluegk5ce"
+      },
+      "description": "Logs de todos os containers (Loki). Valor: linhas com error/fatal/panic na última hora.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#D35400",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Abrir",
+              "url": "/d/sadlil-loki-apps-dashboard"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#D35400",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "suffix: erros/h"
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 9
+      },
+      "id": 6,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 16,
+          "valueSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "efkaloluegk5ce"
+          },
+          "expr": "sum(count_over_time({host=~\".+\"} |~ \"(?i)\\\\b(error|fatal|panic)\\\\b\" [1h]))",
+          "instant": false,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "📜  Logs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Histórico de download, upload, ping e jitter. Valor: último download medido.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#C0392B",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Abrir",
+              "url": "/d/-fs18ztMz"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#C0392B",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "Mbits"
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 9
+      },
+      "id": 7,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 16,
+          "valueSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "last_over_time(speedtest_download_bits_per_second[2h]) / 1e6",
+          "instant": false,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "🚀  Internet",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Sondas HTTP/TCP/DNS de todos os serviços. Abre a visão do cluster com os serviços fora do ar por servidor.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Abrir",
+              "url": "/d/cluster-overview/cluster-visao-geral"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Tudo online ✓"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#27AE60",
+                "value": 0
+              },
+              {
+                "color": "#E02F44",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "suffix:  fora do ar"
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 9
+      },
+      "id": 8,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 16,
+          "valueSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "count(probe_success == 0) or vector(0)",
+          "instant": false,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "🩺  Serviços",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 24,
+      "title": "🗄️  Servidores",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Status do nó e quantidade de guests rodando nele agora. Clique para as especificações.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Especificações de pve",
+              "url": "/d/rYdddlPWk?var-servidor=pve&var-node=pve"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "● Offline"
+                },
+                "1": {
+                  "text": "● Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#27AE60",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Guests"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": []
+              },
+              {
+                "id": "unit",
+                "value": "suffix:  guests"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3D71D9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "id": 10,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 15,
+          "valueSize": 20
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "up{job=~\"servidor.*\",instance=\"pve\"}",
+          "instant": true,
+          "legendFormat": "Status",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "count(pve_guest_info{node=\"pve\"})",
+          "instant": true,
+          "legendFormat": "Guests",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "pve  ·  Intel i5-14600K · iGPU",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Status do nó e quantidade de guests rodando nele agora. Clique para as especificações.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Especificações de pve2",
+              "url": "/d/rYdddlPWk?var-servidor=pve2&var-node=pve2"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "● Offline"
+                },
+                "1": {
+                  "text": "● Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#27AE60",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Guests"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": []
+              },
+              {
+                "id": "unit",
+                "value": "suffix:  guests"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3D71D9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 8,
+        "y": 15
+      },
+      "id": 12,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 15,
+          "valueSize": 20
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "up{job=~\"servidor.*\",instance=\"pve2\"}",
+          "instant": true,
+          "legendFormat": "Status",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "count(pve_guest_info{node=\"pve2\"})",
+          "instant": true,
+          "legendFormat": "Guests",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "pve2  ·  Xeon E5-2680 v4 · Arc A310",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Status do nó e quantidade de guests rodando nele agora. Clique para as especificações.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Especificações de pve3",
+              "url": "/d/rYdddlPWk?var-servidor=pve3&var-node=pve3"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "● Offline"
+                },
+                "1": {
+                  "text": "● Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#27AE60",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Guests"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": []
+              },
+              {
+                "id": "unit",
+                "value": "suffix:  guests"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3D71D9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      },
+      "id": 14,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 15,
+          "valueSize": 20
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "up{job=~\"servidor.*\",instance=\"pve3\"}",
+          "instant": true,
+          "legendFormat": "Status",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "count(pve_guest_info{node=\"pve3\"})",
+          "instant": true,
+          "legendFormat": "Guests",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "pve3  ·  Xeon E5-2680 v4",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Especificações de pve",
+              "url": "/d/rYdddlPWk?var-servidor=pve&var-node=pve"
+            }
+          ],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#27AE60",
+                "value": 0
+              },
+              {
+                "color": "#F39C12",
+                "value": 70
+              },
+              {
+                "color": "#E02F44",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temp."
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#27AE60",
+                      "value": 0
+                    },
+                    {
+                      "color": "#F39C12",
+                      "value": 80
+                    },
+                    {
+                      "color": "#E02F44",
+                      "value": 90
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#27AE60",
+                      "value": 0
+                    },
+                    {
+                      "color": "#F39C12",
+                      "value": 80
+                    },
+                    {
+                      "color": "#E02F44",
+                      "value": 92
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 18
+      },
+      "id": 11,
+      "options": {
+        "barShape": "flat",
+        "barWidthFactor": 0.5,
+        "effects": {
+          "barGlow": false,
+          "centerGlow": false,
+          "gradient": true
+        },
+        "endpointMarker": "point",
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "segmentCount": 1,
+        "segmentSpacing": 0.3,
+        "shape": "gauge",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "sparkline": true,
+        "text": {
+          "titleSize": 13,
+          "valueSize": 20
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "max(node_hwmon_temp_celsius{instance=\"pve\",chip=~\".*coretemp.*\"})",
+          "instant": true,
+          "legendFormat": "Temp.",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{instance=\"pve\",mode=\"idle\"}[5m])))",
+          "instant": true,
+          "legendFormat": "CPU",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{instance=\"pve\"} / node_memory_MemTotal_bytes{instance=\"pve\"})",
+          "instant": true,
+          "legendFormat": "RAM",
+          "range": false,
+          "refId": "C"
+        }
+      ],
+      "title": "",
+      "transparent": true,
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Especificações de pve2",
+              "url": "/d/rYdddlPWk?var-servidor=pve2&var-node=pve2"
+            }
+          ],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#27AE60",
+                "value": 0
+              },
+              {
+                "color": "#F39C12",
+                "value": 70
+              },
+              {
+                "color": "#E02F44",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temp."
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#27AE60",
+                      "value": 0
+                    },
+                    {
+                      "color": "#F39C12",
+                      "value": 80
+                    },
+                    {
+                      "color": "#E02F44",
+                      "value": 90
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#27AE60",
+                      "value": 0
+                    },
+                    {
+                      "color": "#F39C12",
+                      "value": 80
+                    },
+                    {
+                      "color": "#E02F44",
+                      "value": 92
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 18
+      },
+      "id": 13,
+      "options": {
+        "barShape": "flat",
+        "barWidthFactor": 0.5,
+        "effects": {
+          "barGlow": false,
+          "centerGlow": false,
+          "gradient": true
+        },
+        "endpointMarker": "point",
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "segmentCount": 1,
+        "segmentSpacing": 0.3,
+        "shape": "gauge",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "sparkline": true,
+        "text": {
+          "titleSize": 13,
+          "valueSize": 20
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "max(node_hwmon_temp_celsius{instance=\"pve2\",chip=~\".*coretemp.*\"})",
+          "instant": true,
+          "legendFormat": "Temp.",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{instance=\"pve2\",mode=\"idle\"}[5m])))",
+          "instant": true,
+          "legendFormat": "CPU",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{instance=\"pve2\"} / node_memory_MemTotal_bytes{instance=\"pve2\"})",
+          "instant": true,
+          "legendFormat": "RAM",
+          "range": false,
+          "refId": "C"
+        }
+      ],
+      "title": "",
+      "transparent": true,
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": false,
+              "title": "Especificações de pve3",
+              "url": "/d/rYdddlPWk?var-servidor=pve3&var-node=pve3"
+            }
+          ],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#27AE60",
+                "value": 0
+              },
+              {
+                "color": "#F39C12",
+                "value": 70
+              },
+              {
+                "color": "#E02F44",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temp."
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#27AE60",
+                      "value": 0
+                    },
+                    {
+                      "color": "#F39C12",
+                      "value": 80
+                    },
+                    {
+                      "color": "#E02F44",
+                      "value": 90
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#27AE60",
+                      "value": 0
+                    },
+                    {
+                      "color": "#F39C12",
+                      "value": 80
+                    },
+                    {
+                      "color": "#E02F44",
+                      "value": 92
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 18
+      },
+      "id": 15,
+      "options": {
+        "barShape": "flat",
+        "barWidthFactor": 0.5,
+        "effects": {
+          "barGlow": false,
+          "centerGlow": false,
+          "gradient": true
+        },
+        "endpointMarker": "point",
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "segmentCount": 1,
+        "segmentSpacing": 0.3,
+        "shape": "gauge",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "sparkline": true,
+        "text": {
+          "titleSize": 13,
+          "valueSize": 20
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "max(node_hwmon_temp_celsius{instance=\"pve3\",chip=~\".*coretemp.*\"})",
+          "instant": true,
+          "legendFormat": "Temp.",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{instance=\"pve3\",mode=\"idle\"}[5m])))",
+          "instant": true,
+          "legendFormat": "CPU",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{instance=\"pve3\"} / node_memory_MemTotal_bytes{instance=\"pve3\"})",
+          "instant": true,
+          "legendFormat": "RAM",
+          "range": false,
+          "refId": "C"
+        }
+      ],
+      "title": "",
+      "transparent": true,
+      "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 25,
+      "title": "🧰  Ferramentas",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Deploy e atualização das stacks",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": true,
+              "title": "Abrir Komodo",
+              "url": "http://192.168.10.50:9120"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Offline"
+                },
+                "1": {
+                  "text": "Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#2C3E50",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 0,
+        "y": 25
+      },
+      "id": 17,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 18
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "probe_success{name=\"komodo\"}",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "🦎  Komodo",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Saúde SMART dos discos",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": true,
+              "title": "Abrir Scrutiny",
+              "url": "http://192.168.10.50:8480"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Offline"
+                },
+                "1": {
+                  "text": "Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#2C3E50",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 4,
+        "y": 25
+      },
+      "id": 18,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 18
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "probe_success{name=\"scrutiny\"}",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "💽  Scrutiny",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Interface do cluster",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": true,
+              "title": "Abrir Proxmox",
+              "url": "https://192.168.10.2:8006"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Offline"
+                },
+                "1": {
+                  "text": "Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#2C3E50",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 8,
+        "y": 25
+      },
+      "id": 19,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 18
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "min(probe_success{name=\"proxmox-ui\"})",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "🟧  Proxmox",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Métricas e alvos",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": true,
+              "title": "Abrir Prometheus",
+              "url": "http://192.168.10.50:9090/targets"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Offline"
+                },
+                "1": {
+                  "text": "Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#2C3E50",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 12,
+        "y": 25
+      },
+      "id": 20,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 18
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "probe_success{name=\"prometheus\"}",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "🔥  Prometheus",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Página inicial dos serviços",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": true,
+              "title": "Abrir Homepage",
+              "url": "http://192.168.10.50:3002"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Offline"
+                },
+                "1": {
+                  "text": "Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#2C3E50",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 16,
+        "y": 25
+      },
+      "id": 21,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 18
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "probe_success{name=\"homepage\"}",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "🏡  Homepage",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cfkaln29oadq8a"
+      },
+      "description": "Nginx Proxy Manager: proxies e certificados",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "links": [
+            {
+              "oneClick": true,
+              "targetBlank": true,
+              "title": "Abrir Proxy Manager",
+              "url": "http://192.168.10.10:81"
+            }
+          ],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Offline"
+                },
+                "1": {
+                  "text": "Online"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": 0
+              },
+              {
+                "color": "#2C3E50",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 20,
+        "y": 25
+      },
+      "id": 22,
+      "maxDataPoints": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 18
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cfkaln29oadq8a"
+          },
+          "expr": "probe_success{name=\"npm\"}",
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "🔀  Proxy Manager",
+      "type": "stat"
+    }
+  ],
+  "preload": false,
+  "refresh": "1m",
+  "schemaVersion": 42,
+  "tags": [
+    "home"
+  ],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Início",
+  "uid": "home"
+}

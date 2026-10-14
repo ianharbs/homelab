@@ -1,0 +1,634 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'lxc100 (srv-omada)'
+    static_configs:
+      - targets: ['192.168.10.5:9100']
+        labels:
+          instance: 'srv-omada'
+
+  - job_name: 'lxc101 (srv-gateway)'
+    static_configs:
+      - targets: ['192.168.10.10:9100']
+        labels:
+          instance: 'srv-gateway'
+
+  - job_name: 'lxc102 (srv-media)'
+    static_configs:
+      - targets: ['192.168.10.20:9100']
+        labels:
+          instance: 'srv-media'
+
+  - job_name: 'lxc103 (srv-apps)'
+    static_configs:
+      - targets: ['192.168.10.30:9100']
+        labels:
+          instance: 'srv-apps'
+
+  - job_name: 'lxc104 (srv-security)'
+    static_configs:
+      - targets: ['192.168.10.40:9100']
+        labels:
+          instance: 'srv-security'
+
+  - job_name: 'lxc105 (srv-monitor)'
+    static_configs:
+      - targets: ['192.168.10.50:9100']
+        labels:
+          instance: 'srv-monitor'
+
+  - job_name: 'lxc107 (srv-games)'
+    static_configs:
+      - targets: ['192.168.10.70:9100']
+        labels:
+          instance: 'srv-games'
+
+  - job_name: 'lxc108 (srv-ai)'
+    static_configs:
+      - targets: ['192.168.10.80:9100']
+        labels:
+          instance: 'srv-ai'
+
+  # Nós do cluster iHomeCluster (node_exporter no host Proxmox)
+  - job_name: 'servidor (pve-nodes)'
+    static_configs:
+      - targets: ['192.168.10.2:9100']
+        labels:
+          instance: 'pve'
+      - targets: ['192.168.10.3:9100']
+        labels:
+          instance: 'pve2'
+      - targets: ['192.168.10.4:9100']
+        labels:
+          instance: 'pve3'
+
+  # pve-exporter: métricas do cluster (guests, storage, status) — coletadas uma vez só
+  - job_name: 'pve'
+    metrics_path: /pve
+    params:
+      module: [default]
+      cluster: ['1']
+      node: ['0']
+    static_configs:
+      - targets: ['192.168.10.2']
+    relabel_configs: &pve_relabel
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 192.168.10.50:9221
+    metric_relabel_configs: &pve_metric_relabel
+      - source_labels: [id]
+        regex: 'lxc/100'
+        target_label: nodename
+        replacement: 'srv-omada'
+      - source_labels: [id]
+        regex: 'lxc/101'
+        target_label: nodename
+        replacement: 'srv-gateway'
+      - source_labels: [id]
+        regex: 'lxc/102'
+        target_label: nodename
+        replacement: 'srv-media'
+      - source_labels: [id]
+        regex: 'lxc/103'
+        target_label: nodename
+        replacement: 'srv-apps'
+      - source_labels: [id]
+        regex: 'lxc/104'
+        target_label: nodename
+        replacement: 'srv-security'
+      - source_labels: [id]
+        regex: 'lxc/105'
+        target_label: nodename
+        replacement: 'srv-monitor'
+      - source_labels: [id]
+        regex: 'qemu/106'
+        target_label: nodename
+        replacement: 'vm-haos'
+      - source_labels: [id]
+        regex: 'lxc/107'
+        target_label: nodename
+        replacement: 'srv-games'
+      - source_labels: [id]
+        regex: 'lxc/108'
+        target_label: nodename
+        replacement: 'srv-ai'
+      - source_labels: [id]
+        regex: 'node/(.+)'
+        target_label: nodename
+        replacement: '$1'
+
+  # pve-exporter: métricas específicas de cada nó (versão, replicação, subscription, config)
+  - job_name: 'pve-nodes'
+    metrics_path: /pve
+    params:
+      module: [default]
+      cluster: ['0']
+      node: ['1']
+    static_configs:
+      - targets: ['192.168.10.2', '192.168.10.3', '192.168.10.4']
+    relabel_configs: *pve_relabel
+    metric_relabel_configs: *pve_metric_relabel
+
+  - job_name: 'cadvisor-srv-omada'
+    static_configs:
+      - targets: ['192.168.10.5:8082']
+        labels:
+          instance: 'srv-omada'
+
+  - job_name: 'cadvisor-srv-gateway'
+    static_configs:
+      - targets: ['192.168.10.10:8082']
+        labels:
+          instance: 'srv-gateway'
+
+  - job_name: 'cadvisor-srv-media'
+    static_configs:
+      - targets: ['192.168.10.20:8082']
+        labels:
+          instance: 'srv-media'
+
+  - job_name: 'cadvisor-srv-apps'
+    static_configs:
+      - targets: ['192.168.10.30:8082']
+        labels:
+          instance: 'srv-apps'
+
+  - job_name: 'cadvisor-srv-security'
+    static_configs:
+      - targets: ['192.168.10.40:8082']
+        labels:
+          instance: 'srv-security'
+
+  - job_name: 'cadvisor-srv-monitor'
+    static_configs:
+      - targets: ['192.168.10.50:8082']
+        labels:
+          instance: 'srv-monitor'
+
+  - job_name: 'cadvisor-srv-games'
+    static_configs:
+      - targets: ['192.168.10.70:8082']
+        labels:
+          instance: 'srv-games'
+
+  - job_name: 'cadvisor-srv-ai'
+    static_configs:
+      - targets: ['192.168.10.80:8082']
+        labels:
+          instance: 'srv-ai'
+
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      # --- srv-gateway (lxc101) ---
+      - targets: ['http://192.168.10.10:3000']
+        labels:
+          name: adguard
+          instance: srv-gateway
+          __param_target: 'http://192.168.10.10:3000'
+      - targets: ['http://192.168.10.10:81']
+        labels:
+          name: npm
+          instance: srv-gateway
+          __param_target: 'http://192.168.10.10:81'
+      - targets: ['http://192.168.10.10:51821']
+        labels:
+          name: wg-easy
+          instance: srv-gateway
+          __param_target: 'http://192.168.10.10:51821'
+      - targets: ['http://192.168.10.10:20211']
+        labels:
+          name: netalertx
+          instance: srv-gateway
+          __param_target: 'http://192.168.10.10:20211'
+
+      # --- srv-media (lxc102) ---
+      - targets: ['http://192.168.10.20:8096']
+        labels:
+          name: jellyfin
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:8096'
+      - targets: ['http://192.168.10.20:8989']
+        labels:
+          name: sonarr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:8989'
+      - targets: ['http://192.168.10.20:7878']
+        labels:
+          name: radarr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:7878'
+      - targets: ['http://192.168.10.20:9696']
+        labels:
+          name: prowlarr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:9696'
+      - targets: ['http://192.168.10.20:6767']
+        labels:
+          name: bazarr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:6767'
+      - targets: ['http://192.168.10.20:5055']
+        labels:
+          name: jellyseerr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:5055'
+      - targets: ['http://192.168.10.20:8080']
+        labels:
+          name: qbittorrent
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:8080'
+      - targets: ['http://192.168.10.20:4533']
+        labels:
+          name: navidrome
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:4533'
+      - targets: ['http://192.168.10.20:9191']
+        labels:
+          name: dispatcharr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:9191'
+      - targets: ['http://192.168.10.20:13378']
+        labels:
+          name: audiobookshelf
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:13378'
+      - targets: ['http://192.168.10.20:5000']
+        labels:
+          name: kavita
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:5000'
+      - targets: ['http://192.168.10.20:4567']
+        labels:
+          name: suwayomi
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:4567'
+      - targets: ['http://192.168.10.20:6868']
+        labels:
+          name: profilarr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:6868'
+      - targets: ['http://192.168.10.20:6969/ping']
+        labels:
+          name: whisparr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:6969/ping'
+      - targets: ['http://192.168.10.20:9999']
+        labels:
+          name: stash
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:9999'
+      - targets: ['http://192.168.10.20:11011']
+        labels:
+          name: cleanuparr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:11011'
+
+      # --- srv-apps (lxc103) ---
+      - targets: ['http://192.168.10.30:9925']
+        labels:
+          name: mealie
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:9925'
+      - targets: ['http://192.168.10.30:6060']
+        labels:
+          name: wingfit
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:6060'
+      - targets: ['http://192.168.10.30:7700']
+        labels:
+          name: meilisearch
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:7700'
+      - targets: ['http://192.168.10.30:5006']
+        labels:
+          name: actual_budget
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:5006'
+      - targets: ['http://192.168.10.30:5678']
+        labels:
+          name: n8n
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:5678'
+      - targets: ['http://192.168.10.30:8015']
+        labels:
+          name: adventurelog
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:8015'
+      - targets: ['http://192.168.10.30:9092']
+        labels:
+          name: bar-assistant
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:9092'
+      - targets: ['http://192.168.10.30:8484']
+        labels:
+          name: marreta
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:8484'
+      - targets: ['http://192.168.10.30:3035']
+        labels:
+          name: bentopdf
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:3035'
+      - targets: ['http://192.168.10.30:8090']
+        labels:
+          name: sftpgo
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:8090'
+
+      # --- srv-security (lxc104) ---
+      # Frigate só serve HTTPS com certificado autoassinado na 8971
+      - targets: ['https://192.168.10.40:8971']
+        labels:
+          name: frigate
+          instance: srv-security
+          __param_target: 'https://192.168.10.40:8971'
+          __param_module: http_2xx_insecure
+      - targets: ['http://192.168.10.40:8181']
+        labels:
+          name: vaultwarden
+          instance: srv-security
+          __param_target: 'http://192.168.10.40:8181'
+
+      # --- srv-monitor (lxc105) ---
+      - targets: ['http://192.168.10.50:3002']
+        labels:
+          name: homepage
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:3002'
+      - targets: ['http://192.168.10.50:3005']
+        labels:
+          name: jellystat
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:3005'
+
+      # --- srv-games (lxc107) ---
+      - targets: ['http://192.168.10.70:8181']
+        labels:
+          name: gameyfin
+          instance: srv-games
+          __param_target: 'http://192.168.10.70:8181'
+
+      # --- vm-haos (vm106) ---
+      - targets: ['http://192.168.10.60:8123']
+        labels:
+          name: home-assistant
+          instance: vm-haos
+          __param_target: 'http://192.168.10.60:8123'
+
+      # --- srv-ai (lxc108) ---
+      - targets: ['http://192.168.10.80:3000']
+        labels:
+          name: open-webui
+          instance: srv-ai
+          __param_target: 'http://192.168.10.80:3000'
+      - targets: ['http://192.168.10.80:11434']
+        labels:
+          name: ollama
+          instance: srv-ai
+          __param_target: 'http://192.168.10.80:11434'
+
+      # --- adicionados na auditoria de 2026-10-14 ---
+      # srv-omada (lxc100)
+      - targets: ['https://192.168.10.5:8043']
+        labels:
+          name: omada
+          instance: srv-omada
+          __param_target: 'https://192.168.10.5:8043'
+          __param_module: http_2xx_insecure
+      # srv-media (lxc102)
+      - targets: ['http://192.168.10.20:8085']
+        labels:
+          name: sabnzbd
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:8085'
+      - targets: ['http://192.168.10.20:8191']
+        labels:
+          name: flaresolverr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:8191'
+      - targets: ['http://192.168.10.20:7006']
+        labels:
+          name: torrent-indexer
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:7006'
+      - targets: ['http://192.168.10.20:9876']
+        labels:
+          name: lingarr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:9876'
+      - targets: ['http://192.168.10.20:8688']
+        labels:
+          name: droppedneedle
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:8688'
+      - targets: ['http://192.168.10.20:5274']
+        labels:
+          name: octo-fiesta
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:5274'
+      - targets: ['http://192.168.10.20:8020']
+        labels:
+          name: audiomuse-ai
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:8020'
+      - targets: ['http://192.168.10.20:5030']
+        labels:
+          name: slskd
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:5030'
+      - targets: ['http://192.168.10.20:5056']
+        labels:
+          name: shelfarr
+          instance: srv-media
+          __param_target: 'http://192.168.10.20:5056'
+      # srv-apps (lxc103)
+      - targets: ['http://192.168.10.30:9110']
+        labels:
+          name: wger
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:9110'
+      - targets: ['http://192.168.10.30:8080']
+        labels:
+          name: salt-rim
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:8080'
+      - targets: ['http://192.168.10.30:8016']
+        labels:
+          name: adventurelog-api
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:8016'
+      - targets: ['http://192.168.10.30:5050/misc/ping']
+        labels:
+          name: pgadmin
+          instance: srv-apps
+          __param_target: 'http://192.168.10.30:5050/misc/ping'
+      # srv-monitor (lxc105)
+      - targets: ['http://192.168.10.50:3001']
+        labels:
+          name: adguard-secondary
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:3001'
+      - targets: ['http://192.168.10.50:9120']
+        labels:
+          name: komodo
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:9120'
+      - targets: ['http://192.168.10.50:3010/api/health']
+        labels:
+          name: grafana
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:3010/api/health'
+      - targets: ['http://192.168.10.50:9090/-/healthy']
+        labels:
+          name: prometheus
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:9090/-/healthy'
+      - targets: ['http://192.168.10.50:3100/loki/api/v1/status/buildinfo']
+        labels:
+          name: loki
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:3100/loki/api/v1/status/buildinfo'
+      - targets: ['http://192.168.10.50:8480/api/health']
+        labels:
+          name: scrutiny
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:8480/api/health'
+      - targets: ['http://192.168.10.50:8086/health']
+        labels:
+          name: scrutiny-influxdb
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:8086/health'
+      - targets: ['http://192.168.10.50:9221']
+        labels:
+          name: pve-exporter
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:9221'
+      - targets: ['http://192.168.10.50:9115']
+        labels:
+          name: blackbox
+          instance: srv-monitor
+          __param_target: 'http://192.168.10.50:9115'
+      # nós Proxmox (UI web, TLS autoassinado)
+      - targets: ['https://192.168.10.2:8006']
+        labels:
+          name: proxmox-ui
+          instance: pve
+          __param_target: 'https://192.168.10.2:8006'
+          __param_module: http_2xx_insecure
+      - targets: ['https://192.168.10.3:8006']
+        labels:
+          name: proxmox-ui
+          instance: pve2
+          __param_target: 'https://192.168.10.3:8006'
+          __param_module: http_2xx_insecure
+      - targets: ['https://192.168.10.4:8006']
+        labels:
+          name: proxmox-ui
+          instance: pve3
+          __param_target: 'https://192.168.10.4:8006'
+          __param_module: http_2xx_insecure
+
+    relabel_configs:
+      - source_labels: [__param_target]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  # Bancos e serviços sem HTTP: só verifica se a porta aceita conexão
+  - job_name: 'blackbox-tcp'
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets: ['192.168.10.30:5432']
+        labels:
+          name: postgres
+          instance: srv-apps
+          __param_target: '192.168.10.30:5432'
+      - targets: ['192.168.10.30:6379']
+        labels:
+          name: redis
+          instance: srv-apps
+          __param_target: '192.168.10.30:6379'
+      - targets: ['192.168.10.10:3306']
+        labels:
+          name: npm-db
+          instance: srv-gateway
+          __param_target: '192.168.10.10:3306'
+      - targets: ['192.168.10.5:2375']
+        labels:
+          name: docker-socket-proxy
+          instance: srv-omada
+          __param_target: '192.168.10.5:2375'
+      - targets: ['192.168.10.10:2375']
+        labels:
+          name: docker-socket-proxy
+          instance: srv-gateway
+          __param_target: '192.168.10.10:2375'
+      - targets: ['192.168.10.20:2375']
+        labels:
+          name: docker-socket-proxy
+          instance: srv-media
+          __param_target: '192.168.10.20:2375'
+      - targets: ['192.168.10.30:2375']
+        labels:
+          name: docker-socket-proxy
+          instance: srv-apps
+          __param_target: '192.168.10.30:2375'
+      - targets: ['192.168.10.40:2375']
+        labels:
+          name: docker-socket-proxy
+          instance: srv-security
+          __param_target: '192.168.10.40:2375'
+      - targets: ['192.168.10.50:2375']
+        labels:
+          name: docker-socket-proxy
+          instance: srv-monitor
+          __param_target: '192.168.10.50:2375'
+      - targets: ['192.168.10.70:2375']
+        labels:
+          name: docker-socket-proxy
+          instance: srv-games
+          __param_target: '192.168.10.70:2375'
+      - targets: ['192.168.10.80:2375']
+        labels:
+          name: docker-socket-proxy
+          instance: srv-ai
+          __param_target: '192.168.10.80:2375'
+    relabel_configs:
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  # DNS: resolve um nome de verdade em cada AdGuard (porta aberta não basta)
+  - job_name: 'blackbox-dns'
+    metrics_path: /probe
+    params:
+      module: [dns_udp]
+    static_configs:
+      - targets: ['192.168.10.10:53']
+        labels:
+          name: adguard
+          instance: srv-gateway
+          __param_target: '192.168.10.10:53'
+      - targets: ['192.168.10.50:53']
+        labels:
+          name: adguard-secondary
+          instance: srv-monitor
+          __param_target: '192.168.10.50:53'
+    relabel_configs:
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  - job_name: 'speedtest'
+    scrape_interval: 60m
+    scrape_timeout: 60s
+    static_configs:
+      - targets: ['192.168.10.50:9798']
