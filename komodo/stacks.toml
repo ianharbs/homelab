@@ -5,8 +5,10 @@
 
 [[stack]]
 name = "omada-controller"
-tags = ["srv-omada", "critico"]
+description = "Controladora TP-Link Omada (APs e switches)"
+tags = ["rede", "srv-omada", "critico"]
 [stack.config]
+links = ["https://192.168.10.5:8043"]
 server = "srv-omada"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -23,7 +25,8 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "stack-agents-omada"
-tags = ["srv-omada"]
+description = "cadvisor, docker-socket-proxy e promtail"
+tags = ["agentes", "srv-omada"]
 [stack.config]
 server = "srv-omada"
 repo = "ianharbs/homelab"
@@ -40,7 +43,8 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "gateway-db"
-tags = ["srv-gateway", "critico"]
+description = "MariaDB do Nginx Proxy Manager"
+tags = ["rede", "srv-gateway", "critico"]
 [stack.config]
 server = "srv-gateway"
 repo = "ianharbs/homelab"
@@ -58,8 +62,10 @@ MARIADB_PASSWORD=[[MARIADB_PASSWORD]]
 
 [[stack]]
 name = "gateway-dns"
-tags = ["srv-gateway"]
+description = "AdGuard Home (DNS principal) + sync com o secundário"
+tags = ["rede", "srv-gateway"]
 [stack.config]
+links = ["http://192.168.10.10:3000"]
 server = "srv-gateway"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -77,8 +83,10 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "gateway-network"
-tags = ["srv-gateway"]
+description = "WireGuard (wg-easy) e NetAlertX"
+tags = ["rede", "srv-gateway"]
 [stack.config]
+links = ["http://192.168.10.10:51821", "http://192.168.10.10:20211"]
 server = "srv-gateway"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -97,8 +105,10 @@ WG_PASSWORD_HASH=[[WG_PASSWORD_HASH]]
 
 [[stack]]
 name = "gateway-proxy"
-tags = ["srv-gateway", "critico"]
+description = "Nginx Proxy Manager + Cloudflare Tunnel"
+tags = ["rede", "srv-gateway", "critico"]
 [stack.config]
+links = ["http://192.168.10.10:81"]
 server = "srv-gateway"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -117,7 +127,8 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "stack-agents-gateway"
-tags = ["srv-gateway"]
+description = "cadvisor, docker-socket-proxy e promtail"
+tags = ["agentes", "srv-gateway"]
 [stack.config]
 server = "srv-gateway"
 repo = "ianharbs/homelab"
@@ -134,8 +145,10 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "media-download"
-tags = ["srv-media"]
+description = "qBittorrent, SABnzbd, Prowlarr, Cleanuparr, FlareSolverr, torrent-indexer"
+tags = ["midia", "srv-media"]
 [stack.config]
+links = ["http://192.168.10.20:8080", "http://192.168.10.20:8085", "http://192.168.10.20:9696", "http://192.168.10.20:11011"]
 server = "srv-media"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -160,8 +173,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "media-editing"
-tags = ["srv-media"]
+description = "Bazarr, Lingarr, Profilarr, Seerr"
+tags = ["midia", "srv-media"]
 [stack.config]
+links = ["http://192.168.10.20:5055", "http://192.168.10.20:6767", "http://192.168.10.20:9876", "http://192.168.10.20:6868"]
 server = "srv-media"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -185,8 +200,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "media-music"
-tags = ["srv-media"]
+description = "Navidrome, Octo-Fiesta, AudioMuse-AI, DroppedNeedle, slskd"
+tags = ["midia", "srv-media"]
 [stack.config]
+links = ["http://192.168.10.20:4533", "http://192.168.10.20:5274", "http://192.168.10.20:8020", "http://192.168.10.20:8688", "http://192.168.10.20:5030"]
 server = "srv-media"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -217,8 +234,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "media-others"
-tags = ["srv-media"]
+description = "Stash e Whisparr"
+tags = ["midia", "srv-media"]
 [stack.config]
+links = ["http://192.168.10.20:9999", "http://192.168.10.20:6969"]
 server = "srv-media"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -242,8 +261,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "media-reading"
-tags = ["srv-media"]
+description = "Audiobookshelf, Kavita, Suwayomi, Shelfarr"
+tags = ["midia", "srv-media"]
 [stack.config]
+links = ["http://192.168.10.20:13378", "http://192.168.10.20:5000", "http://192.168.10.20:4567", "http://192.168.10.20:5056"]
 server = "srv-media"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -263,8 +284,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "media-tv"
-tags = ["srv-media"]
+description = "Dispatcharr (IPTV)"
+tags = ["midia", "srv-media"]
 [stack.config]
+links = ["http://192.168.10.20:9191"]
 server = "srv-media"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -287,8 +310,10 @@ REDIS_PORT=[[REDIS_PORT]]
 
 [[stack]]
 name = "media-video"
-tags = ["srv-media"]
+description = "Jellyfin, Radarr, Sonarr"
+tags = ["midia", "srv-media"]
 [stack.config]
+links = ["http://192.168.10.20:8096", "http://192.168.10.20:7878", "http://192.168.10.20:8989"]
 server = "srv-media"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -312,7 +337,8 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "stack-agents-media"
-tags = ["srv-media"]
+description = "cadvisor, docker-socket-proxy e promtail"
+tags = ["agentes", "srv-media"]
 [stack.config]
 server = "srv-media"
 repo = "ianharbs/homelab"
@@ -329,8 +355,10 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "apps-automation"
-tags = ["srv-apps"]
+description = "n8n + runner"
+tags = ["apps", "srv-apps"]
 [stack.config]
+links = ["http://192.168.10.30:5678"]
 server = "srv-apps"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -352,8 +380,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "apps-finances"
-tags = ["srv-apps"]
+description = "Actual Budget"
+tags = ["apps", "srv-apps"]
 [stack.config]
+links = ["http://192.168.10.30:5006"]
 server = "srv-apps"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -369,8 +399,10 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "apps-habits"
-tags = ["srv-apps"]
+description = "wger e Wingfit"
+tags = ["apps", "srv-apps"]
 [stack.config]
+links = ["http://192.168.10.30:9110", "http://192.168.10.30:6060"]
 server = "srv-apps"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -395,8 +427,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "apps-housing"
-tags = ["srv-apps"]
+description = "Mealie, Bar Assistant, Salt Rim"
+tags = ["apps", "srv-apps"]
 [stack.config]
+links = ["http://192.168.10.30:9925", "http://192.168.10.30:8080"]
 server = "srv-apps"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -425,8 +459,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "apps-travel"
-tags = ["srv-apps"]
+description = "AdventureLog (com PostGIS próprio)"
+tags = ["apps", "srv-apps"]
 [stack.config]
+links = ["http://192.168.10.30:8015"]
 server = "srv-apps"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -447,8 +483,10 @@ DJANGO_SECRET_KEY=[[DJANGO_SECRET_KEY]]
 
 [[stack]]
 name = "apps-utilities"
-tags = ["srv-apps"]
+description = "BentoPDF, Marreta, SFTPGo"
+tags = ["apps", "srv-apps"]
 [stack.config]
+links = ["http://192.168.10.30:3035", "http://192.168.10.30:8484", "http://192.168.10.30:8090"]
 server = "srv-apps"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -472,7 +510,8 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "stack-agents-apps"
-tags = ["srv-apps"]
+description = "cadvisor, docker-socket-proxy e promtail"
+tags = ["agentes", "srv-apps"]
 [stack.config]
 server = "srv-apps"
 repo = "ianharbs/homelab"
@@ -489,8 +528,10 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "stack-meilisearch"
-tags = ["srv-apps"]
+description = "Meilisearch compartilhado"
+tags = ["infra", "srv-apps"]
 [stack.config]
+links = ["http://192.168.10.30:7700"]
 server = "srv-apps"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -507,8 +548,10 @@ MEILI_MASTER_KEY=[[MEILI_MASTER_KEY]]
 
 [[stack]]
 name = "stack-postgres"
-tags = ["srv-apps", "critico"]
+description = "PostgreSQL 18 compartilhado + pgAdmin"
+tags = ["infra", "srv-apps", "critico"]
 [stack.config]
+links = ["http://192.168.10.30:5050"]
 server = "srv-apps"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -528,7 +571,8 @@ POSTGRES_USER=[[POSTGRES_USER]]
 
 [[stack]]
 name = "stack-redis"
-tags = ["srv-apps", "critico"]
+description = "Redis compartilhado"
+tags = ["infra", "srv-apps", "critico"]
 [stack.config]
 server = "srv-apps"
 repo = "ianharbs/homelab"
@@ -546,8 +590,10 @@ REDIS_PASSWORD=[[REDIS_PASSWORD]]
 
 [[stack]]
 name = "security-nvr"
-tags = ["srv-security"]
+description = "Frigate NVR"
+tags = ["seguranca", "srv-security"]
 [stack.config]
+links = ["https://192.168.10.40:8971"]
 server = "srv-security"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -564,8 +610,10 @@ FRIGATE_RTSP_PASSWORD=[[FRIGATE_RTSP_PASSWORD]]
 
 [[stack]]
 name = "security-pwd"
-tags = ["srv-security", "critico"]
+description = "Vaultwarden"
+tags = ["seguranca", "srv-security", "critico"]
 [stack.config]
+links = ["http://192.168.10.40:8181"]
 server = "srv-security"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -581,7 +629,8 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "stack-agents-security"
-tags = ["srv-security"]
+description = "cadvisor, docker-socket-proxy e promtail"
+tags = ["agentes", "srv-security"]
 [stack.config]
 server = "srv-security"
 repo = "ianharbs/homelab"
@@ -598,8 +647,10 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "adguard-secundary"
-tags = ["srv-monitor"]
+description = "AdGuard Home secundário"
+tags = ["rede", "srv-monitor"]
 [stack.config]
+links = ["http://192.168.10.50:3001"]
 server = "srv-monitor"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -615,7 +666,8 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "komodo"
-tags = ["srv-monitor", "critico"]
+description = "Komodo Core + FerretDB (este painel)"
+tags = ["infra", "srv-monitor", "critico"]
 [stack.config]
 server = "srv-monitor"
 repo = "ianharbs/homelab"
@@ -637,8 +689,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "monitor-home"
-tags = ["srv-monitor"]
+description = "Homepage"
+tags = ["monitor", "srv-monitor"]
 [stack.config]
+links = ["http://192.168.10.50:3002"]
 server = "srv-monitor"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -658,8 +712,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "monitor-media"
-tags = ["srv-monitor"]
+description = "Jellystat"
+tags = ["monitor", "srv-monitor"]
 [stack.config]
+links = ["http://192.168.10.50:3005"]
 server = "srv-monitor"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -680,8 +736,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "monitor-server"
-tags = ["srv-monitor", "critico"]
+description = "Grafana, Prometheus, Loki, Scrutiny, blackbox, pve-exporter"
+tags = ["monitor", "srv-monitor", "critico"]
 [stack.config]
+links = ["http://192.168.10.50:3010", "http://192.168.10.50:9090", "http://192.168.10.50:8480"]
 server = "srv-monitor"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -701,7 +759,8 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "stack-agents-monitor"
-tags = ["srv-monitor"]
+description = "cadvisor, docker-socket-proxy e promtail + speedtest-exporter"
+tags = ["agentes", "srv-monitor"]
 [stack.config]
 server = "srv-monitor"
 repo = "ianharbs/homelab"
@@ -718,8 +777,10 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "games-library"
-tags = ["srv-games"]
+description = "Gameyfin"
+tags = ["jogos", "srv-games"]
 [stack.config]
+links = ["http://192.168.10.70:8181"]
 server = "srv-games"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -738,7 +799,8 @@ PUID=[[PUID]]
 
 [[stack]]
 name = "stack-agents-games"
-tags = ["srv-games"]
+description = "cadvisor, docker-socket-proxy e promtail"
+tags = ["agentes", "srv-games"]
 [stack.config]
 server = "srv-games"
 repo = "ianharbs/homelab"
@@ -755,8 +817,10 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "ai-llm"
-tags = ["srv-ai"]
+description = "Ollama + Open WebUI"
+tags = ["ia", "srv-ai"]
 [stack.config]
+links = ["http://192.168.10.80:3000"]
 server = "srv-ai"
 repo = "ianharbs/homelab"
 branch = "main"
@@ -773,7 +837,8 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "stack-agents-ai"
-tags = ["srv-ai"]
+description = "cadvisor, docker-socket-proxy e promtail"
+tags = ["agentes", "srv-ai"]
 [stack.config]
 server = "srv-ai"
 repo = "ianharbs/homelab"
