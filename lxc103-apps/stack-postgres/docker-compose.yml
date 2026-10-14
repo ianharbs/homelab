@@ -4,7 +4,8 @@ networks:
 
 services:
   postgres:
-    image: postgres:latest
+    # Major fixada: subir de major exige pg_upgrade/dump. Correções 18.x aparecem como "update disponível" no Komodo.
+    image: postgres:18
     container_name: postgres
     restart: unless-stopped
     command: ["postgres", "-c", "listen_addresses=*"]
