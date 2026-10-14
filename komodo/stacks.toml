@@ -545,28 +545,6 @@ REDIS_PASSWORD=[[REDIS_PASSWORD]]
 """
 
 [[stack]]
-name = "tools-hub"
-tags = ["srv-apps"]
-[stack.config]
-server = "srv-apps"
-repo = "ianharbs/homelab"
-branch = "main"
-run_directory = "lxc103-apps/tools-hub"
-file_paths = ["docker-compose.yml"]
-auto_pull = false
-project_name = "tools-hub"
-poll_for_updates = false
-auto_update = true
-environment = """
-CONFIG_PATH=[[CONFIG_PATH]]
-DEEPSEEK_API_KEY=[[DEEPSEEK_API_KEY]]
-GEMINI_API_KEY=[[GEMINI_API_KEY]]
-MEALIE_TOKEN=[[MEALIE_TOKEN]]
-TOOLS_PASSWORD=[[TOOLS_PASSWORD]]
-TOOLS_USER=[[TOOLS_USER]]
-"""
-
-[[stack]]
 name = "security-nvr"
 tags = ["srv-security"]
 [stack.config]

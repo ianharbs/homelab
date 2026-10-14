@@ -72,8 +72,7 @@ pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   │    ├── stack-agents       → cadvisor, docker-socket-proxy, promtail
   │    ├── stack-meilisearch  → meilisearch
   │    ├── stack-postgres     → postgres, pgadmin
-  │    ├── stack-redis        → redis
-  │    └── tools-hub          → tools-nginx, tools-proxy
+  │    └── stack-redis        → redis
   │
   ├── lxc105 · srv-monitor · 192.168.10.50
   │    ├── adguard-secundary  → adguard-secondary
