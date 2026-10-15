@@ -159,14 +159,28 @@ def is_synced(text):
 
 def write(path, text):
     if DRY_RUN:
-        return
+        return True
     tmp = path + ".part"
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(text.strip() + "\n")
-    os.replace(tmp, path)
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(text.strip() + "\n")
+        os.replace(tmp, path)
+        return True
+    except OSError as e:
+        log(f"ERRO gravando {path}: {e}")
+        bump("erro de escrita")
+        return False
 
 
 def process(path, state):
+    try:
+        _process(path, state)
+    except Exception as e:  # uma faixa problemática não derruba a passada
+        log(f"ERRO {path}: {e!r}")
+        bump("erro")
+
+
+def _process(path, state):
     base = os.path.splitext(path)[0]
     if os.path.exists(base + ".lrc") or os.path.exists(base + ".txt"):
         bump("já tinha")
@@ -186,8 +200,8 @@ def process(path, state):
         return
     if meta["embedded"]:
         ext = ".lrc" if is_synced(meta["embedded"]) else ".txt"
-        write(base + ext, meta["embedded"])
-        bump("exportada da tag")
+        if write(base + ext, meta["embedded"]):
+            bump("exportada da tag")
         return
     try:
         rec = lookup(meta)
@@ -207,11 +221,21 @@ def process(path, state):
     elif not has_lyrics(rec):
         bump("não encontrada")
     elif rec.get("syncedLyrics"):
-        write(base + ".lrc", rec["syncedLyrics"])
-        bump("sincronizada (.lrc)")
-    else:
-        write(base + ".txt", rec["plainLyrics"])
+        if write(base + ".lrc", rec["syncedLyrics"]):
+            bump("sincronizada (.lrc)")
+    elif write(base + ".txt", rec["plainLyrics"]):
         bump("só texto (.txt)")
+
+
+def save_state(state):
+    if DRY_RUN:
+        return
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    with lock:
+        data = json.dumps(state)
+    with open(STATE_FILE + ".part", "w", encoding="utf-8") as f:
+        f.write(data)
+    os.replace(STATE_FILE + ".part", STATE_FILE)
 
 
 def main():
@@ -232,11 +256,8 @@ def main():
         for i, _ in enumerate(pool.map(lambda p: process(p, state), files), 1):
             if i % 250 == 0:
                 log(f"{i}/{len(files)} intervalo={interval:.1f}s {stats}")
-    if not DRY_RUN:
-        os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-        with open(STATE_FILE + ".part", "w", encoding="utf-8") as f:
-            json.dump(state, f)
-        os.replace(STATE_FILE + ".part", STATE_FILE)
+                save_state(state)
+    save_state(state)
     log(f"fim em {time.time() - t0:.0f}s: {stats}")
 
 
