@@ -1,5 +1,14 @@
 ---
+# Um bloco por nó (o Homepage procura pelo nome do nó). O API é do cluster, então os três apontam para o pve.
 pve:
+  url: https://192.168.10.2:8006
+  token: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_ID}}"
+  secret: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}"
+pve2:
+  url: https://192.168.10.2:8006
+  token: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_ID}}"
+  secret: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}"
+pve3:
   url: https://192.168.10.2:8006
   token: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_ID}}"
   secret: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}"
