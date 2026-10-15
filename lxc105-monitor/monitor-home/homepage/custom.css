@@ -1,5 +1,3 @@
-/* Whisparr e Stash ficam ocultos; clicar no logo (icone do servidor, topo esquerdo) alterna a exibicao */
-body:not(.show-hidden) li.service[data-name*="whisparr" i],
-body:not(.show-hidden) li.service[data-name*="stash" i] { display: none !important; }
-body:not(.show-hidden) li.service:has(a[href*="whisparr" i]),
-body:not(.show-hidden) li.service:has(a[href*="stash" i]) { display: none !important; }
+/* Grupo "Mídia — XXX" fica oculto; clicar no logo (ícone do servidor, topo esquerdo) alterna a exibição.
+   O custom.js marca o grupo com a classe .grupo-oculto, porque o Homepage não põe id nos grupos. */
+body:not(.show-hidden) .services-group.grupo-oculto { display: none !important; }

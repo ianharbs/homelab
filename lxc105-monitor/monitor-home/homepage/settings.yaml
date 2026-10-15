@@ -25,12 +25,18 @@ layout:
   Gateway & Rede:
     style: row
     columns: 4
+  Mídia — XXX:
+    style: row
+    columns: 2
   Mídia — Players:
     style: row
     columns: 4
   Música & Livros:
     style: row
     columns: 5
+  Mídia — Downloads:
+    style: row
+    columns: 3
   Mídia — Automação (*arr):
     style: row
     columns: 5

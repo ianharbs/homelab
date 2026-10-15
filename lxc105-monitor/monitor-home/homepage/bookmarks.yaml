@@ -4,12 +4,3 @@
     - GitHub homelab:
         - icon: sh-github
           href: https://github.com/ianharbs/homelab
-    - Cloudflare:
-        - icon: sh-cloudflare
-          href: https://dash.cloudflare.com/__CF_ACCOUNT__
-    - Komodo:
-        - icon: sh-komodo
-          href: http://192.168.10.50:9120
-    - Prometheus alvos:
-        - icon: sh-prometheus
-          href: http://192.168.10.50:9090/targets
