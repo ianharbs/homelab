@@ -21,8 +21,8 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=America/Sao_Paulo
-      - SCHEDULER_TIMEZONE=America/Sao_Paulo
+      - TZ=${TZ}
+      - SCHEDULER_TIMEZONE=${TZ}
       # 10h e 22h, longe da atualização automática das 04:00
       - SCHEDULER_HOURS=0
       - SCHEDULER_FIXED_TIMES=10:00,22:00
