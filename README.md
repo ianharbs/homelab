@@ -39,7 +39,7 @@ pve · 192.168.10.2 · Intel i5-14600K · 32 GB · iGPU Intel
   └── lxc102 · srv-media · 192.168.10.20
        ├── media-download     → qbittorrent, sabnzbd, prowlarr, cleanuparr, flaresolverr, torrent-indexer (+ redis)   [gluetun: a instalar]
        ├── media-editing      → bazarr, lingarr, profilarr, seerr
-       ├── media-music        → navidrome, octo-fiesta, audiomuse-ai (flask, worker, redis), droppedneedle, slskd
+       ├── media-music        → navidrome, octo-fiesta (só streaming), audiomuse-ai (flask, worker, redis), droppedneedle (+ plugin deezer), slskd
        ├── media-others       → stash, whisparr
        ├── media-reading      → audiobookshelf, kavita, suwayomi, shelfarr, shelfarr-libation
        ├── media-tv           → dispatcharr_web, dispatcharr_celery
