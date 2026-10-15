@@ -2,8 +2,11 @@
 
 Config em `/opt/docker/homepage/config` no CT 105 (pve3). Publicado em https://home.ihome.dev.br.
 
-- `services.template.yaml` é o `services.yaml` real **sem segredos**: chaves e senhas aparecem como
-  `__NOME__`. O arquivo de verdade só existe no servidor.
+- O arquivo no servidor é a fonte da verdade (ele também é editado à mão). `services.template.yaml` é uma
+  cópia dele **sem segredos**: chaves e senhas aparecem como `__NOME_N__`. Antes de mexer, puxe o arquivo
+  atual do servidor em vez de regravar a partir desta cópia.
+- O grupo `Mídia — XXX` fica oculto: o `custom.js` marca o grupo pelo nome e o `custom.css` esconde;
+  clicar no logo mostra/esconde.
 - `widgets.yaml`: `__LATITUDE__`/`__LONGITUDE__` vêm do Home Assistant (`/api/config`).
 - `proxmox.yaml` (token do Proxmox) não é versionado.
 - Links (`href`) usam o endereço externo `*.ihome.dev.br`; os widgets usam o IP interno.
