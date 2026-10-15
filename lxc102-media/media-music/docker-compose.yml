@@ -16,7 +16,7 @@ services:
       - ND_SPOTIFY_SECRET=${SPOTIFY_SECRET}  
       - ND_LASTFM_APIKEY=${LASTFM_APIKEY}         
       - ND_LASTFM_SECRET=${LASTFM_SECRET}
-      - ND_LYRICSPRIORITY=".lrc,nd-lyrics"
+      - ND_LYRICSPRIORITY=".lrc,.txt,nd-lyrics"
       - ND_PLUGINS_ENABLED=true
       - ND_PLUGINS_AUTORELOAD=true
       - ND_AGENTS=audiomuseai,lastfm,deezer,apple-music
@@ -149,4 +149,24 @@ services:
     volumes:
       - ${CONFIG_PATH}/slskd:/app
       - ${DATA_PATH}/data:/data
+    restart: unless-stopped
+
+  # Letras da LRCLIB para a biblioteca inteira (.lrc sincronizada / .txt texto), uma passada por dia.
+  # Não altera os áudios; faixas sem letra são tentadas de novo depois de 30 dias.
+  lyrics-fetcher:
+    image: python:3.12-alpine
+    container_name: lyrics-fetcher
+    user: "${PUID}:${PGID}"
+    environment:
+      - TZ=${TZ}
+      - HOME=/tmp
+      - MUSIC_DIR=/music
+      - STATE_FILE=/state/lyrics-state.json
+    volumes:
+      - ./lyrics-fetcher/lyrics.py:/app/lyrics.py:ro
+      - ${DATA_PATH}/data/music:/music
+      - ${CONFIG_PATH}/lyrics-fetcher:/state
+    command: >
+      sh -c "pip install -q --user --disable-pip-version-check mutagen==1.47.0 &&
+             while true; do python /app/lyrics.py; sleep 86400; done"
     restart: unless-stopped
