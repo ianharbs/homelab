@@ -1,0 +1,51 @@
+---
+title: HAL — iHomeCluster
+description: Cluster Proxmox · pve · pve2 · pve3 · 8 LXC + HAOS
+favicon: /icons/server.png
+
+language: pt-BR
+theme: dark
+color: slate
+headerStyle: boxed
+cardBlur: sm
+useEqualHeights: true
+statusStyle: "dot"
+hideVersion: true
+target: _blank
+
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: false
+  showSearchSuggestions: true
+
+layout:
+  Infraestrutura:
+    style: row
+    columns: 4
+  Gateway & Rede:
+    style: row
+    columns: 4
+  Mídia — Players:
+    style: row
+    columns: 4
+  Música & Livros:
+    style: row
+    columns: 5
+  Mídia — Automação (*arr):
+    style: row
+    columns: 5
+  Casa & Saúde:
+    style: row
+    columns: 5
+  Ferramentas & IA:
+    style: row
+    columns: 4
+  Segurança & Câmeras:
+    style: row
+    columns: 2
+  Monitoramento:
+    style: row
+    columns: 4
+  Home Assistant & IoT:
+    style: row
+    columns: 4

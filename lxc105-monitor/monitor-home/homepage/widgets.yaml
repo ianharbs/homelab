@@ -1,0 +1,31 @@
+---
+# https://gethomepage.dev/configs/info-widgets/
+- logo:
+    icon: /icons/server.png
+
+- greeting:
+    text_size: xl
+    text: Seja bem-vindo
+
+- datetime:
+    text_size: xl
+    locale: pt-BR
+    format:
+      dateStyle: short
+      timeStyle: short
+      hourCycle: h23
+
+- openmeteo:
+    label: Casa
+    latitude: __LATITUDE__
+    longitude: __LONGITUDE__
+    timezone: America/Sao_Paulo
+    units: metric
+    cache: 15
+    format:
+      maximumFractionDigits: 1
+
+- search:
+    provider: google
+    showSearchSuggestions: true
+    target: _blank

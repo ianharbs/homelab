@@ -1,0 +1,36 @@
+# ============================================================
+# Docker Socket Proxy (tecnativa, porta 2375) em cada LXC.
+# O nome aqui deve bater com "server:" no services.yaml.
+# ============================================================
+
+docker-srv-omada:      # CT 100 · pve
+  host: 192.168.10.5
+  port: 2375
+
+docker-srv-gateway:    # CT 101 · pve
+  host: 192.168.10.10
+  port: 2375
+
+docker-srv-media:      # CT 102 · pve
+  host: 192.168.10.20
+  port: 2375
+
+docker-srv-apps:       # CT 103 · pve3
+  host: 192.168.10.30
+  port: 2375
+
+docker-vm-security:    # CT 104 · pve2
+  host: 192.168.10.40
+  port: 2375
+
+docker-srv-monitor:    # CT 105 · pve3
+  host: 192.168.10.50
+  port: 2375
+
+docker-srv-games:      # CT 107 · pve2
+  host: 192.168.10.70
+  port: 2375
+
+docker-srv-ai:         # CT 108 · pve2
+  host: 192.168.10.80
+  port: 2375

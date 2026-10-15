@@ -1,0 +1,584 @@
+---
+# ============================================================
+# Homepage — iHomeCluster (pve .2 · pve2 .3 · pve3 .4)
+# Links (href) = endereço externo *.ihome.dev.br (NPM + Cloudflare)
+# Widgets (url) = IP interno, que é como o container do Homepage alcança os serviços
+# Serviços sem proxy no NPM ficam com link local (marcados com "· LAN")
+# ============================================================
+
+# ============================================================
+# INFRAESTRUTURA — Proxmox e gestão
+# ============================================================
+- Infraestrutura:
+    - pve:
+        icon: sh-proxmox
+        href: https://pve.ihome.dev.br
+        description: Nó 1 · i5-14600K · 192.168.10.2
+        widget:
+          type: proxmox
+          url: https://192.168.10.2:8006
+          username: __PVE_USER__
+          password: __PVE_PASS__
+          node: pve
+
+    - pve2:
+        icon: sh-proxmox
+        href: https://pve2.ihome.dev.br
+        description: Nó 2 · 192.168.10.3
+        widget:
+          type: proxmox
+          url: https://192.168.10.2:8006
+          username: __PVE_USER__
+          password: __PVE_PASS__
+          node: pve2
+
+    - pve3:
+        icon: sh-proxmox
+        href: https://pve3.ihome.dev.br
+        description: Nó 3 · 192.168.10.4
+        widget:
+          type: proxmox
+          url: https://192.168.10.2:8006
+          username: __PVE_USER__
+          password: __PVE_PASS__
+          node: pve3
+
+    - Komodo:
+        icon: sh-komodo
+        href: http://192.168.10.50:9120
+        description: Deploy dos stacks · update 04:00 · LAN
+        server: docker-srv-monitor
+        container: komodo-core
+
+# ============================================================
+# GATEWAY & REDE — lxc101 (gateway) · lxc100 (omada)
+# ============================================================
+- Gateway & Rede:
+    - NGINX Proxy Manager:
+        icon: sh-nginx-proxy-manager
+        href: https://npm.ihome.dev.br
+        description: Proxy reverso & SSL
+        server: docker-srv-gateway
+        container: npm
+        widget:
+          type: npm
+          url: http://192.168.10.10:81
+          username: __NPM_USER__
+          password: __NPM_PASS__
+
+    - AdGuard Home:
+        icon: sh-adguard-home
+        href: https://adguard.ihome.dev.br
+        description: DNS primário · 192.168.10.10
+        server: docker-srv-gateway
+        container: adguard
+        widget:
+          type: adguard
+          url: http://192.168.10.10:3000
+          username: __ADG_USER__
+          password: __ADG_PASS__
+
+    - AdGuard Secundário:
+        icon: sh-adguard-home
+        href: http://192.168.10.50:3001
+        description: DNS de backup · 192.168.10.50 · LAN
+        server: docker-srv-monitor
+        container: adguard-secondary
+        widget:
+          type: adguard
+          url: http://192.168.10.50:3001
+          username: __ADG_USER__
+          password: __ADG_PASS__
+
+    - Cloudflared:
+        icon: sh-cloudflare
+        href: https://dash.cloudflare.com/__CF_ACCOUNT__/one/networks/connectors
+        description: Túnel externo
+        server: docker-srv-gateway
+        container: cloudflared
+        widget:
+          type: cloudflared
+          accountid: __CF_ACCOUNT__
+          tunnelid: __CF_TUNNEL__
+          key: __CF_KEY__
+          fields: ["status", "origin_ip"]
+
+    - NetAlertX:
+        icon: sh-netalertx
+        href: https://netalert.ihome.dev.br
+        description: Dispositivos da rede
+        server: docker-srv-gateway
+        container: netalertx
+        widget:
+          type: netalertx
+          url: http://192.168.10.10:20212
+          key: __NAX_KEY__
+          version: 2
+
+    - WireGuard:
+        icon: sh-wireguard
+        href: https://wg.ihome.dev.br
+        description: VPN (wg-easy)
+        server: docker-srv-gateway
+        container: wg-easy
+
+    - Omada:
+        icon: sh-omada
+        href: https://192.168.10.5:8043
+        description: Controlador TP-Link · 192.168.10.5 · LAN
+        server: docker-srv-omada
+        container: omada-controller
+
+# ============================================================
+# MÍDIA — PLAYERS — lxc102
+# ============================================================
+- Mídia — Players:
+    - Jellyfin:
+        icon: sh-jellyfin
+        href: https://jf.ihome.dev.br
+        description: Filmes e séries (iGPU UHD 770)
+        server: docker-srv-media
+        container: jellyfin
+        # O widget nativo "jellyfin" do Homepage 1.13 chama /emby/..., que o Jellyfin 12 removeu;
+        # por isso customapi direto em /Items/Counts.
+        widget:
+          type: customapi
+          url: http://192.168.10.20:8096/Items/Counts
+          refreshInterval: 300000
+          headers:
+            Authorization: __JF_AUTH__
+          mappings:
+            - field: MovieCount
+              label: Filmes
+              format: number
+            - field: SeriesCount
+              label: Séries
+              format: number
+            - field: EpisodeCount
+              label: Episódios
+              format: number
+
+    - Seerr:
+        icon: sh-seerr
+        href: https://seerr.ihome.dev.br
+        description: Pedidos de filmes e séries
+        server: docker-srv-media
+        container: seerr
+        widget:
+          type: seerr
+          url: http://192.168.10.20:5055
+          key: __SEERR_KEY__
+
+    - Navidrome:
+        icon: sh-navidrome
+        href: https://music.ihome.dev.br
+        description: Servidor de música
+        server: docker-srv-media
+        container: navidrome
+        widget:
+          type: navidrome
+          url: http://192.168.10.20:4533
+          user: __ND_USER__
+          token: __ND_TOKEN__
+          salt: __ND_SALT__
+
+    - AudioBookshelf:
+        icon: sh-audiobookshelf
+        href: https://audiobook.ihome.dev.br
+        description: Audiolivros e podcasts
+        server: docker-srv-media
+        container: audiobookshelf
+        widget:
+          type: audiobookshelf
+          url: http://192.168.10.20:13378
+          key: __ABS_KEY__
+
+    - Kavita:
+        icon: sh-kavita
+        href: https://kavita.ihome.dev.br
+        description: Leitor de livros, HQ e mangá
+        server: docker-srv-media
+        container: kavita
+        widget:
+          type: kavita
+          url: http://192.168.10.20:5000
+          username: __KAV_USER__
+          password: __KAV_PASS__
+          key: __KAV_KEY__
+
+    - Suwayomi:
+        icon: sh-suwayomi
+        href: https://suwayomi.ihome.dev.br
+        description: Downloads de mangá
+        server: docker-srv-media
+        container: suwayomi
+        widget:
+          type: suwayomi
+          url: http://192.168.10.20:4567
+          username: __SUW_USER__
+          password: __SUW_PASS__
+          category: 0
+
+    - Dispatcharr:
+        icon: sh-dispatcharr
+        href: https://dispatcharr.ihome.dev.br
+        description: IPTV
+        server: docker-srv-media
+        container: dispatcharr_web
+        widget:
+          type: dispatcharr
+          url: http://192.168.10.20:9191
+          username: __DIS_USER__
+          password: __DIS_PASS__
+          enableActiveStreams: true
+
+    - Stash:
+        icon: sh-stash
+        href: https://stash.ihome.dev.br
+        description: Biblioteca adulta local
+        server: docker-srv-media
+        container: stash
+        widget:
+          type: stash
+          url: http://192.168.10.20:9999
+          key: __STASH_KEY__
+          fields: ["scenes", "movies"]
+
+# ============================================================
+# MÚSICA & LIVROS — lxc102
+# ============================================================
+- Música & Livros:
+    - DroppedNeedle:
+        icon: mdi-album
+        href: https://dn.ihome.dev.br
+        description: Pedidos e downloads de música
+        server: docker-srv-media
+        container: droppedneedle
+
+    - slskd:
+        icon: sh-slskd
+        href: http://192.168.10.20:5030
+        description: Soulseek · LAN
+        server: docker-srv-media
+        container: slskd
+        widget:
+          type: slskd
+          url: http://192.168.10.20:5030
+          key: __SLSKD_KEY__
+          fields: ["slskStatus", "downloads", "uploads", "sharedFiles"]
+
+    - AudioMuse-AI:
+        icon: mdi-waveform
+        href: https://musicai.ihome.dev.br
+        description: Playlists por IA
+        server: docker-srv-media
+        container: audiomuse-ai-flask-app
+
+    - Octo Fiesta:
+        icon: mdi-music-circle
+        href: https://music2.ihome.dev.br
+        description: Streaming do Deezer no Navidrome
+        server: docker-srv-media
+        container: octo-fiesta
+
+    - Shelfarr:
+        icon: mdi-bookshelf
+        href: https://shelfarr.ihome.dev.br
+        description: Livros e audiolivros
+        server: docker-srv-media
+        container: shelfarr
+
+# ============================================================
+# MÍDIA — AUTOMAÇÃO (*arr) — lxc102
+# ============================================================
+- Mídia — Automação (*arr):
+    - Sonarr:
+        icon: sh-sonarr
+        href: https://sonarr.ihome.dev.br
+        description: Séries
+        server: docker-srv-media
+        container: sonarr
+        widget:
+          type: sonarr
+          url: http://192.168.10.20:8989
+          key: __SONARR_KEY__
+
+    - Radarr:
+        icon: sh-radarr
+        href: https://radarr.ihome.dev.br
+        description: Filmes
+        server: docker-srv-media
+        container: radarr
+        widget:
+          type: radarr
+          url: http://192.168.10.20:7878
+          key: __RADARR_KEY__
+
+    - Prowlarr:
+        icon: sh-prowlarr
+        href: https://prowlarr.ihome.dev.br
+        description: Indexadores
+        server: docker-srv-media
+        container: prowlarr
+        widget:
+          type: prowlarr
+          url: http://192.168.10.20:9696
+          key: __PROWLARR_KEY__
+
+    - Bazarr:
+        icon: sh-bazarr
+        href: https://bazarr.ihome.dev.br
+        description: Legendas
+        server: docker-srv-media
+        container: bazarr
+        widget:
+          type: bazarr
+          url: http://192.168.10.20:6767
+          key: __BAZARR_KEY__
+
+    - qBittorrent:
+        icon: sh-qbittorrent
+        href: https://torrent.ihome.dev.br
+        description: Torrent
+        server: docker-srv-media
+        container: qbittorrent
+        widget:
+          type: qbittorrent
+          url: http://192.168.10.20:8080
+          username: __QB_USER__
+          password: __QB_PASS__
+
+    - SABnzbd:
+        icon: sh-sabnzbd
+        href: https://nzbd.ihome.dev.br
+        description: Usenet
+        server: docker-srv-media
+        container: sabnzbd
+        widget:
+          type: sabnzbd
+          url: http://192.168.10.20:8085
+          key: __SAB_KEY__
+
+    - Profilarr:
+        icon: mdi-tune-variant
+        href: https://profilarr.ihome.dev.br
+        description: Perfis de qualidade
+        server: docker-srv-media
+        container: profilarr
+
+    - Cleanuparr:
+        icon: sh-cleanuparr
+        href: https://cleanuparr.ihome.dev.br
+        description: Limpeza de downloads travados
+        server: docker-srv-media
+        container: cleanuparr
+
+    - Lingarr:
+        icon: sh-lingarr
+        href: https://lingarr.ihome.dev.br
+        description: Tradução de legendas por IA
+        server: docker-srv-media
+        container: lingarr
+
+    - Whisparr:
+        icon: sh-whisparr
+        href: https://whisparr.ihome.dev.br
+        description: Conteúdo adulto
+        server: docker-srv-media
+        container: whisparr
+
+# ============================================================
+# CASA & SAÚDE — lxc103
+# ============================================================
+- Casa & Saúde:
+    - Mealie:
+        icon: sh-mealie
+        href: https://mealie.ihome.dev.br
+        description: Receitas e cardápio
+        server: docker-srv-apps
+        container: mealie
+        widget:
+          type: mealie
+          url: http://192.168.10.30:9925
+          key: __MEALIE_KEY__
+          version: 2
+
+    - Bar Assistant:
+        icon: sh-bar-assistant
+        href: https://bar.ihome.dev.br
+        description: Receitas de drinks (Salt Rim)
+        server: docker-srv-apps
+        container: salt-rim
+
+    - Wingfit:
+        icon: sh-wingfit
+        href: https://gym.ihome.dev.br
+        description: Planejamento de treinos
+        server: docker-srv-apps
+        container: wingfit
+
+    - wger:
+        icon: sh-wger
+        href: https://wger.ihome.dev.br
+        description: Treinos e nutrição
+        server: docker-srv-apps
+        container: wger-web
+
+    - AdventureLog:
+        icon: sh-adventurelog
+        href: https://travel.ihome.dev.br
+        description: Viagens e rotas de moto
+        server: docker-srv-apps
+        container: adventurelog-frontend
+
+# ============================================================
+# FERRAMENTAS — lxc103 · IA (lxc108) · Jogos (lxc107)
+# ============================================================
+- Ferramentas & IA:
+    - Actual Budget:
+        icon: sh-actual-budget
+        href: https://finances.ihome.dev.br
+        description: Finanças
+        server: docker-srv-apps
+        container: actual_budget
+
+    - Open WebUI:
+        icon: sh-open-webui
+        href: https://ai.ihome.dev.br
+        description: Chat com modelos locais (Ollama)
+        server: docker-srv-ai
+        container: open-webui
+
+    - n8n:
+        icon: sh-n8n
+        href: https://n8n.ihome.dev.br
+        description: Automação de workflows
+        server: docker-srv-apps
+        container: n8n
+
+    - SFTPGo:
+        icon: sh-sftpgo
+        href: https://file.ihome.dev.br
+        description: Arquivos (web, SFTP e WebDAV em dav.ihome.dev.br)
+        server: docker-srv-apps
+        container: sftpgo
+
+    - BentoPDF:
+        icon: sh-bentopdf
+        href: https://pdf.ihome.dev.br
+        description: Ferramentas de PDF
+        server: docker-srv-apps
+        container: bentopdf
+
+    - Marreta:
+        icon: sh-marreta
+        href: https://pw.ihome.dev.br
+        description: Remove paywall
+        server: docker-srv-apps
+        container: marreta
+
+    - pgAdmin:
+        icon: sh-pgadmin
+        href: https://postgres.ihome.dev.br
+        description: PostgreSQL
+        server: docker-srv-apps
+        container: pgadmin
+
+    - Gameyfin:
+        icon: sh-gameyfin
+        href: https://games.ihome.dev.br
+        description: Biblioteca de jogos e ROMs
+        server: docker-srv-games
+        container: gameyfin
+
+# ============================================================
+# SEGURANÇA & CÂMERAS — lxc104
+# ============================================================
+- Segurança & Câmeras:
+    - Vaultwarden:
+        icon: sh-vaultwarden
+        href: https://vw.ihome.dev.br
+        description: Senhas
+        server: docker-vm-security
+        container: vaultwarden
+
+    - Frigate NVR:
+        icon: sh-frigate
+        href: https://192.168.10.40:8971
+        description: Câmeras · LAN
+        server: docker-vm-security
+        container: frigate
+
+# ============================================================
+# MONITORAMENTO — lxc105
+# ============================================================
+- Monitoramento:
+    - Grafana:
+        icon: sh-grafana
+        href: https://grafana.ihome.dev.br
+        description: Dashboards do cluster
+        server: docker-srv-monitor
+        container: grafana
+
+    - Prometheus:
+        icon: sh-prometheus
+        href: http://192.168.10.50:9090
+        description: Métricas e alvos · LAN
+        server: docker-srv-monitor
+        container: prometheus
+        widget:
+          type: prometheus
+          url: http://192.168.10.50:9090
+
+    - Scrutiny:
+        icon: sh-scrutiny
+        href: https://scrutiny.ihome.dev.br
+        description: SMART dos HDs (3 nós)
+        server: docker-srv-monitor
+        container: scrutiny
+        widget:
+          type: scrutiny
+          url: http://192.168.10.50:8480
+
+    - Jellystat:
+        icon: sh-jellystat
+        href: https://jellystat.ihome.dev.br
+        description: Estatísticas do Jellyfin
+        server: docker-srv-monitor
+        container: jellystat
+        widget:
+          type: jellystat
+          url: http://192.168.10.50:3005
+          key: __JST_KEY__
+          days: 30
+
+# ============================================================
+# HOME ASSISTANT & IoT — vm106
+# ============================================================
+- Home Assistant & IoT:
+    - Home Assistant:
+        icon: sh-home-assistant
+        href: https://ha.ihome.dev.br
+        description: Automação residencial (HAOS)
+        proxmoxNode: __HA_NODE__
+        proxmoxVMID: 106
+        proxmoxType: qemu
+        widget:
+          type: homeassistant
+          url: http://192.168.10.60:8123
+          key: __HA_KEY__
+
+    - ESPHome:
+        icon: sh-esphome
+        href: https://ha.ihome.dev.br/5c53de3b_esphome
+        description: Firmware dos dispositivos
+
+    - Node-RED:
+        icon: sh-node-red
+        href: https://ha.ihome.dev.br/a0d7b954_nodered
+        description: Automações visuais
+
+    - Zigbee2MQTT:
+        icon: sh-zigbee2mqtt
+        href: https://ha.ihome.dev.br/45df7312_zigbee2mqtt
+        description: Dongle Zigbee

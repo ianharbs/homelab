@@ -77,7 +77,7 @@ pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   ├── lxc105 · srv-monitor · 192.168.10.50
   │    ├── adguard-secundary  → adguard-secondary
   │    ├── komodo             → komodo-core, komodo-ferretdb, komodo-postgres
-  │    ├── monitor-home       → homepage
+  │    ├── monitor-home       → homepage (config versionada em homepage/, sem segredos)
   │    ├── monitor-media      → jellystat
   │    ├── monitor-server     → grafana, loki, prometheus, blackbox, pve-exporter, scrutiny (+ influxdb)
   │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail, speedtest-exporter
