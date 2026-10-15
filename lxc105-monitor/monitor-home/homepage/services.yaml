@@ -3,13 +3,14 @@
 # Homepage — iHomeCluster (pve .2 · pve2 .3 · pve3 .4)
 # Links (href) = endereço externo *.ihome.dev.br (NPM + Cloudflare)
 # Widgets (url) = IP interno, que é como o container do Homepage alcança os serviços
-# Serviços sem proxy no NPM ficam com link local (marcados com "· LAN")
+# Segredos: {{HOMEPAGE_VAR_*}} vêm de /opt/docker/homepage/secrets.env (env_file do compose)
 # ============================================================
 
 # ============================================================
-# INFRAESTRUTURA — Proxmox e gestão
+# INFRAESTRUTURA
 # ============================================================
 - Infraestrutura:
+
     - pve:
         icon: sh-proxmox
         href: https://pve.ihome.dev.br
@@ -17,8 +18,8 @@
         widget:
           type: proxmox
           url: https://192.168.10.2:8006
-          username: __USERNAME_1__
-          password: __PASSWORD_2__
+          username: "{{HOMEPAGE_VAR_PROXMOX_API_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_PROXMOX_API_PASSWORD}}"
           node: pve
 
     - pve2:
@@ -28,8 +29,8 @@
         widget:
           type: proxmox
           url: https://192.168.10.2:8006
-          username: __USERNAME_3__
-          password: __PASSWORD_4__
+          username: "{{HOMEPAGE_VAR_PROXMOX_API_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_PROXMOX_API_PASSWORD}}"
           node: pve2
 
     - pve3:
@@ -39,40 +40,43 @@
         widget:
           type: proxmox
           url: https://192.168.10.2:8006
-          username: __USERNAME_5__
-          password: __PASSWORD_6__
+          username: "{{HOMEPAGE_VAR_PROXMOX_API_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_PROXMOX_API_PASSWORD}}"
           node: pve3
 
     - Komodo:
         icon: sh-komodo
-        href: http://komodo.ihome.dev.br
-        description: Deploy dos stacks · update 04:00 · LAN
+        href: https://komodo.ihome.dev.br
+        description: Deploy dos stacks · update 04:00
         server: docker-srv-monitor
         container: komodo-core
         widget:
           type: komodo
           url: http://192.168.10.50:9120
-          key: __KEY_7__
-          secret: ***REMOVIDO***
-          showSummary: true # optional, default: false. Takes precedence over showStacks
-          showStacks: true # optional, default: false
+          key: "{{HOMEPAGE_VAR_KOMODO_KEY}}"
+          secret: "{{HOMEPAGE_VAR_KOMODO_SECRET}}"
+          showSummary: true
+          showStacks: true
 
 # ============================================================
-# GATEWAY & REDE — lxc101 (gateway) · lxc100 (omada)
+# GATEWAY & REDE
 # ============================================================
 - Gateway & Rede:
+
     - Omada:
         icon: sh-omada
         href: https://omada.ihome.dev.br
         description: Controlador TP-Link · 192.168.10.5
         server: docker-srv-omada
         container: omada-controller
-        widget:
-          type: omada
-          url: https://192.168.10.5:8043
-          username: __USERNAME_8__
-          password: __PASSWORD_9__
-          site: https://omada.ihome.dev.br
+        # Widget desligado: o login local falhou e a conta ficou bloqueada (-30119). Reative quando
+        # HOMEPAGE_VAR_OMADA_USERNAME/PASSWORD forem de um usuário LOCAL do controlador (não a conta TP-Link ID).
+        # widget:
+        #   type: omada
+        #   url: https://192.168.10.5:8043
+        #   username: "{{HOMEPAGE_VAR_OMADA_USERNAME}}"
+        #   password: "{{HOMEPAGE_VAR_OMADA_PASSWORD}}"
+        #   site: iHome Server
 
     - AdGuard Home:
         icon: sh-adguard-home
@@ -83,8 +87,8 @@
         widget:
           type: adguard
           url: http://192.168.10.10:3000
-          username: __USERNAME_10__
-          password: __PASSWORD_11__
+          username: "{{HOMEPAGE_VAR_ADGUARD_HOME_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_ADGUARD_HOME_PASSWORD}}"
 
     - AdGuard Secundário:
         icon: sh-adguard-home
@@ -95,8 +99,8 @@
         widget:
           type: adguard
           url: http://192.168.10.50:3001
-          username: __USERNAME_12__
-          password: __PASSWORD_13__
+          username: "{{HOMEPAGE_VAR_ADGUARD_SECUNDARIO_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_ADGUARD_SECUNDARIO_PASSWORD}}"
 
     - NetAlertX:
         icon: sh-netalertx
@@ -107,7 +111,7 @@
         widget:
           type: netalertx
           url: http://192.168.10.10:20212
-          key: __KEY_14__
+          key: "{{HOMEPAGE_VAR_NETALERTX_KEY}}"
           version: 2
 
     - WireGuard:
@@ -119,10 +123,8 @@
         widget:
           type: wgeasy
           url: http://192.168.10.10:51821
-          version: 2 # optional, default is 1
-          username: __USERNAME_15__
-          password: __PASSWORD_16__
-          threshold: 2 # optional
+          password: "{{HOMEPAGE_VAR_WIREGUARD_PASSWORD}}"  # wg-easy v14 (wg0.json): version 1, só senha
+          threshold: 2
 
     - NGINX Proxy Manager:
         icon: sh-nginx-proxy-manager
@@ -133,26 +135,27 @@
         widget:
           type: npm
           url: http://192.168.10.10:81
-          username: __USERNAME_17__
-          password: __PASSWORD_18__
+          username: "{{HOMEPAGE_VAR_NGINX_PROXY_MANAGER_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_NGINX_PROXY_MANAGER_PASSWORD}}"
 
     - Cloudflared:
         icon: sh-cloudflare
-        href: https://dash.cloudflare.com/__CF_ACCOUNT__/one/networks/connectors
+        href: https://dash.cloudflare.com/{{HOMEPAGE_VAR_CLOUDFLARED_ACCOUNT_ID}}/one/networks/connectors
         description: Túnel externo
         server: docker-srv-gateway
         container: cloudflared
         widget:
           type: cloudflared
-          accountid: __CF_ACCOUNT__
-          tunnelid: __CF_TUNNEL__
-          key: __KEY_19__
+          accountid: "{{HOMEPAGE_VAR_CLOUDFLARED_ACCOUNT_ID}}"
+          tunnelid: "{{HOMEPAGE_VAR_CLOUDFLARED_TUNNEL_ID}}"
+          key: "{{HOMEPAGE_VAR_CLOUDFLARED_KEY}}"
           fields: ["status", "origin_ip"]
 
 # ============================================================
-# MÍDIA — XXX — lxc102
+# MÍDIA — XXX
 # ============================================================
 - Mídia — XXX:
+
     - Stash:
         icon: sh-stash
         href: https://stash.ihome.dev.br
@@ -162,7 +165,7 @@
         widget:
           type: stash
           url: http://192.168.10.20:9999
-          key: __KEY_20__
+          key: "{{HOMEPAGE_VAR_STASH_KEY}}"
           fields: ["scenes", "movies"]
 
     - Whisparr:
@@ -173,9 +176,10 @@
         container: whisparr
 
 # ============================================================
-# MÍDIA — PLAYERS — lxc102
+# FILMES, SÉRIES & TV
 # ============================================================
-- Mídia — Players:
+- Filmes, Séries & TV:
+
     - Jellyfin:
         icon: sh-jellyfin
         href: https://jf.ihome.dev.br
@@ -189,7 +193,7 @@
           url: http://192.168.10.20:8096/Items/Counts
           refreshInterval: 300000
           headers:
-            Authorization: __AUTHORIZATION_21__
+            Authorization: 'MediaBrowser Token="{{HOMEPAGE_VAR_JELLYFIN_KEY}}"'
           mappings:
             - field: MovieCount
               label: Filmes
@@ -201,6 +205,19 @@
               label: Episódios
               format: number
 
+    - Dispatcharr:
+        icon: sh-dispatcharr
+        href: https://dispatcharr.ihome.dev.br
+        description: IPTV
+        server: docker-srv-media
+        container: dispatcharr_web
+        widget:
+          type: dispatcharr
+          url: http://192.168.10.20:9191
+          username: "{{HOMEPAGE_VAR_DISPATCHARR_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_DISPATCHARR_PASSWORD}}"
+          enableActiveStreams: true
+
     - Seerr:
         icon: sh-seerr
         href: https://seerr.ihome.dev.br
@@ -210,7 +227,12 @@
         widget:
           type: seerr
           url: http://192.168.10.20:5055
-          key: __KEY_22__
+          key: "{{HOMEPAGE_VAR_SEERR_KEY}}"
+
+# ============================================================
+# MÚSICAS
+# ============================================================
+- Músicas:
 
     - Navidrome:
         icon: sh-navidrome
@@ -221,20 +243,28 @@
         widget:
           type: navidrome
           url: http://192.168.10.20:4533
-          user: __USER_23__
-          token: __TOKEN_24__
-          salt: __SALT_25__
+          user: "{{HOMEPAGE_VAR_NAVIDROME_USERNAME}}"
+          token: "{{HOMEPAGE_VAR_NAVIDROME_TOKEN}}"
+          salt: "{{HOMEPAGE_VAR_NAVIDROME_SALT}}"
 
-    - AudioBookshelf:
-        icon: sh-audiobookshelf
-        href: https://audiobook.ihome.dev.br
-        description: Audiolivros e podcasts
+    - DroppedNeedle:
+        icon: mdi-album
+        href: https://dn.ihome.dev.br
+        description: Pedidos e downloads de música
         server: docker-srv-media
-        container: audiobookshelf
-        widget:
-          type: audiobookshelf
-          url: http://192.168.10.20:13378
-          key: __KEY_26__
+        container: droppedneedle
+
+    - AudioMuse-AI:
+        icon: mdi-waveform
+        href: https://musicai.ihome.dev.br
+        description: Playlists por IA
+        server: docker-srv-media
+        container: audiomuse-ai-flask-app
+
+# ============================================================
+# LIVROS
+# ============================================================
+- Livros:
 
     - Kavita:
         icon: sh-kavita
@@ -245,9 +275,9 @@
         widget:
           type: kavita
           url: http://192.168.10.20:5000
-          username: __USERNAME_27__
-          password: __PASSWORD_28__
-          key: __KEY_29__
+          username: "{{HOMEPAGE_VAR_KAVITA_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_KAVITA_PASSWORD}}"
+          key: "{{HOMEPAGE_VAR_KAVITA_KEY}}"
 
     - Suwayomi:
         icon: sh-suwayomi
@@ -258,43 +288,20 @@
         widget:
           type: suwayomi
           url: http://192.168.10.20:4567
-          username: __USERNAME_30__
-          password: __PASSWORD_31__
+          username: "{{HOMEPAGE_VAR_SUWAYOMI_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_SUWAYOMI_PASSWORD}}"
           category: 0
 
-    - Dispatcharr:
-        icon: sh-dispatcharr
-        href: https://dispatcharr.ihome.dev.br
-        description: IPTV
+    - AudioBookshelf:
+        icon: sh-audiobookshelf
+        href: https://audiobook.ihome.dev.br
+        description: Audiolivros e podcasts
         server: docker-srv-media
-        container: dispatcharr_web
+        container: audiobookshelf
         widget:
-          type: dispatcharr
-          url: http://192.168.10.20:9191
-          username: __USERNAME_32__
-          password: __PASSWORD_33__
-          enableActiveStreams: true
-
-
-
-# ============================================================
-# MÚSICA & LIVROS — lxc102
-# ============================================================
-- Música & Livros:
-    - DroppedNeedle:
-        icon: mdi-album
-        href: https://dn.ihome.dev.br
-        description: Pedidos e downloads de música
-        server: docker-srv-media
-        container: droppedneedle
-
-
-    - AudioMuse-AI:
-        icon: mdi-waveform
-        href: https://musicai.ihome.dev.br
-        description: Playlists por IA
-        server: docker-srv-media
-        container: audiomuse-ai-flask-app
+          type: audiobookshelf
+          url: http://192.168.10.20:13378
+          key: "{{HOMEPAGE_VAR_AUDIOBOOKSHELF_KEY}}"
 
     - Shelfarr:
         icon: mdi-bookshelf
@@ -304,20 +311,9 @@
         container: shelfarr
 
 # ============================================================
-# MÍDIA — DOWNLOAD — lxc102
+# MÍDIA — DOWNLOADS
 # ============================================================
 - Mídia — Downloads:
-    - qBittorrent:
-        icon: sh-qbittorrent
-        href: https://torrent.ihome.dev.br
-        description: Torrent
-        server: docker-srv-media
-        container: qbittorrent
-        widget:
-          type: qbittorrent
-          url: http://192.168.10.20:8080
-          username: __USERNAME_34__
-          password: __PASSWORD_35__
 
     - SABnzbd:
         icon: sh-sabnzbd
@@ -328,7 +324,19 @@
         widget:
           type: sabnzbd
           url: http://192.168.10.20:8085
-          key: __KEY_36__
+          key: "{{HOMEPAGE_VAR_SABNZBD_KEY}}"
+
+    - qBittorrent:
+        icon: sh-qbittorrent
+        href: https://torrent.ihome.dev.br
+        description: Torrent
+        server: docker-srv-media
+        container: qbittorrent
+        widget:
+          type: qbittorrent
+          url: http://192.168.10.20:8080
+          username: "{{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}"
 
     - slskd:
         icon: sh-slskd
@@ -339,34 +347,8 @@
         widget:
           type: slskd
           url: http://192.168.10.20:5030
-          key: __KEY_37__
+          key: "{{HOMEPAGE_VAR_SLSKD_KEY}}"
           fields: ["slskStatus", "downloads", "uploads", "sharedFiles"]
-
-# ============================================================
-# MÍDIA — AUTOMAÇÃO (*arr) — lxc102
-# ============================================================
-- Mídia — Automação (*arr):
-    - Sonarr:
-        icon: sh-sonarr
-        href: https://sonarr.ihome.dev.br
-        description: Séries
-        server: docker-srv-media
-        container: sonarr
-        widget:
-          type: sonarr
-          url: http://192.168.10.20:8989
-          key: __KEY_38__
-
-    - Radarr:
-        icon: sh-radarr
-        href: https://radarr.ihome.dev.br
-        description: Filmes
-        server: docker-srv-media
-        container: radarr
-        widget:
-          type: radarr
-          url: http://192.168.10.20:7878
-          key: __KEY_39__
 
     - Prowlarr:
         icon: sh-prowlarr
@@ -377,7 +359,34 @@
         widget:
           type: prowlarr
           url: http://192.168.10.20:9696
-          key: __KEY_40__
+          key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
+
+# ============================================================
+# MÍDIA — AUTOMAÇÃO (*ARR)
+# ============================================================
+- Mídia — Automação (*arr):
+
+    - Sonarr:
+        icon: sh-sonarr
+        href: https://sonarr.ihome.dev.br
+        description: Séries
+        server: docker-srv-media
+        container: sonarr
+        widget:
+          type: sonarr
+          url: http://192.168.10.20:8989
+          key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
+
+    - Radarr:
+        icon: sh-radarr
+        href: https://radarr.ihome.dev.br
+        description: Filmes
+        server: docker-srv-media
+        container: radarr
+        widget:
+          type: radarr
+          url: http://192.168.10.20:7878
+          key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
 
     - Bazarr:
         icon: sh-bazarr
@@ -388,15 +397,7 @@
         widget:
           type: bazarr
           url: http://192.168.10.20:6767
-          key: __KEY_41__
-
-
-    - Profilarr:
-        icon: mdi-tune-variant
-        href: https://profilarr.ihome.dev.br
-        description: Perfis de qualidade
-        server: docker-srv-media
-        container: profilarr
+          key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
 
     - Cleanuparr:
         icon: sh-cleanuparr
@@ -405,6 +406,13 @@
         server: docker-srv-media
         container: cleanuparr
 
+    - Profilarr:
+        icon: mdi-tune-variant
+        href: https://profilarr.ihome.dev.br
+        description: Perfis de qualidade
+        server: docker-srv-media
+        container: profilarr
+
     - Lingarr:
         icon: sh-lingarr
         href: https://lingarr.ihome.dev.br
@@ -412,12 +420,23 @@
         server: docker-srv-media
         container: lingarr
 
+# ============================================================
+# JOGOS
+# ============================================================
+- Jogos:
 
+    - Gameyfin:
+        icon: sh-gameyfin
+        href: https://games.ihome.dev.br
+        description: Biblioteca de jogos e ROMs
+        server: docker-srv-games
+        container: gameyfin  
 
 # ============================================================
-# CASA & SAÚDE — lxc103
+# CASA & SAÚDE
 # ============================================================
 - Casa & Saúde:
+
     - Mealie:
         icon: sh-mealie
         href: https://mealie.ihome.dev.br
@@ -427,7 +446,7 @@
         widget:
           type: mealie
           url: http://192.168.10.30:9925
-          key: __KEY_42__
+          key: "{{HOMEPAGE_VAR_MEALIE_KEY}}"
           version: 2
 
     - Bar Assistant:
@@ -459,36 +478,16 @@
         container: adventurelog-frontend
 
 # ============================================================
-# FERRAMENTAS — lxc103 · IA (lxc108) · Jogos (lxc107)
+# FERRAMENTAS & IA
 # ============================================================
 - Ferramentas & IA:
+
     - Actual Budget:
         icon: sh-actual-budget
         href: https://finances.ihome.dev.br
         description: Finanças
         server: docker-srv-apps
         container: actual_budget
-
-    - Open WebUI:
-        icon: sh-open-webui
-        href: https://ai.ihome.dev.br
-        description: Chat com modelos locais (Ollama)
-        server: docker-srv-ai
-        container: open-webui
-
-    - n8n:
-        icon: sh-n8n
-        href: https://n8n.ihome.dev.br
-        description: Automação de workflows
-        server: docker-srv-apps
-        container: n8n
-
-    - SFTPGo:
-        icon: sh-sftpgo
-        href: https://file.ihome.dev.br
-        description: Arquivos (web, SFTP e WebDAV em dav.ihome.dev.br)
-        server: docker-srv-apps
-        container: sftpgo
 
     - BentoPDF:
         icon: sh-bentopdf
@@ -504,6 +503,27 @@
         server: docker-srv-apps
         container: marreta
 
+    - SFTPGo:
+        icon: sh-sftpgo
+        href: https://file.ihome.dev.br
+        description: Arquivos (web, SFTP e WebDAV em dav.ihome.dev.br)
+        server: docker-srv-apps
+        container: sftpgo
+
+    - n8n:
+        icon: sh-n8n
+        href: https://n8n.ihome.dev.br
+        description: Automação de workflows
+        server: docker-srv-apps
+        container: n8n
+
+    - Open WebUI:
+        icon: sh-open-webui
+        href: https://ai.ihome.dev.br
+        description: Chat com modelos locais (Ollama)
+        server: docker-srv-ai
+        container: open-webui
+
     - pgAdmin:
         icon: sh-pgadmin
         href: https://postgres.ihome.dev.br
@@ -511,17 +531,11 @@
         server: docker-srv-apps
         container: pgadmin
 
-    - Gameyfin:
-        icon: sh-gameyfin
-        href: https://games.ihome.dev.br
-        description: Biblioteca de jogos e ROMs
-        server: docker-srv-games
-        container: gameyfin
-
 # ============================================================
-# SEGURANÇA & CÂMERAS — lxc104
+# SEGURANÇA & CÂMERAS
 # ============================================================
 - Segurança & Câmeras:
+
     - Vaultwarden:
         icon: sh-vaultwarden
         href: https://vw.ihome.dev.br
@@ -537,25 +551,22 @@
         container: frigate
 
 # ============================================================
-# MONITORAMENTO — lxc105
+# MONITORAMENTO
 # ============================================================
 - Monitoramento:
+
     - Grafana:
         icon: sh-grafana
         href: https://grafana.ihome.dev.br
         description: Dashboards do cluster
         server: docker-srv-monitor
         container: grafana
-
-    - Prometheus:
-        icon: sh-prometheus
-        href: http://192.168.10.50:9090
-        description: Métricas e alvos · LAN
-        server: docker-srv-monitor
-        container: prometheus
         widget:
-          type: prometheus
-          url: http://192.168.10.50:9090
+          type: grafana
+          version: 2
+          url: http://192.168.10.50:3010
+          username: "{{HOMEPAGE_VAR_GRAFANA_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_GRAFANA_PASSWORD}}"
 
     - Scrutiny:
         icon: sh-scrutiny
@@ -576,13 +587,14 @@
         widget:
           type: jellystat
           url: http://192.168.10.50:3005
-          key: __KEY_43__
+          key: "{{HOMEPAGE_VAR_JELLYSTAT_KEY}}"
           days: 30
 
 # ============================================================
-# HOME ASSISTANT & IoT — vm106
+# HOME ASSISTANT & IOT
 # ============================================================
 - Home Assistant & IoT:
+
     - Home Assistant:
         icon: sh-home-assistant
         href: https://ha.ihome.dev.br
@@ -593,7 +605,7 @@
         widget:
           type: homeassistant
           url: http://192.168.10.60:8123
-          key: __KEY_44__
+          key: "{{HOMEPAGE_VAR_HOME_ASSISTANT_KEY}}"
 
     - ESPHome:
         icon: sh-esphome
