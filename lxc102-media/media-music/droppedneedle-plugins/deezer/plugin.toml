@@ -4,9 +4,9 @@ version = "1.0.0"
 api_version = 1
 entrypoint = "plugin:Deezer"
 capabilities = ["indexer", "download_client"]
-display_name = "Deezer (direto)"
-description = "Busca e baixa direto do Deezer (FLAC/MP3) usando o ARL, montando a edição exata do MusicBrainz por ISRC/UPC."
-author = "homelab"
+display_name = "Deezer (direct)"
+description = "Searches and downloads directly from Deezer (FLAC/MP3) with your ARL, assembling the exact MusicBrainz edition by ISRC/UPC. / Busca e baixa direto do Deezer (FLAC/MP3) com o seu ARL, montando a edição exata do MusicBrainz por ISRC/UPC."
+author = "DroppedNeedle community plugin"
 
 [[capability]]
 id = "indexer"
@@ -19,31 +19,31 @@ display_name = "Deezer"
 
 [[settings]]
 key = "arl"
-label = "ARL do Deezer"
-help = "Cookie 'arl' de uma conta Premium/HiFi logada em deezer.com (192 caracteres)."
+label = "Deezer ARL"
+help = "The 'arl' cookie of a Premium/HiFi account logged in at deezer.com (192 characters). / Cookie 'arl' de uma conta Premium/HiFi logada em deezer.com."
 secret = true
 
 [[settings]]
 key = "quality"
-label = "Qualidade"
-help = "flac (padrão) ou mp3_320"
+label = "Quality / Qualidade"
+help = "flac (default) or mp3_320"
 
 [[settings]]
 key = "allow_fallback"
-label = "Aceitar MP3 320 quando não houver FLAC"
-help = "sim/não (padrão não). Com 'não', faixa sem FLAC conta como ausente."
+label = "Accept MP3 320 when FLAC is missing / Aceitar MP3 320 sem FLAC"
+help = "yes/no (default no). With 'no', a track without FLAC counts as missing. / sim/não (padrão não)."
 
 [[settings]]
 key = "download_dir"
-label = "Pasta temporária de download"
-help = "Caminho dentro do container do DroppedNeedle. Padrão: /data/downloads/deezer"
+label = "Staging folder / Pasta temporária"
+help = "Path inside the DroppedNeedle container. Default: /data/downloads/deezer"
 
 [[settings]]
 key = "max_parallel"
-label = "Downloads simultâneos"
-help = "Faixas baixadas ao mesmo tempo (padrão 3, máx. 6). Mantenha baixo para não arriscar o ARL."
+label = "Parallel downloads / Downloads simultâneos"
+help = "Tracks downloaded at once (default 3, max 6). Keep it low to protect the ARL."
 
 [[settings]]
 key = "musicbrainz_url"
-label = "API do MusicBrainz"
-help = "Usada para descobrir a edição-alvo. Padrão: https://musicbrainz.org/ws/2 (1 req/s)."
+label = "MusicBrainz API"
+help = "Used to find the target edition. Default: https://musicbrainz.org/ws/2 (1 req/s). Use the same source as DroppedNeedle if you run a mirror."
