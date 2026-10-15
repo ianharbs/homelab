@@ -11,6 +11,14 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
+    # Menos séries no Prometheus: só containers Docker, sem copiar todas as labels do Compose
+    # (os dashboards só usam com.docker.compose.project) e sem métricas que nenhum painel usa.
+    command:
+      - --docker_only=true
+      - --store_container_labels=false
+      - --whitelisted_container_labels=com.docker.compose.project,com.docker.compose.service
+      - --disable_metrics=percpu,sched,tcp,udp,advtcp,hugetlb,referenced_memory,cpu_topology,resctrl,cpuset,process,memory_numa
+      - --housekeeping_interval=10s
     restart: unless-stopped
     privileged: true
     devices:
