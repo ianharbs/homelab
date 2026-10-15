@@ -27,22 +27,28 @@ layout:
     columns: 4
   Mídia — XXX:
     style: row
-    columns: 2
-  Mídia — Players:
-    style: row
     columns: 4
-  Música & Livros:
-    style: row
-    columns: 5
-  Mídia — Downloads:
+  Filmes, Séries & TV:
     style: row
     columns: 3
+  Músicas:
+    style: row
+    columns: 3
+  Livros:
+    style: row
+    columns: 4
+  Mídia — Downloads:
+    style: row
+    columns: 4
   Mídia — Automação (*arr):
     style: row
-    columns: 5
+    columns: 3
+  Jogos:
+    style: row
+    columns: 3
   Casa & Saúde:
     style: row
-    columns: 5
+    columns: 4
   Ferramentas & IA:
     style: row
     columns: 4
@@ -51,7 +57,7 @@ layout:
     columns: 2
   Monitoramento:
     style: row
-    columns: 4
+    columns: 3
   Home Assistant & IoT:
     style: row
     columns: 4

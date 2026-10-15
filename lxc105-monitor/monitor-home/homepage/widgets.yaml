@@ -17,8 +17,8 @@
 
 - openmeteo:
     label: Casa
-    latitude: __LATITUDE__
-    longitude: __LONGITUDE__
+    latitude: {{HOMEPAGE_VAR_WEATHER_LATITUDE}}
+    longitude: {{HOMEPAGE_VAR_WEATHER_LONGITUDE}}
     timezone: America/Sao_Paulo
     units: metric
     cache: 15
