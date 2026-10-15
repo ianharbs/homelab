@@ -1,0 +1,39 @@
+# Free Games Claimer Remaster — resgata jogos grátis (Epic, Prime, GOG, Steam, Microsoft, Ubisoft...)
+# https://github.com/P-Adamiec/Free-Games-Claimer-Remaster
+#
+# Logins e senhas NÃO ficam aqui: vão em ${CONFIG_PATH}/free-games-claimer/fgc.env (só no servidor,
+# chmod 600). Variáveis aceitas: .env.example do projeto (EG_EMAIL, PG_EMAIL, GOG_EMAIL, VNC_PASSWORD...).
+# Login manual (código por e-mail, captcha): noVNC em http://192.168.10.70:7080 (só LAN/WireGuard).
+networks:
+  games_net:
+    external: true
+
+services:
+  free-games-claimer:
+    image: ghcr.io/p-adamiec/free-games-claimer-remaster:latest
+    container_name: free-games-claimer
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    shm_size: 1gb
+    env_file:
+      - ${CONFIG_PATH}/free-games-claimer/fgc.env
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=America/Sao_Paulo
+      - SCHEDULER_TIMEZONE=America/Sao_Paulo
+      # 10h e 22h, longe da atualização automática das 04:00
+      - SCHEDULER_HOURS=0
+      - SCHEDULER_FIXED_TIMES=10:00,22:00
+      - RUN_ON_STARTUP=false
+      - SHOW=1
+      - VNC_IP=192.168.10.70
+      - NOVNC_PORT=7080
+      - VNC_LOGIN_TIMEOUT=600
+    volumes:
+      - ${CONFIG_PATH}/free-games-claimer/data:/fgc/data
+    networks:
+      - games_net
+    ports:
+      - "7080:7080"
