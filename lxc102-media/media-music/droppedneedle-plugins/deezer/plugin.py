@@ -541,13 +541,18 @@ class Deezer:
 
     # -- releases ------------------------------------------------------------
 
-    def _tags(self, target: dict, index: int, song: dict) -> dict:
+    def _tags(self, target: dict, index: int, song: dict, requested: str = "") -> dict:
         mb = target["tracks"][index]
+        # DroppedNeedle's import-time wrong-album guard compares ALBUMARTIST with the
+        # requested artist and drops the whole folder for a shared credit ("Ednardo,
+        # Amelinha & Belchior" vs "Belchior"). It re-stamps tags from MusicBrainz on
+        # import, so the staging copy carries the requested name.
+        album_artist = requested if requested and _same_artist(requested, target["artist"]) else target["artist"]
         tags = {
             "title": mb["title"],
             "artist": mb["artist"] or target["artist"],
             "album": target["title"],
-            "albumartist": target["artist"],
+            "albumartist": album_artist,
             "tracknumber": str(mb["pos"]),
             "tracktotal": str(sum(1 for t in target["tracks"] if t["disc"] == mb["disc"])),
             "discnumber": str(mb["disc"]),
@@ -625,12 +630,15 @@ class Deezer:
                                   target["discs"], mb["title"], song["_fmt"])
             files[name] = {"id": str(song["SNG_ID"]), "fmt": song["_fmt"],
                            "size": int(song.get(_FORMAT_KEY[song["_fmt"]]) or 0),
-                           "tags": self._tags(target, index, song)}
+                           "tags": self._tags(target, index, song, artist)}
         score = SCORE_FULL if sources <= 1 else SCORE_ASSEMBLED
         if len(plan) < total:
             score = SCORE_PARTIAL if len(plan) >= 0.75 * total else SCORE_FRAGMENT
             self._log.info("deezer: %s - %s: %d/%d faixas no Deezer", target["artist"], target["title"], len(plan), total)
-        title = f"{target['artist'] or artist} - {target['title']}" + (f" ({target['year']})" if target["year"] else "")
+        # Release titles always carry the REQUESTED artist: DroppedNeedle's wrong_album
+        # gate rejects "Ednardo, Amelinha & Belchior - X" for a "Belchior" request.
+        # The files keep the full MusicBrainz credit in their tags.
+        title = f"{artist} - {target['title']}" + (f" ({target['year']})" if target["year"] else "")
         return [IndexerResult(source=SOURCE_KEY, plugin=self._release(title, files, score))]
 
     async def _unguided(self, artist: str, album: str, year: int | None, track_count: int | None) -> list[IndexerResult]:
@@ -659,7 +667,7 @@ class Deezer:
                     "id": str(song["SNG_ID"]), "fmt": fmt, "size": int(song.get(_FORMAT_KEY[fmt]) or 0),
                     "tags": {k: v for k, v in {
                         "title": song.get("SNG_TITLE", ""), "artist": song.get("ART_NAME", "") or name,
-                        "album": item.get("title", ""), "albumartist": name, "tracknumber": str(pos),
+                        "album": item.get("title", ""), "albumartist": artist, "tracknumber": str(pos),
                         "discnumber": str(disc), "date": str(song.get("PHYSICAL_RELEASE_DATE") or ""),
                         "isrc": song.get("ISRC", ""), "deezer_id": str(song["SNG_ID"]),
                         "_cover": COVER_URL.format(song["ALB_PICTURE"]) if song.get("ALB_PICTURE") else "",
@@ -668,7 +676,7 @@ class Deezer:
             if len(files) < len(songs):
                 score *= 0.8
             if files and score >= MIN_RELEASE_SCORE:
-                title = f"{name} - {item.get('title', '')}" + (f" ({release_year})" if release_year else "")
+                title = f"{artist} - {item.get('title', '')}" + (f" ({release_year})" if release_year else "")
                 out.append(IndexerResult(source=SOURCE_KEY, plugin=self._release(title, files, score)))
         return out
 
@@ -748,7 +756,7 @@ class Deezer:
             files = {fname: {
                 "id": str(song["SNG_ID"]), "fmt": fmt, "size": int(song.get(_FORMAT_KEY[fmt]) or 0),
                 "tags": {k: v for k, v in {
-                    "title": song.get("SNG_TITLE", ""), "artist": artist, "album": album, "albumartist": artist,
+                    "title": song.get("SNG_TITLE", ""), "artist": artist, "album": album, "albumartist": artist_name,
                     "tracknumber": str(pos), "discnumber": str(disc),
                     "date": str(song.get("PHYSICAL_RELEASE_DATE") or ""), "isrc": song.get("ISRC", ""),
                     "deezer_id": str(song["SNG_ID"]),
@@ -757,7 +765,7 @@ class Deezer:
             }}
             # Named after the requested single, not the album the track sits on:
             # DroppedNeedle drops releases whose title doesn't match the wanted one.
-            title = f"{artist} - {name}" if name else f"{artist} - {album}" + (f" ({year})" if year else "")
+            title = f"{artist_name} - {name}" if name else f"{artist_name} - {album}" + (f" ({year})" if year else "")
             out.append(IndexerResult(source=SOURCE_KEY, plugin=self._release(title, files, score)))
         return out
 
