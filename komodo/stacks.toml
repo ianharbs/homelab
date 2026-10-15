@@ -798,6 +798,27 @@ PUID=[[PUID]]
 """
 
 [[stack]]
+name = "games-claimer"
+description = "Free Games Claimer (Epic, Prime, GOG, Steam...) — segredos em fgc.env no servidor"
+tags = ["jogos", "srv-games"]
+[stack.config]
+links = ["http://192.168.10.70:7080/?autoconnect=true"]
+server = "srv-games"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc107-games/games-claimer"
+file_paths = ["docker-compose.yml"]
+auto_pull = false
+project_name = "games-claimer"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+PGID=[[PGID]]
+PUID=[[PUID]]
+"""
+
+[[stack]]
 name = "stack-agents-games"
 description = "cadvisor, docker-socket-proxy e promtail"
 tags = ["agentes", "srv-games"]

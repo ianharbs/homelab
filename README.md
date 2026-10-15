@@ -55,6 +55,7 @@ pve2 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
   │
   ├── lxc107 · srv-games · 192.168.10.70
   │    ├── games-library      → gameyfin
+  │    ├── games-claimer      → free-games-claimer (noVNC :7080)
   │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
   │
   └── lxc108 · srv-ai · 192.168.10.80
