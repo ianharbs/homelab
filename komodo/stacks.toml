@@ -816,6 +816,7 @@ environment = """
 CONFIG_PATH=[[CONFIG_PATH]]
 PGID=[[PGID]]
 PUID=[[PUID]]
+TZ=[[TZ]]
 """
 
 [[stack]]
