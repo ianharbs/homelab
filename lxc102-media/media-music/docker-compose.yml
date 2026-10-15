@@ -32,10 +32,13 @@ services:
     image: ghcr.io/v1ck3s/octo-fiesta:latest
     container_name: octo-fiesta
     restart: unless-stopped
+    # sem isto roda como root e deixa pastas root:root em /music (DroppedNeedle e lyrics-fetcher não gravam nelas)
+    user: "${PUID}:${PGID}"
     ports:
       - "5274:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - HOME=/tmp
       # Porta interna de escuta (precisa bater com a porta mapeada acima)
       - ASPNETCORE_URLS=http://+:${INTERNAL_PORT:-8080}
       # Caminho de download dentro do container
