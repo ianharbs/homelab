@@ -41,6 +41,7 @@ pve · 192.168.10.2 · Intel i5-14600K · 32 GB · iGPU Intel
        ├── media-editing      → bazarr, lingarr, profilarr, seerr
        ├── media-music        → navidrome, octo-fiesta (só streaming), audiomuse-ai (flask, worker, redis), droppedneedle (+ plugin deezer), slskd
        ├── media-others       → stash, whisparr
+       ├── media-photos       → immich (server, machine-learning OpenVINO, valkey, postgres)
        ├── media-reading      → audiobookshelf, kavita, suwayomi, shelfarr, shelfarr-libation
        ├── media-tv           → dispatcharr_web, dispatcharr_celery
        ├── media-video        → jellyfin, radarr, sonarr
@@ -65,9 +66,11 @@ pve2 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
 pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   ├── lxc103 · srv-apps · 192.168.10.30
   │    ├── apps-automation    → n8n, n8n-runner
+  │    ├── apps-documents     → paperless-ngx, gotenberg, tika
   │    ├── apps-finances      → actual_budget
   │    ├── apps-habits        → wingfit, wger (web, nginx, celery-worker, celery-beat)
   │    ├── apps-housing       → mealie, bar-assistant, salt-rim
+  │    ├── apps-tasks         → vikunja (instalado, parado até ser usado)
   │    ├── apps-travel        → adventurelog-backend, adventurelog-frontend, adventurelog-db
   │    ├── apps-utilities     → bentopdf, marreta, sftpgo
   │    ├── stack-agents       → cadvisor, docker-socket-proxy, promtail

@@ -1,0 +1,31 @@
+# Vikunja (tarefas/projetos). Instalado mas mantido PARADO até ser usado:
+# no Komodo o stack tem auto_update = false; para usar, Deploy/Start no Komodo.
+# - Banco "vikunja" no stack-postgres.
+# - Segredos em ${CONFIG_PATH}/vikunja/vikunja.env (só no servidor, chmod 600): VIKUNJA_SERVICE_JWTSECRET.
+# - O primeiro usuário é criado pela tela de cadastro; depois dá para desligar com VIKUNJA_SERVICE_ENABLEREGISTRATION=false.
+networks:
+  apps_net:
+    external: true
+
+services:
+  vikunja:
+    image: vikunja/vikunja:2
+    container_name: vikunja
+    restart: unless-stopped
+    user: "${PUID}:${PGID}"
+    env_file:
+      - ${CONFIG_PATH}/vikunja/vikunja.env
+    environment:
+      - VIKUNJA_SERVICE_PUBLICURL=https://tasks.ihome.dev.br/
+      - VIKUNJA_SERVICE_TIMEZONE=${TZ}
+      - VIKUNJA_DATABASE_TYPE=postgres
+      - VIKUNJA_DATABASE_HOST=${POSTGRES_HOST}:${POSTGRES_PORT}
+      - VIKUNJA_DATABASE_USER=${POSTGRES_USER}
+      - VIKUNJA_DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - VIKUNJA_DATABASE_DATABASE=vikunja
+    volumes:
+      - ${CONFIG_PATH}/vikunja/files:/app/vikunja/files
+    ports:
+      - 3456:3456
+    networks:
+      - apps_net

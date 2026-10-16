@@ -1,0 +1,68 @@
+# Paperless-ngx (documentos com OCR), usando o Postgres e o Redis compartilhados do srv-apps.
+# - Banco "paperless" no stack-postgres; Redis no banco 6 (3 e 4 são do wger).
+# - Segredos em ${CONFIG_PATH}/paperless/paperless.env (só no servidor, chmod 600):
+#   PAPERLESS_SECRET_KEY, PAPERLESS_ADMIN_USER, PAPERLESS_ADMIN_PASSWORD (o admin só é criado no primeiro start).
+# - Tika + Gotenberg: leitura de e-mails e documentos do Office.
+# - Pasta de entrada: ${CONFIG_PATH}/paperless/consume (o que cair lá é importado e apagado).
+networks:
+  apps_net:
+    external: true
+
+services:
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless
+    restart: unless-stopped
+    env_file:
+      - ${CONFIG_PATH}/paperless/paperless.env
+    environment:
+      - USERMAP_UID=${PUID}
+      - USERMAP_GID=${PGID}
+      - PAPERLESS_TIME_ZONE=${TZ}
+      - PAPERLESS_URL=https://paperless.ihome.dev.br
+      - PAPERLESS_CSRF_TRUSTED_ORIGINS=https://paperless.ihome.dev.br,http://192.168.10.30:8000
+      - PAPERLESS_DBENGINE=postgresql
+      - PAPERLESS_DBHOST=${POSTGRES_HOST}
+      - PAPERLESS_DBPORT=${POSTGRES_PORT}
+      - PAPERLESS_DBUSER=${POSTGRES_USER}
+      - PAPERLESS_DBPASS=${POSTGRES_PASSWORD}
+      - PAPERLESS_DBNAME=paperless
+      - PAPERLESS_REDIS=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}/6
+      - PAPERLESS_OCR_LANGUAGE=por+eng
+      - PAPERLESS_OCR_LANGUAGES=por
+      - PAPERLESS_TIKA_ENABLED=1
+      - PAPERLESS_TIKA_ENDPOINT=http://paperless-tika:9998
+      - PAPERLESS_TIKA_GOTENBERG_ENDPOINT=http://paperless-gotenberg:3000
+      - PAPERLESS_CONSUMER_POLLING=60
+      - PAPERLESS_FILENAME_FORMAT={{ created_year }}/{{ correspondent }}/{{ title }}
+    volumes:
+      - ${CONFIG_PATH}/paperless/data:/usr/src/paperless/data
+      - ${CONFIG_PATH}/paperless/media:/usr/src/paperless/media
+      - ${CONFIG_PATH}/paperless/export:/usr/src/paperless/export
+      - ${CONFIG_PATH}/paperless/consume:/usr/src/paperless/consume
+    ports:
+      - 8000:8000
+    networks:
+      - apps_net
+    depends_on:
+      - paperless-tika
+      - paperless-gotenberg
+
+  paperless-gotenberg:
+    image: docker.io/gotenberg/gotenberg:8
+    container_name: paperless-gotenberg
+    restart: unless-stopped
+    # O Gotenberg só converte arquivos locais: JavaScript e acesso externo desligados.
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+    networks:
+      - apps_net
+
+  paperless-tika:
+    image: docker.io/apache/tika:latest
+    container_name: paperless-tika
+    restart: unless-stopped
+    networks:
+      - apps_net

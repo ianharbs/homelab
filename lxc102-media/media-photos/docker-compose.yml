@@ -1,0 +1,79 @@
+# Immich (fotos e vídeos). Baseado no docker-compose.yml oficial da release v3.3.3.
+# - Fotos no HD grande (${DATA_PATH}/data/photos); banco e cache de modelos no SSD (${CONFIG_PATH}/immich).
+# - Senha do banco em ${CONFIG_PATH}/immich/immich.env (só no servidor, chmod 600):
+#   DB_PASSWORD=... e POSTGRES_PASSWORD=... (o mesmo valor; só A-Za-z0-9).
+# - iGPU Intel: QuickSync para transcodificar vídeo e OpenVINO para o machine learning.
+# - IMMICH_VERSION=v3 acompanha só a major 3; o Postgres vem fixado por digest (subir só quando a release pedir).
+networks:
+  media_net:
+    external: true
+
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:v3
+    container_name: immich_server
+    restart: unless-stopped
+    env_file:
+      - ${CONFIG_PATH}/immich/immich.env
+    environment:
+      - TZ=${TZ}
+      - DB_HOSTNAME=immich_postgres
+      - DB_USERNAME=postgres
+      - DB_DATABASE_NAME=immich
+      - REDIS_HOSTNAME=immich_redis
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    group_add:
+      - "993"
+      - "44"
+    volumes:
+      - ${DATA_PATH}/data/photos:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 2283:2283
+    networks:
+      - media_net
+    depends_on:
+      - immich-redis
+      - immich-postgres
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v3-openvino
+    container_name: immich_machine_learning
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "993"
+      - "44"
+    volumes:
+      - ${CONFIG_PATH}/immich/model-cache:/cache
+    networks:
+      - media_net
+
+  immich-redis:
+    image: docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+    container_name: immich_redis
+    restart: unless-stopped
+    healthcheck:
+      test: redis-cli ping | grep -q PONG || exit 1
+    networks:
+      - media_net
+
+  immich-postgres:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    container_name: immich_postgres
+    restart: unless-stopped
+    env_file:
+      - ${CONFIG_PATH}/immich/immich.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - ${CONFIG_PATH}/immich/postgres:/var/lib/postgresql/data
+    shm_size: 128mb
+    networks:
+      - media_net
