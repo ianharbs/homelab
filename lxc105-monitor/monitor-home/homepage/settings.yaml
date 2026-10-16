@@ -46,6 +46,9 @@ layout:
   Jogos:
     style: row
     columns: 3
+  Fotos, Documentos & Tarefas:
+    style: row
+    columns: 3
   Casa & Saúde:
     style: row
     columns: 4

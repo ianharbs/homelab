@@ -71,12 +71,12 @@
         container: omada-controller
         # Widget desligado: o login local falhou e a conta ficou bloqueada (-30119). Reative quando
         # HOMEPAGE_VAR_OMADA_USERNAME/PASSWORD forem de um usuário LOCAL do controlador (não a conta TP-Link ID).
-        # widget:
-        #   type: omada
-        #   url: https://192.168.10.5:8043
-        #   username: "{{HOMEPAGE_VAR_OMADA_USERNAME}}"
-        #   password: "{{HOMEPAGE_VAR_OMADA_PASSWORD}}"
-        #   site: iHome Server
+        widget:
+          type: omada
+          url: https://192.168.10.5:8043
+          username: "{{HOMEPAGE_VAR_OMADA_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_OMADA_PASSWORD}}"
+          site: iHome Server
 
     - AdGuard Home:
         icon: sh-adguard-home
@@ -424,13 +424,47 @@
 # JOGOS
 # ============================================================
 - Jogos:
-
     - Gameyfin:
         icon: sh-gameyfin
         href: https://games.ihome.dev.br
         description: Biblioteca de jogos e ROMs
         server: docker-srv-games
         container: gameyfin  
+
+# ============================================================
+# FOTOS, DOCUMENTOS & TAREFAS
+# ============================================================
+- Fotos, Documentos & Tarefas:
+
+    - Immich:
+        icon: sh-immich
+        href: https://photos.ihome.dev.br
+        description: Fotos e vídeos (iGPU UHD 770)
+        server: docker-srv-media
+        container: immich_server
+        widget:
+          type: immich
+          url: http://192.168.10.20:2283
+          key: "{{HOMEPAGE_VAR_IMMICH_KEY}}"
+          version: 2
+
+    - Paperless-ngx:
+        icon: sh-paperless-ngx
+        href: https://paperless.ihome.dev.br
+        description: Documentos com OCR
+        server: docker-srv-apps
+        container: paperless
+        widget:
+          type: paperlessngx
+          url: http://192.168.10.30:8000
+          key: "{{HOMEPAGE_VAR_PAPERLESS_KEY}}"
+
+    - Vikunja:
+        icon: sh-vikunja
+        href: https://tasks.ihome.dev.br
+        description: Tarefas (parado; ligar no Komodo, stack apps-tasks)
+        server: docker-srv-apps
+        container: vikunja
 
 # ============================================================
 # CASA & SAÚDE
@@ -506,7 +540,7 @@
     - SFTPGo:
         icon: sh-sftpgo
         href: https://file.ihome.dev.br
-        description: Arquivos (web, SFTP e WebDAV em dav.ihome.dev.br)
+        description: Arquivos (web, SFTP e WebDAV)
         server: docker-srv-apps
         container: sftpgo
 

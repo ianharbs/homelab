@@ -43,6 +43,10 @@ services:
     restart: unless-stopped
     environment:
       - TZ=${TZ}
+      # O LXC tem 12 dos 20 núcleos do host: sem número fixo o onnxruntime tenta fixar threads
+      # em núcleos que não existem aqui e enche o log de "pthread_setaffinity_np failed".
+      - MACHINE_LEARNING_MODEL_INTRA_OP_THREADS=4
+      - MACHINE_LEARNING_MODEL_INTER_OP_THREADS=1
     devices:
       - /dev/dri:/dev/dri
     group_add:
