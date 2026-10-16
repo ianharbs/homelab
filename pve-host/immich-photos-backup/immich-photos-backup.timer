@@ -1,0 +1,9 @@
+[Unit]
+Description=Cópia diária das fotos do Immich (02:30, depois do dump do banco às 02:00)
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

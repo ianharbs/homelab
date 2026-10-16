@@ -1,0 +1,9 @@
+[Unit]
+Description=Cópia das fotos do Immich para o scratch disk
+RequiresMountsFor=/mnt/pve/media /mnt/pve/scratch_disk
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/immich-photos-backup.sh
+Nice=10
+IOSchedulingClass=idle
