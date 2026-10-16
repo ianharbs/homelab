@@ -336,6 +336,27 @@ TZ=[[TZ]]
 """
 
 [[stack]]
+name = "media-photos"
+description = "Immich (fotos e vídeos)"
+tags = ["midia", "srv-media"]
+[stack.config]
+links = ["http://192.168.10.20:2283"]
+server = "srv-media"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc102-media/media-photos"
+file_paths = ["docker-compose.yml"]
+auto_pull = false
+project_name = "media-photos"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
 name = "stack-agents-media"
 description = "cadvisor, docker-socket-proxy e promtail"
 tags = ["agentes", "srv-media"]
@@ -505,6 +526,61 @@ POSTGRES_HOST=[[POSTGRES_HOST]]
 POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
 POSTGRES_PORT=[[POSTGRES_PORT]]
 POSTGRES_USER=[[POSTGRES_USER]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "apps-documents"
+description = "Paperless-ngx (documentos com OCR), Tika, Gotenberg"
+tags = ["apps", "srv-apps"]
+[stack.config]
+links = ["http://192.168.10.30:8000"]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/apps-documents"
+file_paths = ["docker-compose.yml"]
+auto_pull = false
+project_name = "apps-documents"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+PGID=[[PGID]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+PUID=[[PUID]]
+REDIS_HOST=[[REDIS_HOST]]
+REDIS_PASSWORD=[[REDIS_PASSWORD]]
+REDIS_PORT=[[REDIS_PORT]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "apps-tasks"
+description = "Vikunja (tarefas) - instalado e PARADO até ser usado; sem auto update"
+tags = ["apps", "srv-apps"]
+[stack.config]
+links = ["http://192.168.10.30:3456"]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+branch = "main"
+run_directory = "lxc103-apps/apps-tasks"
+file_paths = ["docker-compose.yml"]
+auto_pull = false
+project_name = "apps-tasks"
+poll_for_updates = false
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+PGID=[[PGID]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+PUID=[[PUID]]
 TZ=[[TZ]]
 """
 
