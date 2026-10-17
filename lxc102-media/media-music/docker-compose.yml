@@ -29,7 +29,11 @@ services:
     restart: unless-stopped
  
   octo-fiesta:
-    image: ghcr.io/v1ck3s/octo-fiesta:latest
+    # build local com patch do reportPlayback (octo-fiesta/Dockerfile, upstream V1ck3s/octo-fiesta#332);
+    # quando o upstream corrigir, voltar para image: ghcr.io/v1ck3s/octo-fiesta:latest
+    build: ./octo-fiesta
+    image: homelab/octo-fiesta:patched
+    pull_policy: build
     container_name: octo-fiesta
     restart: unless-stopped
     # sem isto roda como root e deixa pastas root:root em /music (DroppedNeedle e lyrics-fetcher não gravam nelas)
