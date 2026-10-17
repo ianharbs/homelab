@@ -2,7 +2,8 @@
 """Baixa letras da LRCLIB (lrclib.net) para toda a biblioteca, sem tocar nos arquivos de áudio.
 
 - Sincronizada → "<faixa>.lrc"; só texto → "<faixa>.txt" (Navidrome: ND_LYRICSPRIORITY com .txt; Jellyfin lê os dois).
-- Letra embutida no arquivo (LYRICS / USLT) é exportada para o sidecar sem consultar a internet.
+- Faixa com letra embutida (gravada pelo library management do DroppedNeedle: LYRICS/SYNCEDLYRICS/USLT/SYLT)
+  é pulada; o script só cobre o que o DroppedNeedle não achou.
 - Faixas sem letra ficam em STATE_FILE e só são tentadas de novo depois de RETRY_DAYS; instrumentais nunca.
 
 Variáveis: MUSIC_DIR (/music), STATE_FILE (/state/lyrics-state.json), RETRY_DAYS (30), WORKERS (2), MIN_INTERVAL (1.0 s, sobe sozinho com 429),
@@ -77,6 +78,8 @@ def read_track(path):
     tags = getattr(raw, "tags", None)
     if tags:
         if hasattr(tags, "getall"):  # ID3
+            if tags.getall("SYLT"):
+                meta["embedded"] = "synced"
             for frame in tags.getall("USLT"):
                 if str(frame.text).strip():
                     meta["embedded"] = str(frame.text)
@@ -84,7 +87,7 @@ def read_track(path):
         elif path.lower().endswith(".m4a"):
             meta["embedded"] = first(tags, "\xa9lyr")
         else:  # Vorbis (chaves sem diferença de maiúsculas)
-            meta["embedded"] = first(tags, "lyrics", "unsyncedlyrics")
+            meta["embedded"] = first(tags, "lyrics", "unsyncedlyrics", "syncedlyrics")
     return meta
 
 
@@ -153,10 +156,6 @@ def lookup(meta):
     return near[0] if near else None
 
 
-def is_synced(text):
-    return any(line.startswith("[") and line[1:3].isdigit() for line in text.splitlines()[:30])
-
-
 def write(path, text):
     if DRY_RUN:
         return True
@@ -199,9 +198,7 @@ def _process(path, state):
         bump("sem tags")
         return
     if meta["embedded"]:
-        ext = ".lrc" if is_synced(meta["embedded"]) else ".txt"
-        if write(base + ext, meta["embedded"]):
-            bump("exportada da tag")
+        bump("já tem na tag")
         return
     try:
         rec = lookup(meta)
