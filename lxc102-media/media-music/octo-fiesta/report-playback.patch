@@ -1,0 +1,64 @@
+diff --git a/octo-fiesta/Controllers/SubSonicController.cs b/octo-fiesta/Controllers/SubSonicController.cs
+index 7a76894..4445649 100644
+--- a/octo-fiesta/Controllers/SubSonicController.cs
++++ b/octo-fiesta/Controllers/SubSonicController.cs
+@@ -1606,6 +1606,38 @@ public class SubsonicController : ControllerBase
+         }
+     }
+ 
++    /// <summary>
++    /// OpenSubsonic playbackReport. External song IDs (mediaId, or legacy id) are resolved to local
++    /// Subsonic IDs when possible; otherwise an empty success is returned instead of forwarding an
++    /// ID the Subsonic server cannot know (which made Navidrome answer error 70 "data not found").
++    /// </summary>
++    [HttpGet, HttpPost]
++    [Route("rest/reportPlayback")]
++    [Route("rest/reportPlayback.view")]
++    public async Task<IActionResult> ReportPlayback()
++    {
++        var parameters = await ExtractAllParameters();
++        var format = parameters.GetValueOrDefault("f", "xml");
++
++        var idParameter = parameters.ContainsKey("mediaId") ? "mediaId" : "id";
++        var resolution = await ResolveExternalSongIdIfPossible(parameters, "reportPlayback", idParameter);
++        if (resolution is { IsExternalSong: true, Resolved: false })
++        {
++            return _responseBuilder.CreateResponse(format, "reportPlayback", new { });
++        }
++
++        try
++        {
++            var result = await _proxyService.RelayAsync("rest/reportPlayback", parameters);
++            var contentType = result.ContentType ?? $"application/{format}";
++            return File(result.Body, contentType);
++        }
++        catch (HttpRequestException ex)
++        {
++            return _responseBuilder.CreateError(format, 0, $"Error connecting to Subsonic server: {ex.Message}");
++        }
++    }
++
+     /// <summary>
+     /// Updates a playlist. External song IDs are resolved to local Subsonic IDs.
+     /// </summary>
+@@ -1673,9 +1705,9 @@ public class SubsonicController : ControllerBase
+         return string.Empty;
+     }
+ 
+-    private async Task<(bool IsExternalSong, bool Resolved)> ResolveExternalSongIdIfPossible(Dictionary<string, string> parameters, string endpoint)
++    private async Task<(bool IsExternalSong, bool Resolved)> ResolveExternalSongIdIfPossible(Dictionary<string, string> parameters, string endpoint, string idParameter = "id")
+     {
+-        if (!parameters.TryGetValue("id", out var id) || string.IsNullOrWhiteSpace(id))
++        if (!parameters.TryGetValue(idParameter, out var id) || string.IsNullOrWhiteSpace(id))
+         {
+             return (false, false);
+         }
+@@ -1691,7 +1723,7 @@ public class SubsonicController : ControllerBase
+         if (!string.IsNullOrEmpty(localId))
+         {
+             _logger.LogInformation("Resolved {Endpoint} ID {ExternalId} to local ID {LocalId}", endpoint, id, localId);
+-            parameters["id"] = localId;
++            parameters[idParameter] = localId;
+             return (true, true);
+         }
+ 
