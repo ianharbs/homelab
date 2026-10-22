@@ -595,18 +595,6 @@
         server: docker-srv-security
         container: frigate
 
-    - Authentik:
-        icon: sh-authentik
-        href: https://auth.ihome.dev.br
-        description: Login único (SSO)
-        server: docker-srv-apps
-        container: authentik-server
-        widget:
-          type: authentik
-          version: 2
-          url: http://192.168.10.30:9000
-          key: "{{HOMEPAGE_VAR_AUTHENTIK_KEY}}"
-
 # ============================================================
 # MONITORAMENTO
 # ============================================================

@@ -582,31 +582,6 @@ TZ=[[TZ]]
 """
 
 [[stack]]
-name = "apps-auth"
-description = "Authentik (SSO/OIDC e forward-auth)"
-tags = ["seguranca", "srv-apps", "critico"]
-[stack.config]
-links = ["http://192.168.10.30:9000"]
-server = "srv-apps"
-repo = "ianharbs/homelab"
-git_account = "ianharbs"
-branch = "main"
-run_directory = "lxc103-apps/apps-auth"
-file_paths = ["docker-compose.yml"]
-auto_pull = false
-project_name = "apps-auth"
-poll_for_updates = true
-auto_update = false
-environment = """
-CONFIG_PATH=[[CONFIG_PATH]]
-POSTGRES_HOST=[[POSTGRES_HOST]]
-POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
-POSTGRES_PORT=[[POSTGRES_PORT]]
-POSTGRES_USER=[[POSTGRES_USER]]
-TZ=[[TZ]]
-"""
-
-[[stack]]
 name = "apps-tasks"
 description = "Vikunja (tarefas) - instalado e PARADO até ser usado; sem auto update"
 tags = ["apps", "srv-apps"]

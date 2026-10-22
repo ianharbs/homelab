@@ -48,9 +48,6 @@ services:
       - ${CONFIG_PATH}/adventurelog/media:/code/media
     ports:
       - "8016:80"
-    # Login pelo Authentik: SocialApp "authentik" (openid_connect) no admin do Django; chamadas ficam na LAN
-    extra_hosts:
-      - auth.ihome.dev.br:192.168.10.10
     networks:
       - apps_net
 

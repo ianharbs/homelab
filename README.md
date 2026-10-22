@@ -65,7 +65,6 @@ pve2 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
 
 pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   ├── lxc103 · srv-apps · 192.168.10.30
-  │    ├── apps-auth          → authentik-server, authentik-worker (Postgres compartilhado)
   │    ├── apps-automation    → n8n, n8n-runner
   │    ├── apps-documents     → paperless-ngx, gotenberg, tika
   │    ├── apps-finances      → actual_budget
@@ -156,10 +155,6 @@ Excludes configurados (`/etc/vzdump.conf`): `var/lib/containerd`, `var/lib/docke
 - **Secrets** são únicos por serviço — não reutilizar entre serviços distintos. Gere com `openssl rand -hex 32`.
 - **VPN (gluetun):** qBittorrent, Prowlarr e FlareSolverr usam a rede do `gluetun` (NordVPN/WireGuard, servidor no Brasil), com kill-switch: se a VPN cair, eles ficam sem internet. As portas (8080, 9696, 8191) ficam publicadas no gluetun e os nomes `qbittorrent`/`prowlarr`/`flaresolverr` continuam valendo na `media_net`. A chave fica em `/opt/docker/gluetun/gluetun.env` no srv-media; a NordVPN não faz port forwarding.
 - **Notificações (ntfy):** `https://ntfy.ihome.dev.br`, acesso fechado. Tópico `homelab` = Proxmox (webhook `ntfy` + matcher `ntfy-tudo` em Datacenter → Notifications) e Komodo (Alerter `ntfy`). Tópico `midia` = Sonarr (importação concluída), Radarr (filme importado) e Bazarr (legenda baixada). Quem publica usa o token do usuário `alertas` (só escrita nesses tópicos); para outro tópico: `docker exec ntfy ntfy access alertas <tópico> write-only`.
-- **Login único (Authentik):** `https://auth.ihome.dev.br`, MFA obrigatório (TOTP ou passkey), acesso só para o grupo `Homelab`.
-  - **Portaria (forward-auth):** os sites sem login próprio (NPM, AdGuard, wg-easy, NetAlertX, Omada, Homepage, Scrutiny, Jellystat, *arr, qBittorrent, SABnzbd, DroppedNeedle, AudioMuse, Seerr, BentoPDF, Marreta, Bar Assistant, Wingfit, Stash, Actual, pgAdmin, SFTPGo web, Gameyfin, tools) têm no *Advanced* do NPM o bloco `# >>> Authentik forward-auth` (verificação no nível do servidor, vale também para os estáticos). Provider "Portaria ihome.dev.br" em modo domínio no outpost embutido.
-  - **OIDC nativo** (senha local continua como reserva): Grafana, Open WebUI, Mealie, Paperless, Komodo, Immich, Audiobookshelf, Kavita e AdventureLog. Contas existentes ligadas pelo e-mail ou pelo usuário (`sub` = nome de usuário). Os containers que falam com o Authentik usam `extra_hosts: auth.ihome.dev.br:192.168.10.10` para não passar pela Cloudflare (que bloqueia clientes Python).
-  - **Fora do Authentik** (clientes próprios quebrariam): Jellyfin, Navidrome/octo-fiesta, Vaultwarden, Home Assistant, ntfy, Dispatcharr, Suwayomi, WebDAV (`dav`), `travel-api`, wger e n8n.
 - **Acesso externo:** os serviços passam pelo Nginx Proxy Manager (lxc101) + Cloudflare Tunnel. A lista de domínios e destinos está em `.ignore/Proxies.txt`.
 
 
