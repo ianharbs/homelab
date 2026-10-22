@@ -1,0 +1,10 @@
+[Unit]
+Description=Limite de potência da CPU (PL1/PL2) e perfil de energia do pve
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/cpu-power-limit.sh
+
+[Install]
+WantedBy=multi-user.target
