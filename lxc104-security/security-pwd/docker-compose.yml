@@ -9,6 +9,8 @@ services:
     restart: unless-stopped
     environment:
       DOMAIN: "https://vw.ihome.dev.br"
+      # Cadastro fechado: a conta já existe. Para liberar outra pessoa, mude para "true", crie e volte.
+      SIGNUPS_ALLOWED: "false"
     volumes:
       - ${CONFIG_PATH}/vaultwarden/vw-data/:/data/
     networks:
