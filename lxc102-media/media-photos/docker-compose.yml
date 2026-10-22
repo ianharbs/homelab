@@ -31,6 +31,9 @@ services:
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 2283:2283
+    # Login pelo Authentik (OAuth em Administração → Configurações, salvo no banco); chamadas ficam na LAN
+    extra_hosts:
+      - auth.ihome.dev.br:192.168.10.10
     networks:
       - media_net
     depends_on:

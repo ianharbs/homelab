@@ -61,5 +61,18 @@ services:
       - POSTGRES_SERVER=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=mealie
+      # Login pelo Authentik (OIDC); client id/secret em ${CONFIG_PATH}/mealie-data/oauth.env. Contas ligadas pelo e-mail.
+      - OIDC_AUTH_ENABLED=true
+      - OIDC_SIGNUP_ENABLED=true
+      - OIDC_CONFIGURATION_URL=https://auth.ihome.dev.br/application/o/mealie/.well-known/openid-configuration
+      - OIDC_PROVIDER_NAME=Authentik
+      - OIDC_AUTO_REDIRECT=false
+      - OIDC_REMEMBER_ME=true
+      - OIDC_USER_GROUP=Homelab
+      - OIDC_ADMIN_GROUP=authentik Admins
+    env_file:
+      - ${CONFIG_PATH}/mealie-data/oauth.env
+    extra_hosts:
+      - auth.ihome.dev.br:192.168.10.10
     networks:
       - apps_net

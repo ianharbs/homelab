@@ -12,6 +12,9 @@ services:
       - ${DATA_PATH}/data:/data
       - ${CONFIG_PATH}/audiobookshelf:/config
       - ${CONFIG_PATH}/audiobookshelf:/metadata
+    # Login pelo Authentik (OpenID em Configurações → Autenticação, salvo no banco); chamadas ficam na LAN
+    extra_hosts:
+      - auth.ihome.dev.br:192.168.10.10
     environment:
       - TZ=${TZ}
     networks:
@@ -30,6 +33,9 @@ services:
       - ${DATA_PATH}/data:/data
     ports:
       - 5000:5000
+    # Login pelo Authentik (OpenIdConnectSettings no appsettings.json); chamadas ficam na LAN
+    extra_hosts:
+      - auth.ihome.dev.br:192.168.10.10
     networks:
       - media_net
     restart: unless-stopped

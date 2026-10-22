@@ -2,6 +2,8 @@
 # - Banco "paperless" no stack-postgres; Redis no banco 6 (3 e 4 são do wger).
 # - Segredos em ${CONFIG_PATH}/paperless/paperless.env (só no servidor, chmod 600):
 #   PAPERLESS_SECRET_KEY, PAPERLESS_ADMIN_USER, PAPERLESS_ADMIN_PASSWORD (o admin só é criado no primeiro start).
+#   Login pelo Authentik (bloco "OIDC Authentik"): PAPERLESS_APPS, PAPERLESS_SOCIALACCOUNT_PROVIDERS (client id/secret),
+#   PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS, PAPERLESS_SOCIAL_AUTO_SIGNUP. Contas existentes: ligar em Perfil → Contas conectadas.
 # - Tika + Gotenberg: leitura de e-mails e documentos do Office.
 # - Pasta de entrada: ${CONFIG_PATH}/paperless/consume (o que cair lá é importado e apagado).
 networks:
@@ -42,6 +44,8 @@ services:
       - ${CONFIG_PATH}/paperless/consume:/usr/src/paperless/consume
     ports:
       - 8000:8000
+    extra_hosts:
+      - auth.ihome.dev.br:192.168.10.10
     networks:
       - apps_net
     depends_on:
