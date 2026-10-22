@@ -1,8 +1,58 @@
+# qBittorrent, Prowlarr e FlareSolverr saem pela NordVPN (gluetun, WireGuard/NordLynx) com kill-switch:
+# eles usam a rede do gluetun (network_mode: service:gluetun), então as portas ficam publicadas no gluetun
+# e os aliases qbittorrent/prowlarr/flaresolverr continuam valendo na media_net.
+# - Chave em ${CONFIG_PATH}/gluetun/gluetun.env (só no servidor, chmod 600): WIREGUARD_PRIVATE_KEY
+#   (sai do access token da Nord: GET https://api.nordvpn.com/v1/users/services/credentials -> nordlynx_private_key).
+# - A NordVPN não tem port forwarding: o torrent não recebe conexões de entrada.
 networks:
   media_net:
     external: true
 
 services:
+  gluetun:
+    image: qmcgaw/gluetun:v3
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    env_file:
+      - ${CONFIG_PATH}/gluetun/gluetun.env
+    environment:
+      - TZ=${TZ}
+      - VPN_SERVICE_PROVIDER=nordvpn
+      - VPN_TYPE=wireguard
+      - SERVER_COUNTRIES=Brazil
+      # LAN (Postgres do srv-apps, SABnzbd) e media_net (Sonarr, Radarr...) fora do túnel
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.10.0/24,172.20.0.0/24
+      - FIREWALL_INPUT_PORTS=8080,9696,8191
+      - UPDATER_PERIOD=24h
+      # API do gluetun (widget do Homepage); papéis/API key em ${CONFIG_PATH}/gluetun/auth/config.toml
+      - HTTP_CONTROL_SERVER_ADDRESS=:8000
+    volumes:
+      - ${CONFIG_PATH}/gluetun:/gluetun
+    # O 1º handshake às vezes falha e o gluetun reinicia a VPN: 60 s de folga antes de virar unhealthy,
+    # senão o compose desiste de subir qbittorrent/prowlarr/flaresolverr.
+    healthcheck:
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      start_interval: 5s
+      retries: 3
+    ports:
+      - 8080:8080   # qbittorrent
+      - 9696:9696   # prowlarr
+      - 8191:8191   # flaresolverr
+      - 8008:8000   # API do gluetun
+    networks:
+      media_net:
+        aliases:
+          - qbittorrent
+          - prowlarr
+          - flaresolverr
+
   cleanuparr:
     image: ghcr.io/cleanuparr/cleanuparr:latest
     container_name: cleanuparr
@@ -35,11 +85,12 @@ services:
       - LOG_HTML=${LOG_HTML:-false}
       - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
       - TZ=${TZ}
-    ports:
-      - "${PORT:-8191}:8191"
     restart: unless-stopped
-    networks:
-      - media_net
+    network_mode: service:gluetun
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -54,14 +105,15 @@ services:
       - PROWLARR__POSTGRES__PASSWORD=${POSTGRES_PASSWORD}
       - PROWLARR__POSTGRES__MAINDB=prowlarr_main
       - PROWLARR__POSTGRES__LOGDB=prowlarr_log
-    ports:
-      - 9696:9696
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIG_PATH}/prowlarr:/config
     restart: unless-stopped
-    networks:
-      - media_net
+    network_mode: service:gluetun
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -75,14 +127,15 @@ services:
       - TZ=${TZ}
       - WEBUI_PORT=8080
       - TORRENTING_PORT=54321
-    ports:
-      - 8080:8080
     volumes:
       - ${CONFIG_PATH}/qbittorrent:/config
       - ${DATA_PATH}/data:/data
       - ${DOWNLOAD_PATH}:/downloads
-    networks:
-      - media_net
+    network_mode: service:gluetun
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
 
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest

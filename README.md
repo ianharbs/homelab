@@ -37,8 +37,9 @@ pve · 192.168.10.2 · Intel i5-14600K · 32 GB · iGPU Intel
   │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail
   │
   └── lxc102 · srv-media · 192.168.10.20
-       ├── media-download     → qbittorrent, sabnzbd, prowlarr, cleanuparr, flaresolverr, torrent-indexer (+ redis)   [gluetun: a instalar]
+       ├── media-download     → gluetun (NordVPN: qbittorrent, prowlarr, flaresolverr), sabnzbd, cleanuparr, torrent-indexer (+ redis)
        ├── media-editing      → bazarr, lingarr, profilarr, seerr
+       ├── media-games        → romm, romm-db (ROMs em /data/data/games)
        ├── media-music        → navidrome, octo-fiesta (só streaming), audiomuse-ai (flask, worker, redis), droppedneedle (+ plugin deezer), slskd
        ├── media-others       → stash, whisparr
        ├── media-photos       → immich (server, machine-learning OpenVINO, valkey, postgres)
@@ -65,6 +66,7 @@ pve2 · 192.168.10.3 · Xeon E5-2680 v4 · 32 GB · Intel Arc A310
 
 pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   ├── lxc103 · srv-apps · 192.168.10.30
+  │    ├── apps-auth          → authentik-server, authentik-worker (Postgres compartilhado)
   │    ├── apps-automation    → n8n, n8n-runner
   │    ├── apps-documents     → paperless-ngx, gotenberg, tika
   │    ├── apps-finances      → actual_budget
@@ -83,6 +85,7 @@ pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   │    ├── komodo             → komodo-core, komodo-ferretdb, komodo-postgres
   │    ├── monitor-home       → homepage (config versionada em homepage/, sem segredos)
   │    ├── monitor-media      → jellystat
+  │    ├── monitor-notify     → ntfy
   │    ├── monitor-server     → grafana, loki, prometheus, blackbox, pve-exporter, scrutiny (+ influxdb)
   │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail, speedtest-exporter
   │
@@ -152,6 +155,8 @@ Excludes configurados (`/etc/vzdump.conf`): `var/lib/containerd`, `var/lib/docke
 - **Hardware transcoding** (iGPU Intel i5-14600K/Intel Arc A310) habilitado em: `jellyfin`, `dispatcharr_web`, `frigate`.
 - **SFTPGo** acessa `/opt/docker` de todos os LXCs via SFTP com virtual folders. Permissões gerenciadas via ACL (`setfacl`) em cada LXC.
 - **Secrets** são únicos por serviço — não reutilizar entre serviços distintos. Gere com `openssl rand -hex 32`.
+- **VPN (gluetun):** qBittorrent, Prowlarr e FlareSolverr usam a rede do `gluetun` (NordVPN/WireGuard, servidor no Brasil), com kill-switch: se a VPN cair, eles ficam sem internet. As portas (8080, 9696, 8191) ficam publicadas no gluetun e os nomes `qbittorrent`/`prowlarr`/`flaresolverr` continuam valendo na `media_net`. A chave fica em `/opt/docker/gluetun/gluetun.env` no srv-media; a NordVPN não faz port forwarding.
+- **Notificações (ntfy):** `https://ntfy.ihome.dev.br`, acesso fechado. Tópico `homelab` = Proxmox (webhook `ntfy` + matcher `ntfy-tudo` em Datacenter → Notifications) e Komodo (Alerter `ntfy`). Tópico `midia` = Sonarr (importação concluída), Radarr (filme importado) e Bazarr (legenda baixada). Quem publica usa o token do usuário `alertas` (só escrita nesses tópicos); para outro tópico: `docker exec ntfy ntfy access alertas <tópico> write-only`.
 - **Acesso externo:** os serviços passam pelo Nginx Proxy Manager (lxc101) + Cloudflare Tunnel. A lista de domínios e destinos está em `.ignore/Proxies.txt`.
 
 

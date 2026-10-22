@@ -1,0 +1,64 @@
+# RomM (biblioteca de ROMs + emulação no navegador), com MariaDB próprio.
+# - ROMs no HD de mídia: ${DATA_PATH}/data/games/roms/<plataforma>/ (ver docs.romm.app → Folder Structure).
+# - Saves/states, capas e config ficam no SSD (${CONFIG_PATH}/romm).
+# - Segredos em ${CONFIG_PATH}/romm/romm.env (só no servidor, chmod 600):
+#   ROMM_AUTH_SECRET_KEY, DB_PASSWD, MARIADB_PASSWORD (= DB_PASSWD), MARIADB_ROOT_PASSWORD.
+#   Metadados opcionais no mesmo arquivo: IGDB_CLIENT_ID/IGDB_CLIENT_SECRET, SCREENSCRAPER_USER/PASSWORD,
+#   RETROACHIEVEMENTS_API_KEY, STEAMGRIDDB_API_KEY.
+networks:
+  media_net:
+    external: true
+
+services:
+  romm:
+    image: rommapp/romm:5
+    container_name: romm
+    restart: unless-stopped
+    env_file:
+      - ${CONFIG_PATH}/romm/romm.env
+    environment:
+      - TZ=${TZ}
+      - DB_HOST=romm-db
+      - DB_NAME=romm
+      - DB_USER=romm
+      - HASHEOUS_API_ENABLED=true
+      - LAUNCHBOX_API_ENABLED=true
+      - PLAYMATCH_API_ENABLED=true
+      - SCAN_WORKERS=2
+      - WEB_SERVER_CONCURRENCY=2
+    volumes:
+      - ${DATA_PATH}/data/games:/romm/library
+      - ${CONFIG_PATH}/romm/assets:/romm/assets
+      - ${CONFIG_PATH}/romm/resources:/romm/resources
+      - ${CONFIG_PATH}/romm/config:/romm/config
+      - ${CONFIG_PATH}/romm/redis:/redis-data
+    ports:
+      - 8099:8080
+    networks:
+      - media_net
+    depends_on:
+      romm-db:
+        condition: service_healthy
+        restart: true
+
+  romm-db:
+    image: mariadb:11.8
+    container_name: romm-db
+    restart: unless-stopped
+    env_file:
+      - ${CONFIG_PATH}/romm/romm.env
+    environment:
+      - TZ=${TZ}
+      - MARIADB_DATABASE=romm
+      - MARIADB_USER=romm
+    volumes:
+      - ${CONFIG_PATH}/romm/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      start_interval: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - media_net

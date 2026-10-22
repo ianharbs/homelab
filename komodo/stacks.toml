@@ -152,7 +152,7 @@ CONFIG_PATH=[[CONFIG_PATH]]
 
 [[stack]]
 name = "media-download"
-description = "qBittorrent, SABnzbd, Prowlarr, Cleanuparr, FlareSolverr, torrent-indexer"
+description = "Gluetun (NordVPN), qBittorrent, SABnzbd, Prowlarr, Cleanuparr, FlareSolverr, torrent-indexer"
 tags = ["midia", "srv-media"]
 [stack.config]
 links = ["http://192.168.10.20:8080", "http://192.168.10.20:8085", "http://192.168.10.20:9696", "http://192.168.10.20:11011"]
@@ -176,6 +176,28 @@ POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
 POSTGRES_PORT=[[POSTGRES_PORT]]
 POSTGRES_USER=[[POSTGRES_USER]]
 PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "media-games"
+description = "RomM (ROMs e emulação no navegador) + MariaDB"
+tags = ["jogos", "srv-media"]
+[stack.config]
+links = ["http://192.168.10.20:8099"]
+server = "srv-media"
+repo = "ianharbs/homelab"
+git_account = "ianharbs"
+branch = "main"
+run_directory = "lxc102-media/media-games"
+file_paths = ["docker-compose.yml"]
+auto_pull = false
+project_name = "media-games"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
 TZ=[[TZ]]
 """
 
@@ -582,6 +604,31 @@ TZ=[[TZ]]
 """
 
 [[stack]]
+name = "apps-auth"
+description = "Authentik (SSO/OIDC e forward-auth)"
+tags = ["seguranca", "srv-apps", "critico"]
+[stack.config]
+links = ["http://192.168.10.30:9000"]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+git_account = "ianharbs"
+branch = "main"
+run_directory = "lxc103-apps/apps-auth"
+file_paths = ["docker-compose.yml"]
+auto_pull = false
+project_name = "apps-auth"
+poll_for_updates = true
+auto_update = false
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+POSTGRES_HOST=[[POSTGRES_HOST]]
+POSTGRES_PASSWORD=[[POSTGRES_PASSWORD]]
+POSTGRES_PORT=[[POSTGRES_PORT]]
+POSTGRES_USER=[[POSTGRES_USER]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
 name = "apps-tasks"
 description = "Vikunja (tarefas) - instalado e PARADO até ser usado; sem auto update"
 tags = ["apps", "srv-apps"]
@@ -815,6 +862,29 @@ auto_update = true
 environment = """
 CONFIG_PATH=[[CONFIG_PATH]]
 HOMEPAGE_ALLOWED_HOSTS=[[HOMEPAGE_ALLOWED_HOSTS]]
+PGID=[[PGID]]
+PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
+name = "monitor-notify"
+description = "ntfy (notificações push)"
+tags = ["monitor", "srv-monitor"]
+[stack.config]
+links = ["http://192.168.10.50:8070"]
+server = "srv-monitor"
+repo = "ianharbs/homelab"
+git_account = "ianharbs"
+branch = "main"
+run_directory = "lxc105-monitor/monitor-notify"
+file_paths = ["docker-compose.yml"]
+auto_pull = false
+project_name = "monitor-notify"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
 PGID=[[PGID]]
 PUID=[[PUID]]
 TZ=[[TZ]]

@@ -19,7 +19,7 @@ docker-srv-apps:       # CT 103 · pve3
   host: 192.168.10.30
   port: 2375
 
-docker-vm-security:    # CT 104 · pve2
+docker-srv-security:    # CT 104 · pve2
   host: 192.168.10.40
   port: 2375
 

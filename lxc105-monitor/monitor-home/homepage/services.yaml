@@ -315,6 +315,17 @@
 # ============================================================
 - Mídia — Downloads:
 
+    - Gluetun:
+        icon: sh-gluetun
+        description: NordVPN (qBittorrent, Prowlarr, FlareSolverr)
+        server: docker-srv-media
+        container: gluetun
+        widget:
+          type: gluetun
+          url: http://192.168.10.20:8008
+          key: "{{HOMEPAGE_VAR_GLUETUN_KEY}}"
+          fields: ["public_ip", "region", "country"]
+
     - SABnzbd:
         icon: sh-sabnzbd
         href: https://nzbd.ihome.dev.br
@@ -329,7 +340,7 @@
     - qBittorrent:
         icon: sh-qbittorrent
         href: https://torrent.ihome.dev.br
-        description: Torrent
+        description: Torrent · via VPN
         server: docker-srv-media
         container: qbittorrent
         widget:
@@ -427,9 +438,16 @@
     - Gameyfin:
         icon: sh-gameyfin
         href: https://games.ihome.dev.br
-        description: Biblioteca de jogos e ROMs
+        description: Biblioteca de jogos de PC
         server: docker-srv-games
-        container: gameyfin  
+        container: gameyfin
+
+    - RomM:
+        icon: sh-romm
+        href: https://romm.ihome.dev.br
+        description: ROMs e emulação no navegador
+        server: docker-srv-media
+        container: romm
 
 # ============================================================
 # FOTOS, DOCUMENTOS & TAREFAS
@@ -584,6 +602,18 @@
         server: docker-srv-security
         container: frigate
 
+    - Authentik:
+        icon: sh-authentik
+        href: https://auth.ihome.dev.br
+        description: Login único (SSO)
+        server: docker-srv-apps
+        container: authentik-server
+        widget:
+          type: authentik
+          version: 2
+          url: http://192.168.10.30:9000
+          key: "{{HOMEPAGE_VAR_AUTHENTIK_KEY}}"
+
 # ============================================================
 # MONITORAMENTO
 # ============================================================
@@ -623,6 +653,13 @@
           url: http://192.168.10.50:3005
           key: "{{HOMEPAGE_VAR_JELLYSTAT_KEY}}"
           days: 30
+
+    - ntfy:
+        icon: sh-ntfy
+        href: https://ntfy.ihome.dev.br
+        description: Notificações push (tópico homelab)
+        server: docker-srv-monitor
+        container: ntfy
 
 # ============================================================
 # HOME ASSISTANT & IOT
