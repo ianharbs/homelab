@@ -39,7 +39,6 @@ pve · 192.168.10.2 · Intel i5-14600K · 32 GB · iGPU Intel
   └── lxc102 · srv-media · 192.168.10.20
        ├── media-download     → gluetun (NordVPN: qbittorrent, prowlarr, flaresolverr), sabnzbd, cleanuparr, torrent-indexer (+ redis)
        ├── media-editing      → bazarr, lingarr, profilarr, seerr
-       ├── media-games        → romm, romm-db (ROMs em /data/data/games)
        ├── media-music        → navidrome, octo-fiesta (só streaming), audiomuse-ai (flask, worker, redis), droppedneedle (+ plugin deezer), slskd
        ├── media-others       → stash, whisparr
        ├── media-photos       → immich (server, machine-learning OpenVINO, valkey, postgres)

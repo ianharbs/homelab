@@ -180,28 +180,6 @@ TZ=[[TZ]]
 """
 
 [[stack]]
-name = "media-games"
-description = "RomM (ROMs e emulação no navegador) + MariaDB"
-tags = ["jogos", "srv-media"]
-[stack.config]
-links = ["http://192.168.10.20:8099"]
-server = "srv-media"
-repo = "ianharbs/homelab"
-git_account = "ianharbs"
-branch = "main"
-run_directory = "lxc102-media/media-games"
-file_paths = ["docker-compose.yml"]
-auto_pull = false
-project_name = "media-games"
-poll_for_updates = false
-auto_update = true
-environment = """
-CONFIG_PATH=[[CONFIG_PATH]]
-DATA_PATH=[[DATA_PATH]]
-TZ=[[TZ]]
-"""
-
-[[stack]]
 name = "media-editing"
 description = "Bazarr, Lingarr, Profilarr, Seerr"
 tags = ["midia", "srv-media"]

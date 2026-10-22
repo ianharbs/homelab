@@ -442,13 +442,6 @@
         server: docker-srv-games
         container: gameyfin
 
-    - RomM:
-        icon: sh-romm
-        href: https://romm.ihome.dev.br
-        description: ROMs e emulação no navegador
-        server: docker-srv-media
-        container: romm
-
 # ============================================================
 # FOTOS, DOCUMENTOS & TAREFAS
 # ============================================================
