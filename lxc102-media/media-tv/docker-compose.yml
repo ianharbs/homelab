@@ -40,8 +40,10 @@ services:
       - media_net
     depends_on:
       - web
+    # O celery precisa do mesmo /data do web: espera o /data/jwt que o web grava (com outra pasta ficava
+    # reiniciando sem parar e nenhuma tarefa agendada rodava, nem a atualização da EPG e das listas).
     volumes:
-      - ${CONFIG_PATH}/dispatcharr/celery/data:/data
+      - ${CONFIG_PATH}/dispatcharr:/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
     entrypoint: ["/app/docker/entrypoint.celery.sh"]
