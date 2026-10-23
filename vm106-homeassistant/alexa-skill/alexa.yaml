@@ -1,0 +1,59 @@
+alexa:
+  smart_home:
+    locale: pt-BR
+    # Preencher depois de criar a skill (Permissions -> Send Alexa Events), para o estado
+    # dos dispositivos chegar na Alexa em tempo real:
+    # endpoint: https://api.amazonalexa.com/v3/events
+    # client_id: !secret alexa_client_id
+    # client_secret: !secret alexa_client_secret
+    filter:
+      include_domains:
+        - light
+        - scene
+        - script
+        - climate
+        - cover
+        - vacuum
+      include_entities:
+        - switch.ian_pc
+        - switch.monitores
+        - button.ian_pc_ian_pc_desligar
+        - button.ian_pc_ian_pc_reiniciar
+        - button.ian_pc_ian_pc_sleep
+        - button.ian_pc_ian_pc_display
+        - button.ian_pc_ian_pc_surround
+        - button.ian_pc_ian_pc_tv
+        - switch.quarto_de_visita_switch_1
+        - switch.quarto_de_visita_switch_2
+        - switch.sala_e_cozinha_socket_1
+        - switch.sala_e_cozinha_socket_2
+        - switch.quarto_switch_1
+        - switch.garagem_switch_1
+        - switch.churrasqueira_socket_1
+        - switch.churrasqueira_socket_2
+        - switch.banheiro_switch_1
+        - switch.1ch_zigbee_switch_module_switch_1
+        - switch.1ch_zigbee_switch_module_2_switch_1
+        - switch.1ch_zigbee_switch_module_3_switch_1
+        - switch.104cz_3_gang_switch_switch_1
+        - switch.104cz_3_gang_switch_switch_2
+        - switch.104cz_3_gang_switch_switch_3
+        - switch.estoque_switch_1
+        - switch.estoque_switch_2
+        - switch.andar_liofilizacao_switch_1
+        - switch.andar_liofilizacao_switch_2
+    entity_config:
+      button.ian_pc_ian_pc_desligar:
+        name: Desligar PC
+      button.ian_pc_ian_pc_reiniciar:
+        name: Reiniciar PC
+      button.ian_pc_ian_pc_sleep:
+        name: Suspender PC
+      button.ian_pc_ian_pc_display:
+        name: PC no monitor
+      button.ian_pc_ian_pc_tv:
+        name: PC na TV
+      button.ian_pc_ian_pc_surround:
+        name: Som surround do PC
+      switch.ian_pc:
+        name: PC
