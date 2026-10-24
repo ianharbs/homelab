@@ -23,21 +23,6 @@ alexa:
         - button.ian_pc_ian_pc_display
         - button.ian_pc_ian_pc_surround
         - button.ian_pc_ian_pc_tv
-        - switch.quarto_de_visita_switch_1
-        - switch.quarto_de_visita_switch_2
-        - switch.sala_e_cozinha_socket_1
-        - switch.sala_e_cozinha_socket_2
-        - switch.quarto_switch_1
-        - switch.garagem_switch_1
-        - switch.churrasqueira_socket_1
-        - switch.churrasqueira_socket_2
-        - switch.banheiro_switch_1
-        - switch.1ch_zigbee_switch_module_switch_1
-        - switch.1ch_zigbee_switch_module_2_switch_1
-        - switch.1ch_zigbee_switch_module_3_switch_1
-        - switch.104cz_3_gang_switch_switch_1
-        - switch.104cz_3_gang_switch_switch_2
-        - switch.104cz_3_gang_switch_switch_3
     entity_config:
       button.ian_pc_ian_pc_desligar:
         name: Desligar PC

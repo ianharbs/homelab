@@ -1,0 +1,1804 @@
+{
+ "dashboard": {
+  "id": "dashboard_apartamento",
+  "show_in_sidebar": true,
+  "icon": "mdi:home",
+  "title": "Apartamento",
+  "require_admin": false,
+  "mode": "storage",
+  "url_path": "dashboard-apartamento"
+ },
+ "config": {
+  "views": [
+   {
+    "badges": [
+     {
+      "type": "entity",
+      "show_name": false,
+      "show_state": true,
+      "show_icon": true,
+      "color": "accent",
+      "tap_action": {
+       "action": "navigate",
+       "navigation_path": "/dashboard-apartamento/luzes"
+      },
+      "entity": "sensor.luzes_acesas"
+     },
+     {
+      "type": "entity",
+      "show_name": false,
+      "show_state": true,
+      "show_icon": true,
+      "entity": "sensor.janelas_abertas",
+      "tap_action": {
+       "action": "navigate",
+       "navigation_path": "/dashboard-apartamento/janelas"
+      }
+     },
+     {
+      "type": "entity",
+      "show_name": false,
+      "show_state": true,
+      "show_icon": true,
+      "entity": "sensor.bateria_baixa",
+      "color": "red",
+      "tap_action": {
+       "action": "navigate",
+       "navigation_path": "/dashboard-apartamento/baterias"
+      }
+     },
+     {
+      "type": "entity",
+      "show_name": false,
+      "show_state": true,
+      "show_icon": true,
+      "entity": "weather.openweathermap",
+      "show_entity_picture": true,
+      "state_content": [
+       "temperature",
+       "state"
+      ],
+      "tap_action": {
+       "action": "navigate",
+       "navigation_path": "/dashboard-apartamento/clima"
+      }
+     }
+    ],
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "horizontal-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-person-card",
+          "entity": "person.ian_augusto",
+          "icon_type": "entity-picture",
+          "fill_container": false,
+          "layout": "vertical"
+         },
+         {
+          "type": "custom:mushroom-person-card",
+          "icon_type": "entity-picture",
+          "entity": "person.ana_paula",
+          "layout": "vertical"
+         }
+        ],
+        "grid_options": {
+         "rows": "auto",
+         "columns": 48
+        }
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "horizontal-stack",
+          "cards": [
+           {
+            "type": "custom:mushroom-template-card",
+            "primary": "Casa",
+            "secondary": "",
+            "icon": "mdi:home",
+            "icon_color": "blue",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "navigate",
+             "navigation_path": "/dashboard-apartamento/casa"
+            }
+           },
+           {
+            "type": "custom:mushroom-template-card",
+            "primary": "Energia",
+            "secondary": "",
+            "icon": "mdi:lightning-bolt",
+            "icon_color": "yellow",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "navigate",
+             "navigation_path": "/dashboard-energia"
+            },
+            "hold_action": {
+             "action": "navigate",
+             "navigation_path": "/dashboard-energia"
+            },
+            "double_tap_action": {
+             "action": "navigate",
+             "navigation_path": "/dashboard-energia"
+            }
+           },
+           {
+            "type": "custom:mushroom-template-card",
+            "primary": "Segurança",
+            "secondary": "",
+            "icon": "mdi:shield",
+            "icon_color": "green",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "navigate",
+             "navigation_path": "/dashboard-apartamento/seguranca"
+            }
+           },
+           {
+            "type": "custom:mushroom-template-card",
+            "primary": "Rede/PC",
+            "secondary": "",
+            "icon": "mdi:network",
+            "icon_color": "purple",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "navigate",
+             "navigation_path": "/dashboard-apartamento/rede-pc"
+            }
+           }
+          ]
+         }
+        ],
+        "grid_options": {
+         "columns": 48,
+         "rows": "auto"
+        }
+       },
+       {
+        "type": "heading",
+        "heading": "Cômodos",
+        "heading_style": "title",
+        "icon": "mdi:home"
+       },
+       {
+        "type": "custom:room-summary-card",
+        "area": "sala_cozinha",
+        "grid_options": {
+         "rows": 4,
+         "columns": 16
+        },
+        "entities": [
+         "light.sala"
+        ],
+        "features": [
+         "multi_light_background",
+         "show_entity_labels",
+         "exclude_default_entities",
+         "skip_entity_styles"
+        ],
+        "lights": [
+         "light.sala"
+        ],
+        "actions": {
+         "tap_action": {
+          "action": "navigate",
+          "navigation_path": "/dashboard-apartamento/sala"
+         },
+         "double_tap_action": {
+          "action": "more-info"
+         }
+        }
+       },
+       {
+        "type": "custom:room-summary-card",
+        "area": "cozinha_2",
+        "grid_options": {
+         "columns": 16,
+         "rows": 4
+        },
+        "features": [
+         "exclude_default_entities",
+         "show_entity_labels",
+         "multi_light_background",
+         "skip_entity_styles"
+        ],
+        "entities": [
+         "light.cozinha",
+         "switch.cafeteira"
+        ],
+        "lights": [
+         "light.cozinha"
+        ],
+        "actions": {
+         "tap_action": {
+          "action": "navigate",
+          "navigation_path": "/dashboard-apartamento/cozinha"
+         },
+         "double_tap_action": {
+          "action": "more-info"
+         }
+        }
+       },
+       {
+        "type": "custom:room-summary-card",
+        "area": "banheiro",
+        "grid_options": {
+         "rows": 4,
+         "columns": 16
+        },
+        "lights": [
+         "light.banheiro",
+         "light.espelho"
+        ],
+        "entities": [
+         "light.banheiro",
+         "light.espelho"
+        ],
+        "features": [
+         "show_entity_labels",
+         "exclude_default_entities",
+         "multi_light_background",
+         "skip_entity_styles"
+        ],
+        "actions": {
+         "tap_action": {
+          "action": "navigate",
+          "navigation_path": "/dashboard-apartamento/banheiro"
+         }
+        }
+       },
+       {
+        "type": "custom:room-summary-card",
+        "area": "escritorio",
+        "entities": [
+         {
+          "entity_id": "light.escritorio",
+          "features": []
+         },
+         "switch.monitores"
+        ],
+        "slider_style": "minimalist",
+        "grid_options": {
+         "rows": 4,
+         "columns": 16
+        },
+        "features": [
+         "skip_entity_styles",
+         "show_entity_labels",
+         "exclude_default_entities",
+         "multi_light_background"
+        ],
+        "lights": [
+         "light.escritorio"
+        ],
+        "actions": {
+         "tap_action": {
+          "action": "navigate",
+          "navigation_path": "/dashboard-apartamento/escritorio"
+         }
+        }
+       },
+       {
+        "type": "custom:room-summary-card",
+        "area": "quarto",
+        "grid_options": {
+         "rows": 4,
+         "columns": 16
+        },
+        "lights": [
+         "light.entrada",
+         "light.quarto"
+        ],
+        "features": [
+         "show_entity_labels",
+         "exclude_default_entities",
+         "skip_entity_styles",
+         "multi_light_background"
+        ],
+        "entities": [
+         "light.entrada",
+         "light.quarto",
+         {
+          "entity_id": "climate.150633093323914_climate",
+          "label": "AC",
+          "features": []
+         }
+        ],
+        "actions": {
+         "tap_action": {
+          "action": "navigate",
+          "navigation_path": "/dashboard-apartamento/quarto"
+         }
+        }
+       },
+       {
+        "type": "custom:room-summary-card",
+        "area": "geral_2",
+        "grid_options": {
+         "rows": 4,
+         "columns": 16
+        },
+        "entities": [
+         "light.corredor",
+         "vacuum.aspirador_robo"
+        ],
+        "features": [
+         "show_entity_labels",
+         "exclude_default_entities",
+         "multi_light_background",
+         "skip_entity_styles"
+        ],
+        "lights": [
+         "light.corredor"
+        ],
+        "water": {
+         "entities": [
+          "binary_sensor.sensor_chuva"
+         ],
+         "card_border_color": "red",
+         "icon_color": "red"
+        },
+        "icon_opacity_preset": "default",
+        "sensors": [
+         "sensor.speedtest_baixar",
+         "sensor.speedtest_carregar",
+         "sensor.energia_apartamento_kw",
+         "sensor.medidor_energia_apartamento_potencia"
+        ]
+       },
+       {
+        "type": "heading",
+        "icon": "mdi:home-city",
+        "heading": "Outros Locais",
+        "heading_style": "title"
+       },
+       {
+        "type": "custom:mushroom-template-card",
+        "primary": "Casa dos Pais",
+        "icon": "mdi:home-heart",
+        "grid_options": {
+         "columns": 48,
+         "rows": 1
+        },
+        "secondary": "",
+        "tap_action": {
+         "action": "navigate",
+         "navigation_path": "/casa-pais"
+        },
+        "hold_action": {
+         "action": "navigate",
+         "navigation_path": "/casa-pais"
+        },
+        "double_tap_action": {
+         "action": "navigate",
+         "navigation_path": "/casa-pais"
+        }
+       }
+      ],
+      "column_span": 4
+     }
+    ],
+    "cards": [],
+    "header": {
+     "card": {
+      "type": "markdown",
+      "content": "{% set time = now().hour %}\n{% if (time >= 18 or time < 5) %}\n#  Boa noite, {{user}}!\n{% elif (time >= 12) %}\n#  Boa tarde, {{user}}!\n{% elif (time >= 5) %}\n#  Bom dia, {{user}}!\n{% else %}\n#  Olá, {{user}}!\n{% endif %}",
+      "text_only": true
+     },
+     "layout": "responsive",
+     "badges_position": "bottom",
+     "badges_wrap": "scroll"
+    },
+    "type": "sections",
+    "max_columns": 4,
+    "subview": false,
+    "icon": "mdi:home"
+   },
+   {
+    "type": "sections",
+    "path": "casa",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mushroom-chips-card",
+        "chips": [
+         {
+          "type": "back"
+         }
+        ]
+       },
+       {
+        "type": "custom:mushroom-vacuum-card",
+        "entity": "vacuum.aspirador_robo",
+        "icon_animation": true,
+        "secondary_info": "state",
+        "commands": [
+         "clean_spot",
+         "on_off",
+         "start_pause",
+         "stop",
+         "locate",
+         "return_home"
+        ],
+        "grid_options": {
+         "rows": 2,
+         "columns": "full"
+        },
+        "fill_container": true
+       }
+      ]
+     }
+    ],
+    "max_columns": 4,
+    "icon": "mdi:home-alert-outline",
+    "cards": [],
+    "subview": true
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "path": "seguranca",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mushroom-chips-card",
+        "chips": [
+         {
+          "type": "back"
+         }
+        ]
+       },
+       {
+        "type": "custom:mushroom-alarm-control-panel-card",
+        "states": [
+         "armed_home",
+         "armed_away"
+        ],
+        "show_keypad": true,
+        "icon": "mdi:shield",
+        "fill_container": true,
+        "icon_type": "entity-picture",
+        "entity": "alarm_control_panel.alarme_casa",
+        "grid_options": {
+         "columns": 12,
+         "rows": 2
+        }
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-title-card",
+          "title": "",
+          "subtitle": "Câmeras"
+         },
+         {
+          "type": "horizontal-stack",
+          "cards": [
+           {
+            "show_state": false,
+            "show_name": true,
+            "camera_view": "live",
+            "type": "picture-entity",
+            "camera_image": "camera.camera_sala",
+            "theme": "Mushroom Square",
+            "entity": "camera.camera_liofilizador"
+           },
+           {
+            "show_state": false,
+            "show_name": true,
+            "camera_view": "live",
+            "type": "picture-entity",
+            "camera_image": "camera.camera_sala",
+            "theme": "Mushroom Square",
+            "entity": "camera.camera_frente"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "type": "picture-entity",
+        "entity": "camera.smart_camera",
+        "camera_image": "camera.smart_camera"
+       }
+      ]
+     }
+    ],
+    "cards": [],
+    "icon": "mdi:shield-outline",
+    "subview": true
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "title": "Rede/PC",
+    "path": "rede-pc",
+    "icon": "mdi:desktop-classic",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "heading",
+        "heading": "Conexão",
+        "heading_style": "title"
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-template-card",
+          "primary": "Speed Test",
+          "secondary": "Há\n{% set time = ((as_timestamp(now()) - as_timestamp(states.sensor.speedtest_download.last_changed))) | round(0) %}\n                  {% set minutes = ((time % 3600) / 60) | int %}\n                  {%- if time < 60 -%}\n                    menos de um minuto\n                  {%- else -%}\n                    {%- if minutes > 0 -%}\n                      {%- if minutes == 1 -%}\n                        1 minuto\n                      {%- else -%}\n                        {{ minutes }} minutos\n                      {%- endif -%}\n                    {%- endif -%}\n                  {%- endif -%}",
+          "icon": "mdi:web",
+          "icon_color": "indigo"
+         },
+         {
+          "type": "horizontal-stack",
+          "cards": [
+           {
+            "type": "custom:mushroom-entity-card",
+            "entity": "sensor.speedtest_baixar",
+            "name": "Download",
+            "icon": "mdi:download",
+            "icon_color": "indigo"
+           },
+           {
+            "type": "custom:mushroom-entity-card",
+            "icon": "mdi:upload",
+            "icon_color": "indigo",
+            "name": "Upload",
+            "entity": "sensor.speedtest_carregar"
+           }
+          ]
+         },
+         {
+          "type": "custom:mushroom-chips-card",
+          "chips": [
+           {
+            "type": "entity",
+            "entity": "sensor.speedtest_ping",
+            "icon_color": "indigo",
+            "icon": "mdi:swap-horizontal-circle-outline",
+            "double_tap_action": {
+             "action": "none"
+            },
+            "tap_action": {
+             "action": "none"
+            },
+            "hold_action": {
+             "action": "none"
+            }
+           },
+           {
+            "type": "entity",
+            "entity": "sensor.tp_link_router_total_clients",
+            "icon_color": "indigo"
+           },
+           {
+            "type": "entity",
+            "entity": "switch.guest_wifi_5g",
+            "name": "Wi-fi Convidados",
+            "content_info": "name",
+            "tap_action": {
+             "action": "toggle"
+            },
+            "hold_action": {
+             "action": "toggle"
+            },
+            "double_tap_action": {
+             "action": "toggle"
+            },
+            "icon_color": "indigo"
+           }
+          ],
+          "alignment": "center"
+         }
+        ],
+        "grid_options": {
+         "columns": 48,
+         "rows": "auto"
+        }
+       },
+       {
+        "type": "heading",
+        "heading": "Hardware",
+        "heading_style": "title"
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-template-card",
+          "primary": "PC - Ian",
+          "secondary": "",
+          "icon": "mdi:desktop-classic",
+          "badge_color": "",
+          "icon_color": "{% if states('sensor.ian_pc_ian_pc_ultimaatividade') != 'unavailable' %}\n  green\n{% endif %}",
+          "tap_action": {
+           "action": "toggle"
+          },
+          "hold_action": {
+           "action": "toggle"
+          },
+          "double_tap_action": {
+           "action": "toggle"
+          },
+          "entity": "switch.ian_pc"
+         },
+         {
+          "type": "conditional",
+          "conditions": [
+           {
+            "condition": "state",
+            "entity": "sensor.ian_pc_ian_pc_ultimaatividade",
+            "state_not": "unavailable"
+           }
+          ],
+          "card": {
+           "type": "vertical-stack",
+           "cards": [
+            {
+             "type": "horizontal-stack",
+             "cards": [
+              {
+               "type": "gauge",
+               "entity": "sensor.ian_pc_generic_hard_disk_load_used_space",
+               "name": "SSD OS",
+               "min": 0,
+               "max": 100,
+               "unit": "%",
+               "severity": {
+                "green": 0,
+                "yellow": 70,
+                "red": 85
+               }
+              },
+              {
+               "type": "gauge",
+               "entity": "sensor.ian_pc_generic_hard_disk_load_used_space_2",
+               "name": "SSD Jogos",
+               "min": 0,
+               "max": 100,
+               "unit": "%",
+               "severity": {
+                "green": 0,
+                "yellow": 70,
+                "red": 85
+               }
+              },
+              {
+               "type": "gauge",
+               "entity": "sensor.ian_pc_st3000dm001_1er166_load_used_space",
+               "name": "HDD Dados",
+               "min": 0,
+               "max": 100,
+               "unit": "%",
+               "severity": {
+                "green": 0,
+                "yellow": 70,
+                "red": 85
+               }
+              },
+              {
+               "type": "gauge",
+               "entity": "sensor.ian_pc_st8000nm000a_2ke101_load_used_space",
+               "name": "HDD Jogos",
+               "min": 0,
+               "max": 100,
+               "unit": "%",
+               "severity": {
+                "green": 0,
+                "yellow": 70,
+                "red": 85
+               }
+              }
+             ]
+            },
+            {
+             "type": "horizontal-stack",
+             "cards": [
+              {
+               "type": "custom:mini-graph-card",
+               "name": "Mem. RAM",
+               "icon": "mdi:memory",
+               "points_per_hour": 12,
+               "hours_to_show": 1,
+               "entities": [
+                {
+                 "entity": "sensor.ian_pc_generic_memory_data_used_memory",
+                 "name": "GB",
+                 "color": "deepskyblue"
+                }
+               ]
+              },
+              {
+               "type": "custom:mini-graph-card",
+               "icon": "mdi:percent",
+               "name": "Carga",
+               "points_per_hour": 12,
+               "hours_to_show": 1,
+               "entities": [
+                {
+                 "entity": "sensor.ian_pc_amd_ryzen_9_3900x_load_cpu_total",
+                 "name": "CPU"
+                },
+                {
+                 "entity": "sensor.ian_pc_nvidia_nvidia_geforce_rtx_2080_super_load_gpu_core",
+                 "name": "GPU"
+                }
+               ]
+              },
+              {
+               "type": "custom:mini-graph-card",
+               "icon": "mdi:thermometer",
+               "name": "Temp.",
+               "points_per_hour": 12,
+               "hours_to_show": 1,
+               "entities": [
+                {
+                 "entity": "sensor.ian_pc_amd_ryzen_9_3900x_temperatures_cpu_package",
+                 "name": "CPU"
+                },
+                {
+                 "entity": "sensor.ian_pc_nvidia_nvidia_geforce_rtx_2080_super_temperatures_gpu_core",
+                 "name": "GPU"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         }
+        ],
+        "grid_options": {
+         "columns": 48,
+         "rows": "auto"
+        }
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-template-card",
+          "primary": "Comandos",
+          "secondary": "",
+          "icon": ""
+         },
+         {
+          "type": "horizontal-stack",
+          "cards": [
+           {
+            "type": "custom:mushroom-entity-card",
+            "entity": "button.ian_pc_ian_pc_desligar",
+            "icon": "mdi:power",
+            "layout": "vertical",
+            "primary_info": "name",
+            "name": "Desligar",
+            "secondary_info": "none",
+            "tap_action": {
+             "action": "toggle"
+            },
+            "hold_action": {
+             "action": "toggle"
+            },
+            "double_tap_action": {
+             "action": "toggle"
+            }
+           },
+           {
+            "type": "custom:mushroom-entity-card",
+            "icon": "mdi:restart",
+            "primary_info": "name",
+            "secondary_info": "none",
+            "name": "Reiniciar",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "toggle"
+            },
+            "hold_action": {
+             "action": "toggle"
+            },
+            "double_tap_action": {
+             "action": "toggle"
+            },
+            "entity": "button.ian_pc_ian_pc_reiniciar"
+           },
+           {
+            "type": "custom:mushroom-entity-card",
+            "name": "Sleep",
+            "icon": "mdi:power-sleep",
+            "primary_info": "name",
+            "secondary_info": "none",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "toggle"
+            },
+            "hold_action": {
+             "action": "toggle"
+            },
+            "double_tap_action": {
+             "action": "toggle"
+            },
+            "entity": "button.ian_pc_ian_pc_sleep"
+           },
+           {
+            "type": "custom:mushroom-template-card",
+            "primary": "Anônimo",
+            "secondary": "",
+            "icon": "mdi:incognito",
+            "layout": "vertical",
+            "icon_color": "{% if states('input_boolean.anonimo') == 'on' %}\n  blue\n{% endif %}",
+            "entity": "input_boolean.anonimo",
+            "tap_action": {
+             "action": "toggle"
+            },
+            "hold_action": {
+             "action": "toggle"
+            },
+            "double_tap_action": {
+             "action": "toggle"
+            }
+           }
+          ]
+         }
+        ],
+        "grid_options": {
+         "columns": 48,
+         "rows": "auto"
+        },
+        "visibility": [
+         {
+          "condition": "state",
+          "entity": "sensor.ian_pc_ian_pc_ultimaatividade",
+          "state_not": "unavailable"
+         }
+        ]
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-template-card",
+          "primary": "Displays",
+          "secondary": "",
+          "icon": ""
+         },
+         {
+          "type": "horizontal-stack",
+          "cards": [
+           {
+            "type": "custom:mushroom-entity-card",
+            "entity": "button.ian_pc_ian_pc_display",
+            "icon": "mdi:monitor",
+            "name": "Normal",
+            "icon_color": "red",
+            "secondary_info": "none",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "toggle"
+            },
+            "hold_action": {
+             "action": "toggle"
+            },
+            "double_tap_action": {
+             "action": "toggle"
+            }
+           },
+           {
+            "type": "custom:mushroom-entity-card",
+            "entity": "button.ian_pc_ian_pc_surround",
+            "icon": "mdi:monitor-multiple",
+            "icon_color": "red",
+            "primary_info": "name",
+            "name": "Surround",
+            "secondary_info": "none",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "toggle"
+            },
+            "hold_action": {
+             "action": "toggle"
+            },
+            "double_tap_action": {
+             "action": "toggle"
+            }
+           },
+           {
+            "type": "custom:mushroom-entity-card",
+            "icon": "mdi:television",
+            "icon_color": "red",
+            "name": "TV",
+            "primary_info": "name",
+            "secondary_info": "none",
+            "layout": "vertical",
+            "tap_action": {
+             "action": "toggle"
+            },
+            "hold_action": {
+             "action": "toggle"
+            },
+            "double_tap_action": {
+             "action": "toggle"
+            },
+            "entity": "button.ian_pc_ian_pc_tv"
+           }
+          ]
+         }
+        ],
+        "grid_options": {
+         "columns": 48,
+         "rows": "auto"
+        },
+        "visibility": [
+         {
+          "condition": "state",
+          "entity": "sensor.ian_pc_ian_pc_ultimaatividade",
+          "state_not": "unavailable"
+         }
+        ]
+       }
+      ],
+      "column_span": 4
+     }
+    ],
+    "subview": true,
+    "cards": [],
+    "badges": []
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "path": "luzes",
+    "icon": "mdi:lightbulb-group-outline",
+    "subview": true,
+    "sections": [
+     {
+      "type": "grid",
+      "column_span": 4,
+      "cards": [
+       {
+        "type": "custom:mushroom-template-card",
+        "primary": "Luzes acesas",
+        "secondary": "",
+        "icon": "mdi:lightbulb-on",
+        "grid_options": {
+         "columns": 48,
+         "rows": 1
+        },
+        "features_position": "bottom",
+        "color": "amber"
+       }
+      ]
+     },
+     {
+      "type": "grid",
+      "column_span": 4,
+      "cards": [
+       {
+        "type": "heading",
+        "heading": "Apartamento",
+        "heading_style": "title",
+        "icon": "mdi:office-building"
+       },
+       {
+        "type": "heading",
+        "heading": "Banheiro",
+        "heading_style": "subtitle"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.banheiro",
+        "name": "Tudo desligado",
+        "icon": "mdi:power",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.banheiro",
+        "name": "Banheiro",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "double_tap_action": {
+         "action": "more-info"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.espelho",
+        "name": "Espelho",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "double_tap_action": {
+         "action": "more-info"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "custom:mushroom-light-card",
+        "entity": "light.luz_espelho",
+        "name": "Luz Escritório",
+        "use_light_color": true,
+        "show_brightness_control": true,
+        "layout": "horizontal",
+        "primary_info": "name",
+        "secondary_info": "state",
+        "fill_container": false,
+        "show_color_temp_control": true,
+        "show_color_control": true,
+        "visibility": [
+         {
+          "condition": "state",
+          "entity": "light.luz_espelho",
+          "state_not": "unavailable"
+         }
+        ]
+       },
+       {
+        "type": "heading",
+        "heading": "Escritório",
+        "heading_style": "subtitle"
+       },
+       {
+        "type": "tile",
+        "entity": "light.escritorio",
+        "name": "Tudo desligado",
+        "icon": "mdi:power",
+        "tap_action": {
+         "action": "toggle"
+        },
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        }
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.escritorio",
+        "name": "Escritório",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "double_tap_action": {
+         "action": "more-info"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "custom:mushroom-light-card",
+        "entity": "light.luz_escritorio",
+        "name": "Luz Escritório",
+        "use_light_color": true,
+        "show_brightness_control": true,
+        "layout": "horizontal",
+        "primary_info": "name",
+        "secondary_info": "state",
+        "fill_container": false,
+        "show_color_temp_control": true,
+        "show_color_control": true,
+        "visibility": [
+         {
+          "condition": "state",
+          "entity": "light.luz_escritorio",
+          "state_not": "unavailable"
+         }
+        ]
+       },
+       {
+        "type": "heading",
+        "heading": "Quarto",
+        "heading_style": "subtitle"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.quarto",
+        "name": "Tudo desligado",
+        "icon": "mdi:power",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.entrada",
+        "name": "Entrada",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "double_tap_action": {
+         "action": "more-info"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.quarto",
+        "name": "Quarto",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "double_tap_action": {
+         "action": "more-info"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "heading",
+        "heading": "Sala/Cozinha",
+        "heading_style": "subtitle"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.sala",
+        "name": "Tudo desligado",
+        "icon": "mdi:power",
+        "hide_state": false,
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.corredor",
+        "name": "Corredor",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "double_tap_action": {
+         "action": "more-info"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.sala",
+        "name": "Sala",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "double_tap_action": {
+         "action": "more-info"
+        },
+        "features_position": "bottom"
+       },
+       {
+        "type": "tile",
+        "grid_options": {
+         "columns": 6,
+         "rows": 1
+        },
+        "entity": "light.cozinha",
+        "name": "Cozinha",
+        "vertical": false,
+        "tap_action": {
+         "action": "toggle"
+        },
+        "double_tap_action": {
+         "action": "more-info"
+        },
+        "features_position": "bottom"
+       }
+      ]
+     }
+    ],
+    "cards": []
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "path": "portas",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mushroom-template-card",
+        "primary": "Portas abertas",
+        "secondary": "",
+        "icon": "mdi:door-open",
+        "icon_color": "blue",
+        "grid_options": {
+         "columns": 12,
+         "rows": 1
+        }
+       },
+       {
+        "type": "entity-filter",
+        "entities": [
+         "binary_sensor.porta_edicula",
+         "binary_sensor.porta_ian",
+         "binary_sensor.porta_pai",
+         "binary_sensor.porta_sala",
+         "binary_sensor.porta_tras"
+        ],
+        "state_filter": [
+         "on"
+        ],
+        "card": {
+         "type": "entities"
+        },
+        "show_empty": false,
+        "sort": [
+         "name"
+        ]
+       }
+      ]
+     }
+    ],
+    "cards": [],
+    "icon": "mdi:door",
+    "subview": true
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "path": "janelas",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mushroom-chips-card",
+        "chips": [
+         {
+          "type": "back"
+         }
+        ]
+       },
+       {
+        "type": "custom:mushroom-template-card",
+        "primary": "Janelas abertas",
+        "secondary": "",
+        "icon": "mdi:window-open-variant",
+        "icon_color": "blue",
+        "grid_options": {
+         "columns": 12,
+         "rows": 1
+        }
+       },
+       {
+        "type": "entity-filter",
+        "entities": [
+         "binary_sensor.janela_cozinha",
+         "binary_sensor.janela_quarto",
+         "binary_sensor.janela_sala_frente",
+         "binary_sensor.janela_sala_lateral"
+        ],
+        "state_filter": [
+         "on"
+        ],
+        "card": {
+         "type": "entities"
+        },
+        "show_empty": false,
+        "sort": [
+         "name"
+        ]
+       }
+      ]
+     }
+    ],
+    "cards": [],
+    "icon": "mdi:window-closed-variant",
+    "subview": true
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "path": "baterias",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mushroom-chips-card",
+        "chips": [
+         {
+          "type": "back"
+         }
+        ]
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-template-card",
+          "primary": "Bateria - Celulares",
+          "secondary": "",
+          "icon": "mdi:cellphone"
+         },
+         {
+          "type": "custom:battery-state-card",
+          "entities": [
+           "sensor.galaxy_s24_ultra_ian_battery_level"
+          ],
+          "sort": [
+           "state"
+          ]
+         }
+        ]
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-template-card",
+          "primary": "Bateria - Dispositivos",
+          "secondary": "",
+          "icon": "mdi:devices"
+         },
+         {
+          "type": "custom:battery-state-card",
+          "entities": [
+           "sensor.janela_sala_frente_bateria",
+           "sensor.janela_sala_lateral_bateria",
+           "sensor.janela_cozinha_bateria",
+           "sensor.janela_escritorio_bateria",
+           "sensor.janela_quarto_bateria"
+          ],
+          "sort": [
+           "state"
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "cards": [
+     {
+      "type": "vertical-stack",
+      "cards": [
+       {
+        "type": "custom:mushroom-template-card",
+        "primary": "Bateria - Sensores Porta",
+        "secondary": "",
+        "icon": "mdi:door-closed"
+       },
+       {
+        "type": "custom:battery-state-card",
+        "entities": [
+         "sensor.porta_ian_bateria",
+         "sensor.porta_edicula_bateria",
+         "sensor.porta_pai_bateria",
+         "sensor.porta_sala_bateria",
+         "sensor.porta_tras_bateria"
+        ],
+        "sort": [
+         "state"
+        ]
+       }
+      ]
+     },
+     {
+      "type": "vertical-stack",
+      "cards": [
+       {
+        "type": "custom:mushroom-template-card",
+        "primary": "Bateria - Sensores Janela",
+        "secondary": "",
+        "icon": "mdi:window-closed-variant"
+       },
+       {
+        "type": "custom:battery-state-card",
+        "entities": [
+         "sensor.janela_ian_bateria",
+         "sensor.janela_cozinha_bateria",
+         "sensor.janela_edicula_bateria",
+         "sensor.janela_pai_bateria",
+         "sensor.janela_pequena_edicula_bateria",
+         "sensor.janela_sala_bateria"
+        ],
+        "sort": [
+         "state"
+        ]
+       }
+      ]
+     },
+     {
+      "type": "vertical-stack",
+      "cards": [
+       {
+        "type": "custom:mushroom-template-card",
+        "primary": "Bateria - Sensores Presença",
+        "secondary": "",
+        "icon": "mdi:account-group"
+       },
+       {
+        "type": "custom:battery-state-card",
+        "entities": [
+         "sensor.presenca_banheiro_bateria",
+         "sensor.presenca_banheiro_edicula_bateria",
+         "sensor.presenca_churrasqueira_bateria",
+         "sensor.presenca_cozinha_bateria",
+         "sensor.presenca_despensa_bateria",
+         "sensor.presenca_edicula_bateria",
+         "sensor.presenca_ian_bateria",
+         "sensor.presenca_pai_bateria",
+         "sensor.presenca_sala_bateria"
+        ],
+        "sort": [
+         "state"
+        ]
+       }
+      ]
+     },
+     {
+      "type": "vertical-stack",
+      "cards": [
+       {
+        "type": "custom:mushroom-template-card",
+        "primary": "Bateria - Sensores Termo-higrômetros",
+        "secondary": "",
+        "icon": "mdi:water-thermometer"
+       },
+       {
+        "type": "custom:battery-state-card",
+        "entities": [
+         "sensor.termohigrometro_sala_cozinha_bateria"
+        ],
+        "sort": [
+         "state"
+        ]
+       }
+      ]
+     }
+    ],
+    "icon": "mdi:battery-outline",
+    "subview": true
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "path": "clima",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "heading",
+        "heading": "Clima",
+        "heading_style": "title"
+       },
+       {
+        "type": "custom:weather-card",
+        "number_of_forecasts": "5",
+        "hourly_forecast": true,
+        "forecast": true,
+        "details": true,
+        "current": true,
+        "entity": "weather.openweathermap"
+       },
+       {
+        "type": "custom:weather-radar-card",
+        "data_source": "RainViewer-DarkSky",
+        "map_style": "Dark",
+        "zoom_level": 7,
+        "show_zoom": true,
+        "show_range": false,
+        "extra_labels": false,
+        "show_recenter": true,
+        "static_map": false,
+        "show_marker": true,
+        "show_scale": true,
+        "show_playback": false
+       }
+      ]
+     }
+    ],
+    "cards": [],
+    "icon": "mdi:weather-partly-cloudy",
+    "subview": true
+   },
+   {
+    "type": "sections",
+    "title": "Sala",
+    "path": "sala",
+    "icon": "mdi:sofa",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mini-graph-card",
+        "icon": "mdi:water-thermometer",
+        "name": "Temperatura/Umidade",
+        "points_per_hour": 2,
+        "hours_to_show": 12,
+        "entities": [
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_umidade",
+          "name": "Umidade"
+         },
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_temperatura",
+          "name": "Temperatura"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "cards": [],
+    "max_columns": 4,
+    "subview": true
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "title": "Cozinha",
+    "path": "cozinha",
+    "icon": "mdi:countertop",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mini-graph-card",
+        "icon": "mdi:water-thermometer",
+        "name": "Temperatura/Umidade",
+        "points_per_hour": 2,
+        "hours_to_show": 12,
+        "entities": [
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_umidade",
+          "name": "Umidade"
+         },
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_temperatura",
+          "name": "Temperatura"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "subview": true,
+    "cards": []
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "title": "Escritório",
+    "path": "escritorio",
+    "icon": "mdi:desk",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mini-graph-card",
+        "icon": "mdi:water-thermometer",
+        "name": "Temperatura/Umidade",
+        "points_per_hour": 2,
+        "hours_to_show": 12,
+        "entities": [
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_umidade",
+          "name": "Umidade"
+         },
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_temperatura",
+          "name": "Temperatura"
+         }
+        ]
+       },
+       {
+        "type": "vertical-stack",
+        "cards": [
+         {
+          "type": "custom:mushroom-template-card",
+          "primary": "Escritório",
+          "icon": "mdi:desk",
+          "secondary": "",
+          "entity": "light.escritorio",
+          "icon_color": "{% if is_state('light.escritorio', 'on') %}\n  amber\n{% endif %}",
+          "tap_action": {
+           "action": "toggle"
+          },
+          "hold_action": {
+           "action": "navigate",
+           "navigation_path": "/dashboard-apartamento/escritorio"
+          },
+          "double_tap_action": {
+           "action": "navigate",
+           "navigation_path": "/dashboard-apartamento/escritorio"
+          },
+          "grid_options": {
+           "columns": 12,
+           "rows": 1
+          }
+         },
+         {
+          "shorten_cards": true,
+          "consolidate_entities": false,
+          "child_card": false,
+          "hide_header": false,
+          "show_header_icon": true,
+          "header": "",
+          "color_wheel": true,
+          "persist_features": true,
+          "brightness": true,
+          "color_temp": true,
+          "white_value": true,
+          "color_picker": true,
+          "speed": true,
+          "intensity": true,
+          "force_features": false,
+          "show_slider_percent": false,
+          "full_width_sliders": true,
+          "brightness_icon": "weather-sunny",
+          "white_icon": "file-word-box",
+          "temperature_icon": "thermometer",
+          "speed_icon": "speedometer",
+          "intensity_icon": "transit-connection-horizontal",
+          "type": "custom:light-entity-card",
+          "entity": "light.luz_escritorio",
+          "effects_list": false
+         }
+        ],
+        "visibility": [
+         {
+          "condition": "state",
+          "entity": "light.escritorio",
+          "state": "on"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "subview": true,
+    "cards": []
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "path": "banheiro",
+    "icon": "mdi:shower",
+    "subview": true,
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mini-graph-card",
+        "icon": "mdi:water-thermometer",
+        "name": "Temperatura/Umidade",
+        "points_per_hour": 2,
+        "hours_to_show": 12,
+        "entities": [
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_umidade",
+          "name": "Umidade"
+         },
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_temperatura",
+          "name": "Temperatura"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "cards": []
+   },
+   {
+    "type": "sections",
+    "max_columns": 4,
+    "title": "Quarto",
+    "path": "quarto",
+    "icon": "mdi:bed-queen",
+    "sections": [
+     {
+      "type": "grid",
+      "cards": [
+       {
+        "type": "custom:mini-graph-card",
+        "icon": "mdi:water-thermometer",
+        "name": "Temperatura/Umidade",
+        "points_per_hour": 2,
+        "hours_to_show": 12,
+        "entities": [
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_umidade",
+          "name": "Umidade"
+         },
+         {
+          "entity": "sensor.termohigrometro_sala_cozinha_temperatura",
+          "name": "Temperatura"
+         }
+        ]
+       },
+       {
+        "type": "thermostat",
+        "grid_options": {
+         "columns": 12,
+         "rows": 5
+        },
+        "features": [
+         {
+          "type": "climate-hvac-modes"
+         }
+        ],
+        "entity": "climate.150633093323914_climate"
+       }
+      ]
+     }
+    ],
+    "subview": true,
+    "cards": []
+   }
+  ]
+ }
+}
