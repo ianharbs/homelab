@@ -3,9 +3,9 @@ alexa:
     locale: pt-BR
     # Preencher depois de criar a skill (Permissions -> Send Alexa Events), para o estado
     # dos dispositivos chegar na Alexa em tempo real:
-    # endpoint: https://api.amazonalexa.com/v3/events
-    # client_id: !secret alexa_client_id
-    # client_secret: !secret alexa_client_secret
+    endpoint: https://api.amazonalexa.com/v3/events
+    client_id: !secret alexa_client_id
+    client_secret: !secret alexa_client_secret
     filter:
       include_domains:
         - light
@@ -38,10 +38,6 @@ alexa:
         - switch.104cz_3_gang_switch_switch_1
         - switch.104cz_3_gang_switch_switch_2
         - switch.104cz_3_gang_switch_switch_3
-        - switch.estoque_switch_1
-        - switch.estoque_switch_2
-        - switch.andar_liofilizacao_switch_1
-        - switch.andar_liofilizacao_switch_2
     entity_config:
       button.ian_pc_ian_pc_desligar:
         name: Desligar PC
