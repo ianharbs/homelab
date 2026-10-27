@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """Baixa letras da LRCLIB (lrclib.net) para toda a biblioteca, sem tocar nos arquivos de áudio.
+Com DEEZER_ARL definido, o que a LRCLIB não tem é buscado no Deezer (pipe.deezer.com, mesma conta do plugin deezer).
 
 - Sincronizada → "<faixa>.lrc"; só texto → "<faixa>.txt" (Navidrome: ND_LYRICSPRIORITY com .txt; Jellyfin lê os dois).
 - Faixa com letra embutida (gravada pelo library management do DroppedNeedle: LYRICS/SYNCEDLYRICS/USLT/SYLT)
   é pulada; o script só cobre o que o DroppedNeedle não achou.
 - Faixas sem letra ficam em STATE_FILE e só são tentadas de novo depois de RETRY_DAYS; instrumentais nunca.
+  Faixa "notfound" que ainda não passou pelo Deezer é tentada de novo na hora quando o Deezer está ativo.
 
 Variáveis: MUSIC_DIR (/music), STATE_FILE (/state/lyrics-state.json), RETRY_DAYS (30), WORKERS (2), MIN_INTERVAL (1.0 s, sobe sozinho com 429),
-           DRY_RUN (0), LIMIT (0 = todas).
+           DRY_RUN (0), LIMIT (0 = todas), DEEZER_ARL (vazio = só LRCLIB).
 """
 import json
 import os
+import re
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -35,9 +39,15 @@ AUDIO_EXT = {".flac", ".mp3", ".m4a", ".ogg", ".opus"}
 UA = "homelab-lyrics-fetcher/1.0 (https://github.com/ianharbs/homelab)"
 API = "https://lrclib.net/api"
 DURATION_TOLERANCE = 2.0
+DEEZER_ARL = os.environ.get("DEEZER_ARL", "").strip("\"'")
+DEEZER_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+DEEZER_TOLERANCE = 3.0  # a API do Deezer arredonda a duração para segundos
 
 lock = Lock()
 rate_lock = Lock()
+deezer_lock = Lock()
+deezer_jwt = {"token": "", "at": 0.0}
+deezer_next = 0.0
 next_call = 0.0
 interval = MIN_INTERVAL
 stats = {}
@@ -69,6 +79,7 @@ def read_track(path):
         return None
     meta = {
         "artist": first(easy.tags, "artist", "albumartist"),
+        "isrc": first(easy.tags, "isrc").upper(),
         "title": first(easy.tags, "title"),
         "album": first(easy.tags, "album"),
         "duration": float(getattr(easy.info, "length", 0) or 0),
@@ -137,6 +148,86 @@ def http_json(path, params):
     raise RuntimeError(f"LRCLIB sem resposta: {path}")
 
 
+def norm(text):
+    text = unicodedata.normalize("NFKD", text.lower())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    text = re.sub(r"\s[-–]\s.*$|[(\[].*?[)\]]|\bfeat\.?\s.*$", " ", text)
+    return " ".join(re.findall(r"[a-z0-9]+", text))
+
+
+def deezer_http(url, body=None, headers=None):
+    global deezer_next
+    with deezer_lock:  # API pública: 50 pedidos / 5 s por IP; aqui bem abaixo disso
+        wait = deezer_next - time.monotonic()
+        deezer_next = max(deezer_next, time.monotonic()) + 0.25
+    if wait > 0:
+        time.sleep(wait)
+    h = {"User-Agent": DEEZER_UA}
+    h.update(headers or {})
+    data = json.dumps(body).encode() if body is not None else None
+    if data is not None:
+        h["Content-Type"] = "application/json"
+    with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=h), timeout=30) as r:
+        return json.load(r)
+
+
+def deezer_token():
+    with lock:
+        if deezer_jwt["token"] and time.time() - deezer_jwt["at"] < 1800:
+            return deezer_jwt["token"]
+    got = deezer_http("https://auth.deezer.com/login/arl?jo=p&rto=c&i=c", {}, {"Cookie": f"arl={DEEZER_ARL}"})
+    with lock:
+        deezer_jwt.update(token=got["jwt"], at=time.time())
+    return got["jwt"]
+
+
+def deezer_track(meta):
+    """Acha a faixa no Deezer pelo ISRC da tag; sem ISRC, por busca com artista, título e duração batendo."""
+    if meta["isrc"]:
+        try:
+            t = deezer_http(f"https://api.deezer.com/track/isrc:{urllib.parse.quote(meta['isrc'])}")
+            if t.get("id") and abs((t.get("duration") or 0) - meta["duration"]) <= DEEZER_TOLERANCE:
+                return t["id"]
+        except urllib.error.HTTPError:
+            pass
+    q = urllib.parse.urlencode({"q": f"{meta['artist']} {meta['title']}", "limit": 25})
+    found = deezer_http(f"https://api.deezer.com/search/track?{q}").get("data") or []
+    artist, title = norm(meta["artist"]), norm(meta["title"])
+    for t in found:
+        a = norm((t.get("artist") or {}).get("name", ""))
+        if (norm(t.get("title", "")) == title and a and (a in artist or artist in a)
+                and abs((t.get("duration") or 0) - meta["duration"]) <= DEEZER_TOLERANCE):
+            return t["id"]
+    return None
+
+
+def deezer_lookup(meta):
+    """Devolve um registro no formato da LRCLIB (syncedLyrics/plainLyrics) ou None."""
+    sng_id = deezer_track(meta)
+    if not sng_id:
+        return None
+    query = ("query SynchronizedTrackLyrics($trackId: String!) { track(trackId: $trackId) "
+             "{ lyrics { text synchronizedLines { lrcTimestamp line } } } }")
+    for attempt in range(2):
+        try:
+            got = deezer_http("https://pipe.deezer.com/api",
+                              {"query": query, "variables": {"trackId": str(sng_id)}},
+                              {"Authorization": f"Bearer {deezer_token()}"})
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 401 or attempt:
+                raise
+            with lock:
+                deezer_jwt["token"] = ""
+    lyrics = (((got.get("data") or {}).get("track") or {}).get("lyrics")) or {}
+    lines = lyrics.get("synchronizedLines") or []
+    synced = "\n".join(f"{l['lrcTimestamp']} {l['line']}" for l in lines if l.get("lrcTimestamp"))
+    plain = (lyrics.get("text") or "").replace("\r\n", "\n")
+    if not synced and not plain.strip():
+        return None
+    return {"syncedLyrics": synced, "plainLyrics": plain}
+
+
 def has_lyrics(rec):
     return bool(rec and (rec.get("syncedLyrics") or rec.get("plainLyrics")))
 
@@ -185,7 +276,8 @@ def _process(path, state):
         bump("já tinha")
         return
     prev = state.get(path)
-    if prev and (prev["status"] == "instrumental" or time.time() - prev["ts"] < RETRY_DAYS * 86400):
+    deezer_pending = DEEZER_ARL and prev and prev["status"] == "notfound" and not prev.get("deezer")
+    if prev and not deezer_pending and (prev["status"] == "instrumental" or time.time() - prev["ts"] < RETRY_DAYS * 86400):
         bump("pulada (sem letra antes)")
         return
     try:
@@ -201,16 +293,25 @@ def _process(path, state):
         bump("já tem na tag")
         return
     try:
-        rec = lookup(meta)
+        rec = None if deezer_pending else lookup(meta)
     except Exception as e:
         log(f"ERRO LRCLIB {meta['artist']} - {meta['title']}: {e}")
         bump("erro")
         return
+    from_deezer = False
+    if DEEZER_ARL and not has_lyrics(rec) and not (rec and rec.get("instrumental")):
+        try:
+            rec = deezer_lookup(meta)
+            from_deezer = has_lyrics(rec)
+        except Exception as e:
+            log(f"ERRO Deezer {meta['artist']} - {meta['title']}: {e}")
+            bump("erro")
+            return
     with lock:
         if rec and rec.get("instrumental"):
             state[path] = {"status": "instrumental", "ts": time.time()}
         elif not has_lyrics(rec):
-            state[path] = {"status": "notfound", "ts": time.time()}
+            state[path] = {"status": "notfound", "ts": time.time(), "deezer": bool(DEEZER_ARL)}
         else:
             state.pop(path, None)
     if rec and rec.get("instrumental"):
@@ -219,9 +320,9 @@ def _process(path, state):
         bump("não encontrada")
     elif rec.get("syncedLyrics"):
         if write(base + ".lrc", rec["syncedLyrics"]):
-            bump("sincronizada (.lrc)")
+            bump("sincronizada (.lrc)" + (" Deezer" if from_deezer else ""))
     elif write(base + ".txt", rec["plainLyrics"]):
-        bump("só texto (.txt)")
+        bump("só texto (.txt)" + (" Deezer" if from_deezer else ""))
 
 
 def save_state(state):

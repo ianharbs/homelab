@@ -170,6 +170,8 @@ services:
       - HOME=/tmp
       - MUSIC_DIR=/music
       - STATE_FILE=/state/lyrics-state.json
+      # segunda fonte (pipe.deezer.com) para o que a LRCLIB não tem
+      - DEEZER_ARL=${DEEZER_ARL}
     volumes:
       - ./lyrics-fetcher/lyrics.py:/app/lyrics.py:ro
       - ${DATA_PATH}/data/music:/music
