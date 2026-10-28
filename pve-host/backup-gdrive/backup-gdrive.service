@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup do Immich e do Paperless para o HD de 24 TB e o Google Drive
+RequiresMountsFor=/mnt/pve/media
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/backup-gdrive.sh
+Nice=10
+IOSchedulingClass=idle

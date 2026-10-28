@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup diário de fotos e documentos (05:00, depois do vzdump das 03:00 e das atualizações das 04:00)
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
