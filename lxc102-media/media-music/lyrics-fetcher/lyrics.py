@@ -7,6 +7,8 @@ Com DEEZER_ARL definido, o que a LRCLIB não tem é buscado no Deezer (pipe.deez
   é pulada; o script só cobre o que o DroppedNeedle não achou.
 - Faixas sem letra ficam em STATE_FILE e só são tentadas de novo depois de RETRY_DAYS; instrumentais nunca.
   Faixa "notfound" que ainda não passou pelo Deezer é tentada de novo na hora quando o Deezer está ativo.
+- Faixa que só tem .txt é conferida de novo a cada RETRY_DAYS atrás de versão sincronizada (LRCLIB e Deezer);
+  achando, grava o .lrc e apaga o .txt.
 
 Variáveis: MUSIC_DIR (/music), STATE_FILE (/state/lyrics-state.json), RETRY_DAYS (30), WORKERS (2), MIN_INTERVAL (1.0 s, sobe sozinho com 429),
            DRY_RUN (0), LIMIT (0 = todas), DEEZER_ARL (vazio = só LRCLIB).
@@ -237,14 +239,18 @@ def lookup(meta):
     if meta["album"]:
         params["album_name"] = meta["album"]
     rec = http_json("get", params)
-    if rec and (has_lyrics(rec) or rec.get("instrumental")):
+    if rec and (rec.get("syncedLyrics") or rec.get("instrumental")):
         return rec
-    # sem casar o álbum: busca por artista + título e fica com a duração mais próxima (±2 s)
+    # o "get" devolve um único registro, às vezes só texto, mesmo havendo outro sincronizado da mesma faixa:
+    # busca por artista + título e prefere sincronizada com a duração mais próxima (±2 s)
     results = http_json("search", {"artist_name": meta["artist"], "track_name": meta["title"]}) or []
     near = [r for r in results if abs((r.get("duration") or 0) - meta["duration"]) <= DURATION_TOLERANCE
             and (has_lyrics(r) or r.get("instrumental"))]
     near.sort(key=lambda r: (not r.get("syncedLyrics"), abs(r["duration"] - meta["duration"])))
-    return near[0] if near else None
+    best = near[0] if near else None
+    if best and best.get("syncedLyrics"):
+        return best
+    return rec if has_lyrics(rec) else best
 
 
 def write(path, text):
@@ -270,10 +276,50 @@ def process(path, state):
         bump("erro")
 
 
+def upgrade_plain(path, base, state):
+    """Faixa só com .txt: procura versão sincronizada; achando, troca o .txt pelo .lrc."""
+    prev = state.get(path)
+    if prev and prev["status"] == "plain" and time.time() - prev["ts"] < RETRY_DAYS * 86400:
+        bump("só texto (conferida antes)")
+        return
+    try:
+        meta = read_track(path)
+    except Exception as e:
+        log(f"ERRO lendo {path}: {e}")
+        bump("erro")
+        return
+    if not meta or not meta["artist"] or not meta["title"] or meta["duration"] <= 0:
+        bump("sem tags")
+        return
+    try:
+        rec = lookup(meta)
+        synced = (rec or {}).get("syncedLyrics") or ""
+        if not synced and DEEZER_ARL:
+            synced = (deezer_lookup(meta) or {}).get("syncedLyrics") or ""
+    except Exception as e:
+        log(f"ERRO procurando sincronizada {meta['artist']} - {meta['title']}: {e}")
+        bump("erro")
+        return
+    if not synced:
+        with lock:
+            state[path] = {"status": "plain", "ts": time.time()}
+        bump("só texto (sem sincronizada)")
+        return
+    if write(base + ".lrc", synced):
+        if not DRY_RUN:
+            os.remove(base + ".txt")
+        with lock:
+            state.pop(path, None)
+        bump("texto → sincronizada (.lrc)")
+
+
 def _process(path, state):
     base = os.path.splitext(path)[0]
-    if os.path.exists(base + ".lrc") or os.path.exists(base + ".txt"):
+    if os.path.exists(base + ".lrc"):
         bump("já tinha")
+        return
+    if os.path.exists(base + ".txt"):
+        upgrade_plain(path, base, state)
         return
     prev = state.get(path)
     deezer_pending = DEEZER_ARL and prev and prev["status"] == "notfound" and not prev.get("deezer")
