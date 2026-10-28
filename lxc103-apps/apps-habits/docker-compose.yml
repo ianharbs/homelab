@@ -30,6 +30,9 @@ services:
       - WGER_INSTANCE=https://wger.de
       - SYNC_EXERCISES_ON_STARTUP=True
       - DOWNLOAD_EXERCISE_IMAGES_ON_STARTUP=False
+      # sincronização semanal com o wger.de pelo celery-beat: exercícios novos e as fotos deles
+      - SYNC_EXERCISES_CELERY=True
+      - SYNC_EXERCISE_IMAGES_CELERY=True
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/wger/static:/home/wger/static
@@ -69,6 +72,8 @@ services:
       - WGER_USE_GUNICORN=True
       - SECRET_KEY=${DJANGO_SECRET_KEY}
       - SIGNING_KEY=${DJANGO_SECRET_KEY}
+      - SYNC_EXERCISES_CELERY=True
+      - SYNC_EXERCISE_IMAGES_CELERY=True
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/wger/media:/home/wger/media
@@ -99,6 +104,8 @@ services:
       - WGER_USE_GUNICORN=True
       - SECRET_KEY=${DJANGO_SECRET_KEY}
       - SIGNING_KEY=${DJANGO_SECRET_KEY}
+      - SYNC_EXERCISES_CELERY=True
+      - SYNC_EXERCISE_IMAGES_CELERY=True
       - TZ=${TZ}
     networks:
       - apps_net
