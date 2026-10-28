@@ -30,8 +30,10 @@ services:
       networks:
         - media_net
 
+  # Profilarr v2 (reescrita, sem migração da v1; dados da v1 em ${CONFIG_PATH}/profilarr-v1).
+  # Tag "2" = última estável da v2, sem pular para uma major nova sozinha.
   profilarr:
-    image: santiagosayshey/profilarr:latest
+    image: ghcr.io/dictionarry-hub/profilarr:2
     container_name: profilarr
     volumes:
       - ${CONFIG_PATH}/profilarr:/config
@@ -39,8 +41,25 @@ services:
       - TZ=${TZ}
       - PUID=${PUID}
       - PGID=${PGID}
+      - UMASK=022
+      - ORIGIN=https://profilarr.ihome.dev.br
+      - PARSER_HOST=profilarr-parser
+      - PARSER_PORT=5000
     ports:
       - 6868:6868
+    networks:
+      - media_net
+    depends_on:
+      profilarr-parser:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Parser C# do Profilarr, só para testar custom formats / perfis na UI.
+  profilarr-parser:
+    image: ghcr.io/dictionarry-hub/profilarr-parser:2
+    container_name: profilarr-parser
+    expose:
+      - "5000"
     networks:
       - media_net
     restart: unless-stopped
