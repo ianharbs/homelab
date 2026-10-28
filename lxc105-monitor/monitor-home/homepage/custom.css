@@ -1,3 +1,13 @@
 /* Grupo "Mídia — XXX" fica oculto; clicar no logo (ícone do servidor, topo esquerdo) alterna a exibição.
    O custom.js marca o grupo com a classe .grupo-oculto, porque o Homepage não põe id nos grupos. */
 body:not(.show-hidden) .services-group.grupo-oculto { display: none !important; }
+
+/* Colunas dentro dos grupos (layout style: row / columns: N). O Homepage só aplica N colunas a partir de 1024px
+   (768–1023px = 2, abaixo = 1); aqui as N colunas valem a partir de 768px e telas menores ficam com 2. */
+@media (min-width: 768px) {
+  .services-list.lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .services-list.lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 480px) and (max-width: 767px) {
+  .services-list.lg\:grid-cols-2, .services-list.lg\:grid-cols-3, .services-list.lg\:grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

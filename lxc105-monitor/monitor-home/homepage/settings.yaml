@@ -9,8 +9,6 @@ color: slate
 headerStyle: boxed
 cardBlur: sm
 useEqualHeights: true
-# grupos lado a lado (até 4 por linha); com style: row cada grupo ocupava a largura inteira
-maxGroupColumns: 4
 statusStyle: "dot"
 hideVersion: true
 target: _blank
@@ -20,35 +18,49 @@ quicklaunch:
   hideInternetSearch: false
   showSearchSuggestions: true
 
-# layout: só a ordem dos grupos
 layout:
   Infraestrutura:
-    header: true
+    style: row
+    columns: 4
   Gateway & Rede:
-    header: true
+    style: row
+    columns: 4
   Mídia — XXX:
-    header: true
+    style: row
+    columns: 4
   Filmes, Séries & TV:
-    header: true
+    style: row
+    columns: 3
   Músicas:
-    header: true
+    style: row
+    columns: 3
   Livros:
-    header: true
+    style: row
+    columns: 4
   Mídia — Downloads:
-    header: true
+    style: row
+    columns: 4
   Mídia — Automação (*arr):
-    header: true
+    style: row
+    columns: 3
   Jogos:
-    header: true
+    style: row
+    columns: 3
   Fotos, Documentos & Tarefas:
-    header: true
+    style: row
+    columns: 3
   Casa & Saúde:
-    header: true
+    style: row
+    columns: 4
   Ferramentas & IA:
-    header: true
+    style: row
+    columns: 4
   Segurança & Câmeras:
-    header: true
+    style: row
+    columns: 2
   Monitoramento:
-    header: true
+    style: row
+    columns: 3
   Home Assistant & IoT:
-    header: true
+    style: row
+    columns: 4
