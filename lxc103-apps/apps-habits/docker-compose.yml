@@ -34,9 +34,12 @@ services:
       - SYNC_EXERCISES_CELERY=True
       - SYNC_EXERCISE_IMAGES_CELERY=True
       - TZ=${TZ}
+      # wger-settings.py: cookies com nome próprio (wger_sessionid) — ver o arquivo
+      - DJANGO_SETTINGS_MODULE=settings.ihome
     volumes:
       - ${CONFIG_PATH}/wger/static:/home/wger/static
       - ${CONFIG_PATH}/wger/media:/home/wger/media
+      - ./wger-settings.py:/home/wger/src/settings/ihome.py:ro
     expose:
       - 8000
     healthcheck:
