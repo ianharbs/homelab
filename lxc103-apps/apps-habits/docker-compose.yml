@@ -3,19 +3,6 @@ networks:
     external: true
 
 services:
-  wingfit:
-    image: ghcr.io/itskovacs/wingfit:latest
-    container_name: wingfit
-    restart: unless-stopped
-    ports:
-      - "6060:8000"
-    environment:
-      - DB_TYPE=sqlite
-    volumes:
-      - ${CONFIG_PATH}/wingfit/data:/app/data
-    networks:
-      - apps_net
-
   wger-web:
     image: docker.io/wger/server:latest
     container_name: wger-web

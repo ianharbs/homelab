@@ -297,11 +297,6 @@ scrape_configs:
           name: mealie
           instance: srv-apps
           __param_target: 'http://192.168.10.30:9925'
-      - targets: ['http://192.168.10.30:6060']
-        labels:
-          name: wingfit
-          instance: srv-apps
-          __param_target: 'http://192.168.10.30:6060'
       - targets: ['http://192.168.10.30:7700']
         labels:
           name: meilisearch

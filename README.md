@@ -68,7 +68,7 @@ pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   │    ├── apps-automation    → n8n, n8n-runner
   │    ├── apps-documents     → paperless-ngx, gotenberg, tika
   │    ├── apps-finances      → actual_budget
-  │    ├── apps-habits        → wingfit, wger (web, nginx, celery-worker, celery-beat)
+  │    ├── apps-habits        → wger (web, nginx, celery-worker, celery-beat)
   │    ├── apps-housing       → mealie, bar-assistant, salt-rim
   │    ├── apps-tasks         → vikunja (instalado, parado até ser usado)
   │    ├── apps-travel        → adventurelog-backend, adventurelog-frontend, adventurelog-db

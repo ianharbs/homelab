@@ -501,13 +501,6 @@
         server: docker-srv-apps
         container: salt-rim
 
-    - Wingfit:
-        icon: sh-wingfit
-        href: https://gym.ihome.dev.br
-        description: Planejamento de treinos
-        server: docker-srv-apps
-        container: wingfit
-
     - wger:
         icon: sh-wger
         href: https://wger.ihome.dev.br
