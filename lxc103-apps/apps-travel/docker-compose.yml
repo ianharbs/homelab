@@ -36,9 +36,6 @@ services:
       - POSTGRES_PASSWORD=${ADVENTURELOG_DB_PASSWORD}
       - SECRET_KEY=${DJANGO_SECRET_KEY}
       - SESSION_ENGINE=django.contrib.sessions.backends.db
-      - DJANGO_ADMIN_USERNAME=${DJANGO_ADMIN_USERNAME}
-      - DJANGO_ADMIN_PASSWORD=${DJANGO_ADMIN_PASSWORD}
-      - DJANGO_ADMIN_EMAIL=${DJANGO_ADMIN_EMAIL}
       - PUBLIC_URL=https://travel-api.ihome.dev.br
       - CSRF_TRUSTED_ORIGINS=https://travel-api.ihome.dev.br,https://travel.ihome.dev.br
       - FRONTEND_URL=https://travel.ihome.dev.br
