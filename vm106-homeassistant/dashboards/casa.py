@@ -238,18 +238,28 @@ AGORA_FILTROS = [
 ]
 
 
-def view_inicio():
-    secoes = [secao(
-        cols({"type": "horizontal-stack", "cards": [
+# Tela larga: uma seção de 4 colunas (grade de 48) dividida em 1,5 + 2,5 por dois vertical-stacks.
+# 4 colunas de seção só cabem a partir de ~1440 px de conteúdo (+ sidebar); abaixo disso, layout de celular.
+LARGO = [{"condition": "screen", "media_query": "(min-width: 1700px)"}]
+ESTREITO = [{"condition": "screen", "media_query": "(max-width: 1699px)"}]
+
+
+def pilha(cards, n):
+    return cols({"type": "vertical-stack", "cards": cards}, n)
+
+
+def topo_inicio():
+    return [
+        {"type": "horizontal-stack", "cards": [
             {"type": "custom:mushroom-person-card", "entity": p, "icon_type": "entity-picture",
-             "layout": "vertical", "fill_container": True} for p in PESSOAS]}, 12),
-        cols({"type": "horizontal-stack", "cards": [
+             "layout": "vertical", "fill_container": True} for p in PESSOAS]},
+        {"type": "horizontal-stack", "cards": [
             menu("Segurança", "mdi:shield-home", "green", nav("seguranca")),
             menu("Alexa", "mdi:speaker-message", "cyan", nav("alexa")),
             menu("Energia", "mdi:lightning-bolt", "yellow", {"action": "navigate", "navigation_path": "/dashboard-energia"}),
             menu("Rede/PC", "mdi:lan", "purple", nav("rede-pc")),
-        ]}, 12),
-        cols({"type": "custom:mushroom-chips-card", "alignment": "center", "chips": [
+        ]},
+        {"type": "custom:mushroom-chips-card", "alignment": "center", "chips": [
             {"type": "template", "icon": "mdi:lightbulb-group-off", "icon_color": "red", "content": "Apagar tudo",
              "tap_action": {**run("script.apagar_tudo"), "confirmation": {"text": "Apagar todas as luzes?"}}},
             {"type": "template", "icon": "mdi:garage-variant", "content": "Portão",
@@ -260,16 +270,45 @@ def view_inicio():
              "tap_action": {**run("scene.racao_interno"), "confirmation": {"text": "Soltar ração interna?"}}},
             {"type": "template", "icon": "mdi:robot-vacuum", "icon_color": "green", "content": "Limpar",
              "tap_action": run("scene.limpar_casa")},
-        ]}, 12),
-    ), secao(
-        titulo("Agora em casa", "mdi:home-search"),
-        lista_auto(AGORA_FILTROS, "Tudo apagado e fechado"),
-    )]
-    for piso, nome, icon, script in PISOS:
-        secoes.append(secao(
-            titulo(nome, icon, badges=[badge_apagar(script)]),
-            *[card_comodo(c) for c in COMODOS if c["piso"] == piso],
-        ))
+        ]},
+    ]
+
+
+def agora_em_casa():
+    return [titulo("Agora em casa", "mdi:home-search"), lista_auto(AGORA_FILTROS, "Tudo apagado e fechado")]
+
+
+def cameras_inicio():
+    return [titulo("Câmeras", "mdi:cctv"),
+            {"type": "picture-entity", "entity": "camera.smart_camera", "camera_view": "auto",
+             "name": "Sala", "show_state": False, "tap_action": nav("seguranca")}]
+
+
+def piso_cards(piso, nome, icon, script):
+    return [titulo(nome, icon, badges=[badge_apagar(script)]),
+            *[card_comodo(c) for c in COMODOS if c["piso"] == piso]]
+
+
+def linha_piso(cabecalho, *comodos):
+    return [cabecalho, {"type": "grid", "square": False, "columns": len(comodos), "cards": list(comodos)}]
+
+
+# ordem no Início escolhida pelo usuário (PISOS segue a ordem da casa nas outras abas)
+PISOS_INICIO = [PISOS[2], PISOS[1], PISOS[0]]
+
+
+def view_inicio():
+    # tela larga: esquerda 1,5 (pessoas, atalhos, agora em casa, câmeras) | direita 2,5 (um piso por linha)
+    largo = secao(
+        pilha(topo_inicio() + agora_em_casa() + cameras_inicio(), 18),
+        pilha([c for p in PISOS_INICIO for c in linha_piso(*piso_cards(*p))], 30),
+        span=4)
+    largo["visibility"] = LARGO
+    estreitas = [secao(*[cols(c, 12) for c in topo_inicio()]), secao(*agora_em_casa())]
+    estreitas += [secao(*piso_cards(*p)) for p in PISOS_INICIO]
+    for s in estreitas:
+        s["visibility"] = ESTREITO
+    secoes = [largo] + estreitas
     return {
         "title": "Início", "path": "inicio", "icon": "mdi:home", "type": "sections", "max_columns": 4,
         "header": {"card": {"type": "markdown", "text_only": True, "content": SAUDACAO},
