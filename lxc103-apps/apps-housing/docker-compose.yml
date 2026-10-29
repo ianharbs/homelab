@@ -4,7 +4,7 @@ networks:
 
 services:
   bar-assistant:
-    image: barassistant/server:v5
+    image: barassistant/server:v6
     container_name: bar-assistant
     environment:
       # endereço público: o NPM (bar.ihome.dev.br) manda /bar → API :9092 e /search → Meilisearch :7700
@@ -20,12 +20,14 @@ services:
     ports:
       - "9092:8080"
     volumes:
-      - ${CONFIG_PATH}/barassistant:/var/www/html/storage
+      # banco (database.ba3.sqlite) e fotos; até 28/10 isso ficava num volume anônimo, porque o bind
+      # antigo apontava para /var/www/html/storage, que a imagem não usa
+      - ${CONFIG_PATH}/barassistant/bar-assistant:/var/www/cocktails/storage/bar-assistant
     networks:
       - apps_net
 
   salt-rim:
-    image: barassistant/salt-rim:v4
+    image: barassistant/salt-rim:v5
     container_name: salt-rim
     depends_on:
       - bar-assistant
