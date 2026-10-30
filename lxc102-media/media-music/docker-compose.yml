@@ -28,7 +28,8 @@ services:
       - ND_DEVARTISTINFOTIMETOLIVE=1s
     volumes:
       - ${CONFIG_PATH}/navidrome:/data
-      - ${DATA_PATH}/data/music:/music:ro
+      # rw: o plugin Musixmatch grava a letra (.lrc/.txt) ao lado da faixa quando ela é tocada
+      - ${DATA_PATH}/data/music:/music
     networks:
       - media_net
     restart: unless-stopped
