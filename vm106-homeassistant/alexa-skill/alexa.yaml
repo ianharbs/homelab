@@ -6,17 +6,17 @@ alexa:
     endpoint: https://api.amazonalexa.com/v3/events
     client_id: !secret alexa_client_id
     client_secret: !secret alexa_client_secret
+    # Só o que NÃO vem da Tuya: os aparelhos Tuya já chegam na Alexa pela skill Smart Life
+    # (luzes switch_as_x, luminária, portão, cenas, aspirador, monitores ficam de fora).
     filter:
+      exclude_entities:
+        - script.anunciar
       include_domains:
-        - light
-        - scene
         - script
         - climate
-        - cover
-        - vacuum
       include_entities:
+        - light.luzes
         - switch.ian_pc
-        - switch.monitores
         - button.ian_pc_ian_pc_desligar
         - button.ian_pc_ian_pc_reiniciar
         - button.ian_pc_ian_pc_sleep
