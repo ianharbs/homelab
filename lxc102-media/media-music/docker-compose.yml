@@ -6,6 +6,8 @@ services:
   navidrome:
     image: deluan/navidrome:latest
     container_name: navidrome
+    # a imagem ignora PUID/PGID; sem isto roda como root
+    user: "${PUID}:${PGID}"
     ports:
       - 4533:4533
     environment:
