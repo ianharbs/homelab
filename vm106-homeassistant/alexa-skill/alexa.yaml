@@ -6,35 +6,16 @@ alexa:
     endpoint: https://api.amazonalexa.com/v3/events
     client_id: !secret alexa_client_id
     client_secret: !secret alexa_client_secret
-    # Só o que NÃO vem da Tuya: os aparelhos Tuya já chegam na Alexa pela skill Smart Life
-    # (luzes switch_as_x, luminária, portão, cenas, aspirador, monitores ficam de fora).
+    # Só os botões que trocam a tela/som do PC (monitor / TV / surround). O resto (Tuya) vem pela skill Smart Life.
     filter:
-      exclude_entities:
-        - script.anunciar
-      include_domains:
-        - script
-        - climate
       include_entities:
-        - light.luzes
-        - switch.ian_pc
-        - button.ian_pc_ian_pc_desligar
-        - button.ian_pc_ian_pc_reiniciar
-        - button.ian_pc_ian_pc_sleep
         - button.ian_pc_ian_pc_display
-        - button.ian_pc_ian_pc_surround
         - button.ian_pc_ian_pc_tv
+        - button.ian_pc_ian_pc_surround
     entity_config:
-      button.ian_pc_ian_pc_desligar:
-        name: Desligar PC
-      button.ian_pc_ian_pc_reiniciar:
-        name: Reiniciar PC
-      button.ian_pc_ian_pc_sleep:
-        name: Suspender PC
       button.ian_pc_ian_pc_display:
         name: PC no monitor
       button.ian_pc_ian_pc_tv:
         name: PC na TV
       button.ian_pc_ian_pc_surround:
         name: Som surround do PC
-      switch.ian_pc:
-        name: PC
