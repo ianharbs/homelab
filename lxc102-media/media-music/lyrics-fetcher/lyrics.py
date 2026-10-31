@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """Baixa letras da LRCLIB (lrclib.net) para toda a biblioteca, sem tocar nos arquivos de áudio.
 Com DEEZER_ARL definido, o que a LRCLIB não tem é buscado no Deezer (pipe.deezer.com, mesma conta do plugin deezer).
+Com GENIUS_TOKEN definido, o que nenhum dos dois tem sai do Genius (só texto: busca pela API, letra lida da página).
 
 - Sincronizada → "<faixa>.lrc"; só texto → "<faixa>.txt" (Navidrome: ND_LYRICSPRIORITY com .txt; Jellyfin lê os dois).
 - Faixa com letra embutida (gravada pelo library management do DroppedNeedle: LYRICS/SYNCEDLYRICS/USLT/SYLT)
   é pulada; o script só cobre o que o DroppedNeedle não achou.
 - Faixas sem letra ficam em STATE_FILE e só são tentadas de novo depois de RETRY_DAYS; instrumentais nunca.
-  Faixa "notfound" que ainda não passou pelo Deezer é tentada de novo na hora quando o Deezer está ativo.
+  Faixa "notfound" que ainda não passou pelo Deezer/Genius é tentada de novo na hora, só na fonte que faltou.
 - Faixa que só tem .txt é conferida de novo a cada RETRY_DAYS atrás de versão sincronizada (LRCLIB e Deezer);
   achando, grava o .lrc e apaga o .txt.
 
 Variáveis: MUSIC_DIR (/music), STATE_FILE (/state/lyrics-state.json), RETRY_DAYS (30), WORKERS (2), MIN_INTERVAL (1.0 s, sobe sozinho com 429),
-           DRY_RUN (0), LIMIT (0 = todas), DEEZER_ARL (vazio = só LRCLIB).
+           DRY_RUN (0), LIMIT (0 = todas), DEEZER_ARL (vazio = sem Deezer), GENIUS_TOKEN (vazio = sem Genius).
 """
+import html
 import json
 import os
 import re
@@ -23,6 +25,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from html.parser import HTMLParser
 from threading import Lock
 
 import mutagen
@@ -44,12 +47,15 @@ DURATION_TOLERANCE = 2.0
 DEEZER_ARL = os.environ.get("DEEZER_ARL", "").strip("\"'")
 DEEZER_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 DEEZER_TOLERANCE = 3.0  # a API do Deezer arredonda a duração para segundos
+GENIUS_TOKEN = os.environ.get("GENIUS_TOKEN", "").strip("\"'")
 
 lock = Lock()
 rate_lock = Lock()
 deezer_lock = Lock()
 deezer_jwt = {"token": "", "at": 0.0}
 deezer_next = 0.0
+genius_lock = Lock()
+genius_next = 0.0
 next_call = 0.0
 interval = MIN_INTERVAL
 stats = {}
@@ -230,6 +236,87 @@ def deezer_lookup(meta):
     return {"syncedLyrics": synced, "plainLyrics": plain}
 
 
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+
+class GeniusLyrics(HTMLParser):
+    """Texto dos <div data-lyrics-container="true"> da página do Genius, sem os blocos marcados para não copiar."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.depth = 0  # profundidade dentro de um container de letra (0 = fora)
+        self.skip = 0  # profundidade dentro de um bloco data-exclude-from-selection
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "br":
+            if self.depth and not self.skip:
+                self.parts.append("\n")
+            return
+        if tag in VOID_TAGS:  # sem tag de fechamento: não mexe na profundidade
+            return
+        if self.depth:
+            self.depth += 1
+            if self.skip or a.get("data-exclude-from-selection") == "true":
+                self.skip += 1
+        elif tag == "div" and a.get("data-lyrics-container") == "true":
+            self.depth = 1
+            self.parts.append("\n")
+
+    def handle_endtag(self, tag):
+        if self.depth and tag not in VOID_TAGS:
+            self.depth -= 1
+            if self.skip:
+                self.skip -= 1
+
+    def handle_data(self, data):
+        if self.depth and not self.skip:
+            self.parts.append(data)
+
+
+def genius_http(url, api=True):
+    global genius_next
+    for attempt in range(4):
+        with genius_lock:  # o Genius não publica limite; um pedido por segundo
+            wait = genius_next - time.monotonic()
+            genius_next = max(genius_next, time.monotonic()) + 1.0
+        if wait > 0:
+            time.sleep(wait)
+        h = {"User-Agent": DEEZER_UA}
+        if api:
+            h["Authorization"] = f"Bearer {GENIUS_TOKEN}"
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=30) as r:
+                body = r.read().decode("utf-8", "replace")
+            return json.loads(body) if api else body
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 500, 502, 503, 504) or attempt == 3:
+                raise
+            time.sleep(5.0 * (attempt + 1))
+
+
+def genius_lookup(meta):
+    """Só texto: acha a música pela API (artista e título batendo) e lê a letra da página."""
+    q = urllib.parse.urlencode({"q": f"{meta['artist']} {meta['title']}"})
+    hits = ((genius_http(f"https://api.genius.com/search?{q}").get("response") or {}).get("hits")) or []
+    artist, title = norm(meta["artist"]), norm(meta["title"])
+    for h in hits:
+        s = h.get("result") or {}
+        names = [norm((s.get("primary_artist") or {}).get("name", "")), norm(s.get("artist_names", ""))]
+        if (h.get("type") == "song" and s.get("lyrics_state") == "complete" and not s.get("instrumental")
+                and norm(s.get("title", "")) == title and any(a and (a in artist or artist in a) for a in names)):
+            break
+    else:
+        return None
+    parser = GeniusLyrics()
+    parser.feed(genius_http(s["url"], api=False))
+    lines = [l.strip() for l in html.unescape("".join(parser.parts)).split("\n")]
+    # tira os cabeçalhos de seção ([Refrão], [Verso 1: ...]) e junta linhas em branco seguidas
+    text = re.sub(r"\n{3,}", "\n\n", "\n".join(l for l in lines if not re.fullmatch(r"\[.*\]", l))).strip()
+    return {"syncedLyrics": "", "plainLyrics": text} if text else None
+
+
 def has_lyrics(rec):
     return bool(rec and (rec.get("syncedLyrics") or rec.get("plainLyrics")))
 
@@ -322,8 +409,10 @@ def _process(path, state):
         upgrade_plain(path, base, state)
         return
     prev = state.get(path)
-    deezer_pending = DEEZER_ARL and prev and prev["status"] == "notfound" and not prev.get("deezer")
-    if prev and not deezer_pending and (prev["status"] == "instrumental" or time.time() - prev["ts"] < RETRY_DAYS * 86400):
+    retry = bool(prev and prev["status"] == "notfound" and time.time() - prev["ts"] < RETRY_DAYS * 86400)
+    deezer_pending = bool(DEEZER_ARL and prev and prev["status"] == "notfound" and not prev.get("deezer"))
+    genius_pending = bool(GENIUS_TOKEN and prev and prev["status"] == "notfound" and not prev.get("genius"))
+    if prev and not (deezer_pending or genius_pending) and (prev["status"] == "instrumental" or retry):
         bump("pulada (sem letra antes)")
         return
     try:
@@ -339,25 +428,36 @@ def _process(path, state):
         bump("já tem na tag")
         return
     try:
-        rec = None if deezer_pending else lookup(meta)
+        # fonte nova ligada: só ela é consultada; o resto espera o RETRY_DAYS normal
+        rec = None if retry else lookup(meta)
     except Exception as e:
         log(f"ERRO LRCLIB {meta['artist']} - {meta['title']}: {e}")
         bump("erro")
         return
-    from_deezer = False
-    if DEEZER_ARL and not has_lyrics(rec) and not (rec and rec.get("instrumental")):
+    source = ""
+    if DEEZER_ARL and (deezer_pending or not retry) and not has_lyrics(rec) and not (rec and rec.get("instrumental")):
         try:
             rec = deezer_lookup(meta)
-            from_deezer = has_lyrics(rec)
+            source = " Deezer" if has_lyrics(rec) else ""
         except Exception as e:
             log(f"ERRO Deezer {meta['artist']} - {meta['title']}: {e}")
+            bump("erro")
+            return
+    if GENIUS_TOKEN and (genius_pending or not retry) and not has_lyrics(rec) and not (rec and rec.get("instrumental")):
+        try:
+            rec = genius_lookup(meta)
+            source = " Genius" if has_lyrics(rec) else ""
+        except Exception as e:
+            log(f"ERRO Genius {meta['artist']} - {meta['title']}: {e}")
             bump("erro")
             return
     with lock:
         if rec and rec.get("instrumental"):
             state[path] = {"status": "instrumental", "ts": time.time()}
         elif not has_lyrics(rec):
-            state[path] = {"status": "notfound", "ts": time.time(), "deezer": bool(DEEZER_ARL)}
+            # um retry só de fonte nova mantém o ts antigo: as outras fontes continuam no prazo de RETRY_DAYS
+            ts = prev["ts"] if retry else time.time()
+            state[path] = {"status": "notfound", "ts": ts, "deezer": bool(DEEZER_ARL), "genius": bool(GENIUS_TOKEN)}
         else:
             state.pop(path, None)
     if rec and rec.get("instrumental"):
@@ -366,9 +466,9 @@ def _process(path, state):
         bump("não encontrada")
     elif rec.get("syncedLyrics"):
         if write(base + ".lrc", rec["syncedLyrics"]):
-            bump("sincronizada (.lrc)" + (" Deezer" if from_deezer else ""))
+            bump("sincronizada (.lrc)" + source)
     elif write(base + ".txt", rec["plainLyrics"]):
-        bump("só texto (.txt)" + (" Deezer" if from_deezer else ""))
+        bump("só texto (.txt)" + source)
 
 
 def save_state(state):

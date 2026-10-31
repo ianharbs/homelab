@@ -164,7 +164,7 @@ services:
       - ${DATA_PATH}/data:/data
     restart: unless-stopped
 
-  # Letras da LRCLIB para a biblioteca inteira (.lrc sincronizada / .txt texto), uma passada por dia.
+  # Letras da LRCLIB (depois Deezer e Genius) para a biblioteca inteira (.lrc sincronizada / .txt texto), uma passada por dia.
   # Não altera os áudios; faixas sem letra são tentadas de novo depois de 30 dias.
   lyrics-fetcher:
     image: python:3.12-alpine
@@ -177,6 +177,8 @@ services:
       - STATE_FILE=/state/lyrics-state.json
       # segunda fonte (pipe.deezer.com) para o que a LRCLIB não tem
       - DEEZER_ARL=${DEEZER_ARL}
+      # terceira fonte, só texto (genius.com/api-clients → Client Access Token)
+      - GENIUS_TOKEN=${GENIUS_TOKEN}
     volumes:
       - ./lyrics-fetcher/lyrics.py:/app/lyrics.py:ro
       - ${DATA_PATH}/data/music:/music
