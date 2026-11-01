@@ -1,0 +1,38 @@
+# Music Assistant Alexa Skill (player Alexa do Music Assistant)
+# https://www.music-assistant.io/player-support/alexa/
+# https://github.com/alams154/music-assistant-alexa-skill-prototype
+#
+# Público (Cloudflare tunnel → NPM):
+#   https://alexa-ma.ihome.dev.br   → 192.168.10.30:5000 (endpoint do skill)
+#   https://ma-stream.ihome.dev.br  → 192.168.10.60:8097 (stream do MA, Echos sem tela)
+# Usuário/senha da UI/API ficam em ${CONFIG_PATH}/alexa-skill/secrets/ (fora do git);
+# credenciais do ASK CLI persistem em ${CONFIG_PATH}/alexa-skill/ask_data.
+
+secrets:
+  APP_USERNAME:
+    file: ${CONFIG_PATH}/alexa-skill/secrets/app_username.txt
+  APP_PASSWORD:
+    file: ${CONFIG_PATH}/alexa-skill/secrets/app_password.txt
+
+services:
+  music-assistant-skill:
+    image: ghcr.io/alams154/music-assistant-skill:latest
+    container_name: music-assistant-skill
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - SKILL_HOSTNAME=alexa-ma.ihome.dev.br
+      - MA_HOSTNAME=ma-stream.ihome.dev.br
+      - APP_USERNAME=/run/secrets/APP_USERNAME
+      - APP_PASSWORD=/run/secrets/APP_PASSWORD
+      - PORT=5000
+      - DEBUG_PORT=0
+      - LOCALE=pt-BR
+      - AWS_DEFAULT_REGION=us-east-1
+      - TZ=${TZ}
+    secrets:
+      - APP_USERNAME
+      - APP_PASSWORD
+    volumes:
+      - ${CONFIG_PATH}/alexa-skill/ask_data:/root/.ask

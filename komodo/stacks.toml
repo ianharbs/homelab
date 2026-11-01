@@ -1013,3 +1013,25 @@ auto_update = true
 environment = """
 CONFIG_PATH=[[CONFIG_PATH]]
 """
+
+[[stack]]
+name = "apps-alexa"
+description = "Music Assistant Alexa Skill (player Alexa do MA)"
+tags = ["apps", "srv-apps"]
+[stack.config]
+links = ["http://192.168.10.30:5000/status", "https://alexa-ma.ihome.dev.br/status"]
+server = "srv-apps"
+repo = "ianharbs/homelab"
+git_account = "ianharbs"
+branch = "main"
+run_directory = "lxc103-apps/apps-alexa"
+file_paths = ["docker-compose.yml"]
+auto_pull = true
+project_name = "apps-alexa"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+TZ=[[TZ]]
+"""
+
