@@ -6,12 +6,14 @@ alexa:
     endpoint: https://api.amazonalexa.com/v3/events
     client_id: !secret alexa_client_id
     client_secret: !secret alexa_client_secret
-    # Só os botões que trocam a tela/som do PC (monitor / TV / surround). O resto (Tuya) vem pela skill Smart Life.
+    # Só os botões que trocam a tela/som do PC (monitor / TV / surround) e o script de música aleatória
+    # (Music Assistant na Echo que foi chamada). O resto (Tuya) vem pela skill Smart Life.
     filter:
       include_entities:
         - button.ian_pc_ian_pc_display
         - button.ian_pc_ian_pc_tv
         - button.ian_pc_ian_pc_surround
+        - script.musica_aleatoria
     entity_config:
       button.ian_pc_ian_pc_display:
         name: PC no monitor
@@ -19,3 +21,5 @@ alexa:
         name: PC na TV
       button.ian_pc_ian_pc_surround:
         name: Som surround do PC
+      script.musica_aleatoria:
+        name: Música aleatória
