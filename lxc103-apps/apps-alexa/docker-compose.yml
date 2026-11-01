@@ -5,14 +5,21 @@
 # Público (Cloudflare tunnel → NPM):
 #   https://alexa-ma.ihome.dev.br   → 192.168.10.30:5000 (endpoint do skill)
 #   https://ma-stream.ihome.dev.br  → 192.168.10.60:8097 (stream do MA, Echos sem tela)
-# Usuário/senha da UI/API ficam em ${CONFIG_PATH}/alexa-skill/secrets/ (fora do git);
-# credenciais do ASK CLI persistem em ${CONFIG_PATH}/alexa-skill/ask_data.
+#   https://alexa-busca.ihome.dev.br → 192.168.10.30:5001 (skill "minhas músicas", busca por voz)
+# Segredos em ${CONFIG_PATH}/alexa-skill/secrets/ (fora do git): usuário/senha da UI/API do skill,
+# token do MA (avançar/voltar por voz) e token do HA (skill de busca).
+# Credenciais do ASK CLI persistem em ${CONFIG_PATH}/alexa-skill/ask_data; a associação
+# Echo → player do MA (/devices) em ${CONFIG_PATH}/alexa-skill/instance_data.
 
 secrets:
   APP_USERNAME:
     file: ${CONFIG_PATH}/alexa-skill/secrets/app_username.txt
   APP_PASSWORD:
     file: ${CONFIG_PATH}/alexa-skill/secrets/app_password.txt
+  MA_API_TOKEN:
+    file: ${CONFIG_PATH}/alexa-skill/secrets/ma_api_token.txt
+  HA_TOKEN:
+    file: ${CONFIG_PATH}/alexa-skill/secrets/ha_token.txt
 
 services:
   music-assistant-skill:
@@ -31,9 +38,35 @@ services:
       - SKILL_ID=amzn1.ask.skill.ee89cf2c-02eb-44d9-b048-847613c657f1
       - LOCALE=pt-BR
       - AWS_DEFAULT_REGION=us-east-1
+      # Avançar/voltar por voz: comandos vão direto para a fila do MA
+      - MA_API_URL=http://192.168.10.60:8095
+      - MA_API_TOKEN=/run/secrets/MA_API_TOKEN
       - TZ=${TZ}
     secrets:
       - APP_USERNAME
       - APP_PASSWORD
+      - MA_API_TOKEN
     volumes:
       - ${CONFIG_PATH}/alexa-skill/ask_data:/root/.ask
+      - ${CONFIG_PATH}/alexa-skill/instance_data:/app/instance_data
+
+  # Skill "minhas músicas": busca por voz → HA (music_assistant.search + script.musica_tocar_na_echo)
+  alexa-busca:
+    build: ./busca
+    image: alexa-busca:local
+    pull_policy: build
+    container_name: alexa-busca
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - SKILL_ID=${ALEXA_BUSCA_SKILL_ID:-}
+      - HA_URL=http://192.168.10.60:8123
+      - HA_TOKEN=/run/secrets/HA_TOKEN
+      - MA_CONFIG_ENTRY_ID=01M5NDGP4RRY0YDSXP8DJ00CQS
+      - PORT=5001
+      # Apelidos para nomes que a Alexa transcreve mal: {"o que ela entende": "o que buscar"}
+      - 'APELIDOS={}'
+      - TZ=${TZ}
+    secrets:
+      - HA_TOKEN

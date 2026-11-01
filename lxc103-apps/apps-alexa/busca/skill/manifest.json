@@ -1,0 +1,44 @@
+{
+  "manifest": {
+    "manifestVersion": "1.0",
+    "publishingInformation": {
+      "locales": {
+        "pt-BR": {
+          "name": "Minhas Músicas",
+          "summary": "Busca por voz na biblioteca do Music Assistant",
+          "description": "Toca artistas, álbuns, músicas e playlists da biblioteca do Music Assistant (Home Assistant) na Echo em que você falou.",
+          "examplePhrases": [
+            "Alexa, abrir minhas músicas",
+            "Alexa, peça ao minhas músicas para tocar Legião Urbana",
+            "Alexa, peça ao minhas músicas para tocar qualquer coisa"
+          ],
+          "keywords": []
+        }
+      },
+      "isAvailableWorldwide": false,
+      "distributionCountries": [
+        "BR"
+      ],
+      "testingInstructions": "Uso pessoal.",
+      "category": "STREAMING_SERVICE"
+    },
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": false,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false,
+      "locales": {
+        "pt-BR": {}
+      }
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "https://alexa-busca.ihome.dev.br/",
+          "sslCertificateType": "Wildcard"
+        }
+      }
+    }
+  }
+}
