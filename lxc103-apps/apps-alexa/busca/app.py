@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Skill "minhas músicas": busca por voz no Music Assistant (via Home Assistant).
+"""Skill "meu servidor": busca por voz no Music Assistant (via Home Assistant).
 
-"Alexa, peça ao minhas músicas para tocar Legião Urbana"
+"Alexa, peça ao meu servidor para tocar Faroeste Caboclo de Legião Urbana"
   1. A Amazon manda o texto livre (slot AMAZON.SearchQuery) para cá.
   2. A assinatura e o horário do pedido são verificados (ask-sdk-webservice-support)
      e só o SKILL_ID configurado é aceito.
@@ -13,6 +13,8 @@ import json
 import logging
 import os
 import re
+import threading
+import time
 import unicodedata
 import urllib.request
 from difflib import SequenceMatcher
@@ -117,14 +119,75 @@ def nota(q, item, tipo):
     return n + PREFERENCIA.get(tipo, 0)
 
 
+def limpa(texto):
+    """Tira o "no servidor" / "do servidor" que a pessoa pode falar no fim."""
+    return re.sub(r"\s+(no|do|pelo|lá no)\s+(meu\s+)?servidor\s*$", "", texto.strip(), flags=re.I)
+
+
+_ARTISTAS = {"lista": [], "quando": 0.0}
+_ARTISTAS_LOCK = threading.Lock()
+
+
+def artistas_biblioteca():
+    """Todos os artistas da biblioteca do MA (cache de 1 h), para achar nomes mal ouvidos."""
+    with _ARTISTAS_LOCK:
+        if _ARTISTAS["lista"] and time.time() - _ARTISTAS["quando"] < 3600:
+            return _ARTISTAS["lista"]
+        lista, offset = [], 0
+        while offset < 20000:
+            data = {"media_type": "artist", "limit": 500, "offset": offset, "order_by": "name"}
+            if MA_ENTRY:
+                data["config_entry_id"] = MA_ENTRY
+            r = ha("/api/services/music_assistant/get_library?return_response", data, timeout=20)
+            itens = ((r or {}).get("service_response") or {}).get("items") or []
+            lista += [{"name": i.get("name"), "uri": i.get("uri"), "n": norm(i.get("name"))} for i in itens if i.get("uri")]
+            if len(itens) < 500:
+                break
+            offset += 500
+        _ARTISTAS.update(lista=lista, quando=time.time())
+        log.info("cache de artistas: %d", len(lista))
+        return lista
+
+
+CONECTOR = re.compile(r"\s+(?:de|do|da|dos|das)\s+")
+
+
+def consultas(q):
+    """'faroeste caboclo de legiao urbana' -> a frase inteira, sem o conector, e só o nome."""
+    out = [q]
+    for m in CONECTOR.finditer(q):
+        esq, dir_ = q[:m.start()], q[m.end():]
+        if esq and dir_:
+            out += [f"{esq} {dir_}", esq]
+    return list(dict.fromkeys(out))[:5]
+
+
 def melhor(texto, tipos):
+    texto = limpa(texto)
     q = norm(APELIDOS.get(texto.lower().strip(), texto))
-    res = ma_search(q, tipos)
-    achados = []
-    for tipo in tipos:
-        for item in res.get(CHAVE[tipo]) or []:
-            achados.append((nota(q, item, tipo), tipo, item))
+    vistos, achados = set(), []
+    for consulta in consultas(q):
+        res = ma_search(consulta, tipos)
+        for tipo in tipos:
+            for item in res.get(CHAVE[tipo]) or []:
+                if item.get("uri") in vistos:
+                    continue
+                vistos.add(item.get("uri"))
+                achados.append((nota(q, item, tipo), tipo, item))
+        if achados and max(a[0] for a in achados) >= 0.9:
+            break  # já tem um resultado muito bom; não gasta mais buscas
+    if "artist" in tipos and (not achados or max(a[0] for a in achados) < 0.7):
+        # Reserva: nome de artista parecido na biblioteca ("perl jem" -> Pearl Jam)
+        try:
+            n_art, art = max(((parecido(q, a["n"]), a) for a in artistas_biblioteca()), key=lambda x: x[0],
+                             default=(0, None))
+        except Exception:
+            log.exception("falha ao carregar artistas")
+            n_art, art = 0, None
+        if art and n_art >= 0.7:
+            achados.append((n_art + 0.01, "artist", {"name": art["name"], "uri": art["uri"]}))
     if not achados:
+        log.info("busca %r tipos=%s -> nada", texto, tipos)
         return None
     achados.sort(key=lambda x: x[0], reverse=True)
     n, tipo, item = achados[0]
@@ -264,5 +327,7 @@ if __name__ == "__main__":
         log.warning("HA_TOKEN vazio: a busca não vai funcionar")
     if not SKILL_ID:
         log.warning("SKILL_ID vazio: aceitando qualquer skill assinado pela Amazon")
+    if HA_TOKEN:
+        threading.Thread(target=lambda: artistas_biblioteca(), daemon=True).start()
     log.info("ouvindo em :%d", PORT)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

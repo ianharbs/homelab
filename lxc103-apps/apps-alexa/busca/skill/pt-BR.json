@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "minhas músicas",
+      "invocationName": "meu servidor",
       "intents": [
         {
           "name": "TocarIntent",
@@ -15,6 +15,7 @@
             "bota {busca}",
             "botar {busca}",
             "coloca {busca}",
+            "coloca {busca} no servidor",
             "colocar {busca}",
             "escutar {busca}",
             "me toca {busca}",
@@ -22,12 +23,15 @@
             "põe {busca}",
             "quero escutar {busca}",
             "quero ouvir {busca}",
+            "quero ouvir {busca} no servidor",
             "reproduzir {busca}",
             "toca {busca}",
+            "toca {busca} no servidor",
             "tocar algo de {busca}",
             "tocar músicas de {busca}",
             "tocar um pouco de {busca}",
             "tocar {busca}",
+            "tocar {busca} no servidor",
             "toque {busca}"
           ]
         },
