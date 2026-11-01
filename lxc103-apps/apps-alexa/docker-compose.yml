@@ -28,6 +28,7 @@ services:
       - APP_PASSWORD=/run/secrets/APP_PASSWORD
       - PORT=5000
       - DEBUG_PORT=0
+      - SKILL_ID=amzn1.ask.skill.ee89cf2c-02eb-44d9-b048-847613c657f1
       - LOCALE=pt-BR
       - AWS_DEFAULT_REGION=us-east-1
       - TZ=${TZ}
