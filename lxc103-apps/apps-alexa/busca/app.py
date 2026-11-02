@@ -162,20 +162,41 @@ def consultas(q):
     return list(dict.fromkeys(out))[:5]
 
 
+NUM_EN = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty".split()
+NUM_PT = ("zero um dois tres quatro cinco seis sete oito nove dez onze doze treze quatorze quinze dezesseis dezessete "
+          "dezoito dezenove vinte").split()
+
+
+def variantes(q):
+    """A Alexa escreve números com algarismos ("o álbum ten" -> "10"): tenta também por extenso."""
+    out = [q]
+    if re.search(r"\b\d{1,2}\b", q):
+        for nomes in (NUM_EN, NUM_PT):
+            out.append(re.sub(r"\b(\d{1,2})\b",
+                              lambda m: nomes[int(m.group(1))] if int(m.group(1)) < len(nomes) else m.group(1), q))
+    return list(dict.fromkeys(out))
+
+
 def melhor(texto, tipos):
     texto = limpa(texto)
-    q = norm(APELIDOS.get(texto.lower().strip(), texto))
-    vistos, achados = set(), []
-    for consulta in consultas(q):
-        res = ma_search(consulta, tipos)
-        for tipo in tipos:
-            for item in res.get(CHAVE[tipo]) or []:
-                if item.get("uri") in vistos:
-                    continue
-                vistos.add(item.get("uri"))
-                achados.append((nota(q, item, tipo), tipo, item))
+    q0 = norm(APELIDOS.get(texto.lower().strip(), texto))
+    vistos, achados = {}, []
+    for q in variantes(q0):
+        for consulta in consultas(q):
+            res = ma_search(consulta, tipos)
+            for tipo in tipos:
+                for item in res.get(CHAVE[tipo]) or []:
+                    n = nota(q, item, tipo)
+                    uri = item.get("uri")
+                    if uri in vistos and vistos[uri] >= n:
+                        continue
+                    vistos[uri] = n
+                    achados.append((n, tipo, item))
+            if achados and max(a[0] for a in achados) >= 0.9:
+                break  # já tem um resultado muito bom; não gasta mais buscas
         if achados and max(a[0] for a in achados) >= 0.9:
-            break  # já tem um resultado muito bom; não gasta mais buscas
+            break
+    q = q0
     if "artist" in tipos and (not achados or max(a[0] for a in achados) < 0.7):
         # Reserva: nome de artista parecido na biblioteca ("perl jem" -> Pearl Jam)
         try:
