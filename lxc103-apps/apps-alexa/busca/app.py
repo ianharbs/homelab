@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Skill "meu servidor": busca por voz no Music Assistant (via Home Assistant).
+"""Skill "servidor": busca por voz no Music Assistant (via Home Assistant).
 
-"Alexa, peça ao meu servidor para tocar Faroeste Caboclo de Legião Urbana"
+"Alexa, peça ao servidor para tocar Faroeste Caboclo de Legião Urbana"
   1. A Amazon manda o texto livre (slot AMAZON.SearchQuery) para cá.
   2. A assinatura e o horário do pedido são verificados (ask-sdk-webservice-support)
      e só o SKILL_ID configurado é aceito.

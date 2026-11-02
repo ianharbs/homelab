@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "meu servidor",
+      "invocationName": "servidor",
       "intents": [
         {
           "name": "TocarIntent",

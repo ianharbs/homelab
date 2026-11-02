@@ -4,13 +4,13 @@
     "publishingInformation": {
       "locales": {
         "pt-BR": {
-          "name": "Meu Servidor",
+          "name": "Servidor",
           "summary": "Busca por voz na biblioteca do Music Assistant",
           "description": "Toca artistas, álbuns, músicas e playlists da biblioteca do Music Assistant (Home Assistant) na Echo em que você falou.",
           "examplePhrases": [
-            "Alexa, abrir meu servidor",
-            "Alexa, peça ao meu servidor para tocar Faroeste Caboclo de Legião Urbana",
-            "Alexa, peça ao meu servidor para tocar qualquer coisa"
+            "Alexa, abrir servidor",
+            "Alexa, peça ao servidor para tocar Faroeste Caboclo de Legião Urbana",
+            "Alexa, peça ao servidor para tocar qualquer coisa"
           ],
           "keywords": []
         }

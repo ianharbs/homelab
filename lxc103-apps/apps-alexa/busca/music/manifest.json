@@ -1,0 +1,89 @@
+{
+  "manifest": {
+    "manifestVersion": "1.0",
+    "publishingInformation": {
+      "locales": {
+        "pt-BR": {
+          "name": "iHome Music",
+          "summary": "Toca a biblioteca de música do servidor de casa (Navidrome/Music Assistant).",
+          "description": "Skill pessoal: toca artistas, álbuns, músicas e playlists da biblioteca do servidor de casa.",
+          "examplePhrases": [
+            "Alexa, tocar Legião Urbana no iHome Music",
+            "Alexa, tocar o álbum Ten no iHome Music",
+            "Alexa, tocar música no iHome Music"
+          ],
+          "keywords": []
+        }
+      },
+      "isAvailableWorldwide": false,
+      "testingInstructions": "Uso pessoal.",
+      "category": "STREAMING_SERVICE",
+      "distributionCountries": [
+        "BR"
+      ]
+    },
+    "apis": {
+      "music": {
+        "endpoint": {
+          "uri": "arn:aws:lambda:us-east-1:589246107217:function:iHomeMusic"
+        },
+        "locales": {
+          "pt-BR": {
+            "aliases": [
+              {
+                "name": "iHome Music"
+              },
+              {
+                "name": "servidor"
+              },
+              {
+                "name": "meu servidor"
+              }
+            ],
+            "promptName": "iHome Music"
+          }
+        },
+        "interfaces": [
+          {
+            "namespace": "Alexa.Audio.PlayQueue",
+            "requests": [
+              {
+                "name": "GetNextItem"
+              },
+              {
+                "name": "GetPreviousItem"
+              }
+            ],
+            "version": "1.0"
+          },
+          {
+            "namespace": "Alexa.Media.Playback",
+            "requests": [
+              {
+                "name": "Initiate"
+              }
+            ],
+            "version": "1.0"
+          },
+          {
+            "namespace": "Alexa.Media.Search",
+            "requests": [
+              {
+                "name": "GetPlayableContent"
+              }
+            ],
+            "version": "1.0"
+          }
+        ]
+      }
+    },
+    "permissions": [],
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "isExportCompliant": true,
+      "containsAds": false,
+      "isChildDirected": false,
+      "usesPersonalInfo": false
+    }
+  }
+}

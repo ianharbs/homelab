@@ -5,7 +5,7 @@
 # Público (Cloudflare tunnel → NPM):
 #   https://alexa-ma.ihome.dev.br   → 192.168.10.30:5000 (endpoint do skill)
 #   https://ma-stream.ihome.dev.br  → 192.168.10.60:8097 (stream do MA, Echos sem tela)
-#   https://alexa-busca.ihome.dev.br → 192.168.10.30:5001 (skill "meu servidor", busca por voz)
+#   https://alexa-busca.ihome.dev.br → 192.168.10.30:5001 (skill "servidor", busca por voz)
 # Segredos em ${CONFIG_PATH}/alexa-skill/secrets/ (fora do git): usuário/senha da UI/API do skill,
 # token do MA (avançar/voltar por voz) e token do HA (skill de busca).
 # Credenciais do ASK CLI persistem em ${CONFIG_PATH}/alexa-skill/ask_data; a associação
