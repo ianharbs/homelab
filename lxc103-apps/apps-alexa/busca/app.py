@@ -44,6 +44,7 @@ SKILL_ID = os.environ.get("SKILL_ID", "")
 PORT = int(os.environ.get("PORT", "5001"))
 SCRIPT_TOCAR = os.environ.get("SCRIPT_TOCAR", "script.musica_tocar_na_echo")
 SCRIPT_ALEATORIO = os.environ.get("SCRIPT_ALEATORIO", "script.musica_aleatoria")
+SCRIPT_CONTROLE = os.environ.get("SCRIPT_CONTROLE", "script.musica_controle")
 
 # Apelidos para nomes que a Alexa em pt-BR transcreve mal: {"o que ela entende": "o que buscar"}
 try:
@@ -280,6 +281,31 @@ def aleatorio(h):
     return h.response_builder.speak("Tocando músicas aleatórias da sua biblioteca.").set_should_end_session(True).response
 
 
+CONTROLES = {  # intent -> (ação do script do HA, fala)
+    "ProximaIntent": ("next", "Próxima."),
+    "AnteriorIntent": ("previous", "Voltando."),
+    "PausarIntent": ("pause", "Pausado."),
+    "ContinuarIntent": ("play", "Continuando."),
+}
+
+
+def controlar(h, acao, fala):
+    """Próxima/anterior/pausa no player do MA da Echo chamada (script do HA acha qual)."""
+    try:
+        ha("/api/services/script/turn_on", {"entity_id": SCRIPT_CONTROLE, "variables": {"acao": acao}})
+    except Exception:
+        log.exception("falha no controle %s", acao)
+        return h.response_builder.speak("Não consegui falar com o Home Assistant agora.").set_should_end_session(True).response
+    return h.response_builder.speak(fala).set_should_end_session(True).response
+
+
+@sb.request_handler(can_handle_func=lambda h: is_request_type("IntentRequest")(h)
+                    and h.request_envelope.request.intent.name in CONTROLES)
+def controle_intent(h):
+    acao, fala = CONTROLES[h.request_envelope.request.intent.name]
+    return controlar(h, acao, fala)
+
+
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def ajuda(h):
     fala = ("Diga, por exemplo: tocar Legião Urbana, tocar o álbum Ten, tocar a música Faroeste Caboclo, "
@@ -290,6 +316,10 @@ def ajuda(h):
 @sb.request_handler(can_handle_func=lambda h: is_intent_name("AMAZON.StopIntent")(h)
                     or is_intent_name("AMAZON.CancelIntent")(h) or is_intent_name("AMAZON.NavigateHomeIntent")(h))
 def parar(h):
+    # "peça ao servidor para parar" (pedido único) = pausar a música; dentro da conversa = só sair
+    sessao = h.request_envelope.session
+    if is_intent_name("AMAZON.StopIntent")(h) and sessao is not None and sessao.new:
+        return controlar(h, "pause", "Pausado.")
     return h.response_builder.speak("Tudo bem.").set_should_end_session(True).response
 
 

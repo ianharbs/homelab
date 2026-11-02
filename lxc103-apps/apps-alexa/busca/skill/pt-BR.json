@@ -460,6 +460,92 @@
           ]
         },
         {
+          "name": "ProximaIntent",
+          "slots": [],
+          "samples": [
+            "próxima",
+            "a próxima",
+            "próxima música",
+            "próxima faixa",
+            "toca a próxima",
+            "pula",
+            "pular",
+            "pula essa",
+            "pula essa música",
+            "pular essa música",
+            "pula a música",
+            "pular a música",
+            "avança",
+            "avançar",
+            "avança a música",
+            "avançar a música",
+            "passa",
+            "passar",
+            "passa a música",
+            "passar a música",
+            "passa essa",
+            "troca a música",
+            "trocar a música",
+            "outra música"
+          ]
+        },
+        {
+          "name": "AnteriorIntent",
+          "slots": [],
+          "samples": [
+            "anterior",
+            "a anterior",
+            "música anterior",
+            "faixa anterior",
+            "toca a anterior",
+            "tocar a anterior",
+            "volta",
+            "voltar",
+            "volta a música",
+            "voltar a música",
+            "volta uma",
+            "volta uma música",
+            "voltar uma música",
+            "volta para a anterior",
+            "voltar para a anterior",
+            "retrocede",
+            "retroceder"
+          ]
+        },
+        {
+          "name": "PausarIntent",
+          "slots": [],
+          "samples": [
+            "pausa",
+            "pausar",
+            "pausa a música",
+            "pausar a música",
+            "para a música",
+            "parar a música",
+            "para de tocar",
+            "parar de tocar",
+            "desliga a música",
+            "desligar a música",
+            "silêncio"
+          ]
+        },
+        {
+          "name": "ContinuarIntent",
+          "slots": [],
+          "samples": [
+            "continua",
+            "continuar",
+            "continua a música",
+            "continuar a música",
+            "volta a tocar",
+            "voltar a tocar",
+            "retoma",
+            "retomar",
+            "despausa",
+            "despausar"
+          ]
+        },
+        {
           "name": "AMAZON.HelpIntent",
           "samples": []
         },
