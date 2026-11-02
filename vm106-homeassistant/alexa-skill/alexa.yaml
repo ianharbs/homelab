@@ -7,13 +7,15 @@ alexa:
     client_id: !secret alexa_client_id
     client_secret: !secret alexa_client_secret
     # Só os botões que trocam a tela/som do PC (monitor / TV / surround) e o script de música aleatória
-    # (Music Assistant na Echo que foi chamada). O resto (Tuya) vem pela skill Smart Life.
+    # (Music Assistant na Echo que foi chamada) e os scripts que ligam/desligam o LED (display) do ar-condicionado. O resto (Tuya) vem pela skill Smart Life.
     filter:
       include_entities:
         - button.ian_pc_ian_pc_display
         - button.ian_pc_ian_pc_tv
         - button.ian_pc_ian_pc_surround
         - script.musica_aleatoria
+        - script.ligar_led_ar_suite
+        - script.desligar_led_ar_suite
     entity_config:
       button.ian_pc_ian_pc_display:
         name: PC no monitor
@@ -23,3 +25,7 @@ alexa:
         name: Som surround do PC
       script.musica_aleatoria:
         name: Música aleatória
+      script.ligar_led_ar_suite:
+        name: Ligar LED do ar
+      script.desligar_led_ar_suite:
+        name: Desligar LED do ar
