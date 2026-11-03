@@ -8,6 +8,7 @@ Home + DEL (um logo após o outro, em até JANELA s, qualquer ordem) alterna:
 O receptor original fica escondido do Kodi pela regra udev 70-controle-tv.rules
 (LIBINPUT_IGNORE_DEVICE), por isso este serviço precisa estar sempre rodando.
 """
+import concurrent.futures
 import json
 import os
 import select
@@ -15,13 +16,16 @@ import socket
 import sys
 import threading
 import time
+import urllib.error
 import urllib.request
 
 import evdev
 from evdev import ecodes as e
 
 NOME_RECEPTOR = "XING WEI 2.4G USB USB Composite Device"
-TV_IP = os.environ.get("TV_IP", "192.168.0.133")
+TV_IP = os.environ.get("TV_IP", "192.168.0.105")  # muda por DHCP: TV.descobre() acha de novo
+TV_MODELO = "XBR-55X905E"
+REDE = "192.168.0."
 PSK = open(os.environ.get("TV_PSK_FILE", "/etc/controle-tv/psk")).read().strip()
 KODI_RPC = ("127.0.0.1", 9090)
 JANELA = 0.6  # s para a segunda tecla da combinação
@@ -91,12 +95,44 @@ class TV:
         self.cv = threading.Condition()
         self.tocando = True
         self.codigos_ok = False
+        self.ip = TV_IP
         threading.Thread(target=self._loop, daemon=True).start()
 
-    def _post(self, path, body, headers, timeout=3):
-        req = urllib.request.Request(f"http://{TV_IP}{path}", data=body.encode(), headers=headers)
+    def _post1(self, ip, path, body, headers, timeout):
+        req = urllib.request.Request(f"http://{ip}{path}", data=body.encode(), headers=headers)
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read()
+
+    def _post(self, path, body, headers, timeout=3):
+        try:
+            return self._post1(self.ip, path, body, headers, timeout)
+        except (urllib.error.URLError, OSError):
+            if not self.descobre():
+                raise
+            return self._post1(self.ip, path, body, headers, timeout)
+
+    def descobre(self):
+        """A TV sumiu do IP conhecido: procura a Bravia na rede (DHCP pode ter mudado)."""
+        corpo = json.dumps({"method": "getInterfaceInformation", "id": 1,
+                            "params": [], "version": "1.0"})
+
+        def testa(i):
+            ip = f"{REDE}{i}"
+            try:
+                r = self._post1(ip, "/sony/system", corpo, {"Content-Type": "application/json"}, 1.5)
+                return ip if json.loads(r)["result"][0].get("modelName") == TV_MODELO else None
+            except Exception:
+                return None
+
+        with concurrent.futures.ThreadPoolExecutor(64) as ex:
+            for ip in ex.map(testa, range(1, 255)):
+                if ip:
+                    if ip != self.ip:
+                        log("TV achada em", ip, "(antes", self.ip + ")")
+                    self.ip = ip
+                    return True
+        log("TV não encontrada na rede")
+        return False
 
     def _atualiza_codigos(self):
         try:
