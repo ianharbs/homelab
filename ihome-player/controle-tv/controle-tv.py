@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """controle-tv: usa o controle XING WEI do iHome Player (Kodi) também na TV Sony.
 
-Home + DEL (um logo após o outro, em até JANELA s, qualquer ordem) alterna:
+DEL alterna:
   - modo Kodi: as teclas vão para um controle virtual (uinput) que o Kodi lê;
   - modo TV:   as teclas viram comandos IRCC enviados à Bravia pela rede (PSK).
 
@@ -28,8 +28,7 @@ TV_MODELO = "XBR-55X905E"
 REDE = "192.168.0."
 PSK = open(os.environ.get("TV_PSK_FILE", "/etc/controle-tv/psk")).read().strip()
 KODI_RPC = ("127.0.0.1", 9090)
-JANELA = 0.6  # s para a segunda tecla da combinação
-COMBO = {e.KEY_HOMEPAGE, e.KEY_BACKSPACE}
+TROCA = e.KEY_BACKSPACE  # botão DEL do controle: alterna Kodi <-> TV
 HDMI_KODI = 4  # segurar Home no modo Kodi põe a TV nesta entrada
 
 # Códigos IRCC padrão das Bravia (atualizados pelo getRemoteControllerInfo da TV)
@@ -243,41 +242,9 @@ def main():
 
     tv = TV()
     modo_tv = False
-    pendente = None  # (tecla, fd, instante)
-
-    def emite_kodi(fd, code):
-        ui = virt[fd]
-        for v in (1, 0):
-            ui.write(e.EV_KEY, code, v)
-            ui.syn()
-
-    def tecla_solta(code, fd):
-        """Tecla simples (fora da combinação) já confirmada."""
-        if modo_tv:
-            if code in MAPA:
-                tv.envia(MAPA[code])
-            else:
-                log("modo TV: tecla sem mapa", e.KEY.get(code, code))
-        else:
-            log("modo Kodi:", e.KEY.get(code, code))
-            emite_kodi(fd, code)
-            if code == e.KEY_HOMEPAGE:  # o controle manda Home ao segurar o Voltar/Home
-                tv.entrada(HDMI_KODI)
-
-    def alterna():
-        nonlocal modo_tv
-        modo_tv = not modo_tv
-        log("modo", "TV" if modo_tv else "Kodi")
-        kodi_aviso("Controle", "Agora controlando a TV" if modo_tv else "De volta ao Kodi")
 
     while True:
-        timeout = None
-        if pendente:
-            timeout = max(0.0, pendente[2] + JANELA - time.monotonic())
-        r, _, _ = select.select(list(fd2dev), [], [], timeout)
-        if pendente and time.monotonic() >= pendente[2] + JANELA:
-            tecla_solta(pendente[0], pendente[1])
-            pendente = None
+        r, _, _ = select.select(list(fd2dev), [], [])
         for fd in r:
             try:
                 eventos = list(fd2dev[fd].read())
@@ -290,26 +257,23 @@ def main():
                         virt[fd].write(ev.type, ev.code, ev.value)
                     continue
                 code, val = ev.code, ev.value
-                if code in COMBO:
-                    if val != 1:
-                        continue
-                    if pendente and pendente[0] != code:
-                        pendente = None
-                        alterna()
-                    else:
-                        if pendente:
-                            tecla_solta(pendente[0], pendente[1])
-                        pendente = (code, fd, time.monotonic())
+                if code == TROCA:
+                    if val == 1:
+                        modo_tv = not modo_tv
+                        log("modo", "TV" if modo_tv else "Kodi")
+                        kodi_aviso("Controle", "Agora controlando a TV" if modo_tv else "De volta ao Kodi")
                     continue
-                if pendente and val == 1:
-                    tecla_solta(pendente[0], pendente[1])
-                    pendente = None
                 if modo_tv:
                     nome = MAPA.get(code)
                     if val == 1 or (val == 2 and nome in REPETE):
-                        tecla_solta(code, fd)
+                        if nome:
+                            tv.envia(nome)
+                        else:
+                            log("modo TV: tecla sem mapa", e.KEY.get(code, code))
                 else:
                     virt[fd].write(e.EV_KEY, code, val)
+                    if code == e.KEY_HOMEPAGE and val == 1:  # segurar Voltar/Home → TV na HDMI do Kodi
+                        tv.entrada(HDMI_KODI)
 
 
 if __name__ == "__main__":
