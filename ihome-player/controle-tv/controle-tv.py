@@ -23,7 +23,7 @@ import evdev
 from evdev import ecodes as e
 
 NOME_RECEPTOR = "XING WEI 2.4G USB USB Composite Device"
-TV_IP = os.environ.get("TV_IP", "192.168.0.105")  # muda por DHCP: TV.descobre() acha de novo
+TV_IP = os.environ.get("TV_IP", "192.168.0.12")  # reserva DHCP no Omada; se mudar, TV.descobre() acha
 TV_MODELO = "XBR-55X905E"
 REDE = "192.168.0."
 PSK = open(os.environ.get("TV_PSK_FILE", "/etc/controle-tv/psk")).read().strip()

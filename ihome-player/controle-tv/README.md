@@ -1,6 +1,6 @@
 # controle-tv (iHome Player)
 
-Usa o controle XING WEI do Kodi também na TV Sony Bravia (192.168.0.133).
+Usa o controle XING WEI do Kodi também na TV Sony Bravia (192.168.0.12, reserva DHCP no Omada; se sumir, o serviço procura na rede).
 **Home + DEL** (um logo após o outro, até 0,6 s, qualquer ordem) alterna modo Kodi ↔ modo TV;
 o Kodi mostra um aviso a cada troca.
 
