@@ -1,7 +1,8 @@
 # controle-tv (iHome Player)
 
 Usa o controle XING WEI do Kodi também na TV Sony Bravia (192.168.0.12, reserva DHCP no Omada; se sumir, o serviço procura na rede).
-**DEL** alterna modo Kodi ↔ modo TV (o DEL não chega mais ao Kodi); o Kodi mostra um aviso a cada troca.
+**DEL duas vezes seguidas** (até 0,5 s) alterna modo Kodi ↔ modo TV; o Kodi mostra um aviso a cada troca.
+Um DEL só continua indo ao Kodi (mostrar/esconder legenda), com ~0,5 s de atraso; no modo TV é ignorado.
 No modo Kodi, segurar Voltar/Home (o controle manda Home) também põe a TV na HDMI 4.
 
 - `70-controle-tv.rules` → `/etc/udev/rules.d/`: esconde o receptor do Kodi (LIBINPUT_IGNORE_DEVICE).

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """controle-tv: usa o controle XING WEI do iHome Player (Kodi) também na TV Sony.
 
-DEL alterna:
+DEL duas vezes seguidas (até JANELA s) alterna; um DEL só continua indo ao Kodi:
   - modo Kodi: as teclas vão para um controle virtual (uinput) que o Kodi lê;
   - modo TV:   as teclas viram comandos IRCC enviados à Bravia pela rede (PSK).
 
@@ -28,7 +28,8 @@ TV_MODELO = "XBR-55X905E"
 REDE = "192.168.0."
 PSK = open(os.environ.get("TV_PSK_FILE", "/etc/controle-tv/psk")).read().strip()
 KODI_RPC = ("127.0.0.1", 9090)
-TROCA = e.KEY_BACKSPACE  # botão DEL do controle: alterna Kodi <-> TV
+TROCA = e.KEY_BACKSPACE  # botão DEL: dois cliques alternam Kodi <-> TV; um clique vai ao Kodi
+JANELA = 0.5  # s entre os dois cliques do DEL
 HDMI_KODI = 4  # segurar Home no modo Kodi põe a TV nesta entrada
 
 # Códigos IRCC padrão das Bravia (atualizados pelo getRemoteControllerInfo da TV)
@@ -242,9 +243,24 @@ def main():
 
     tv = TV()
     modo_tv = False
+    del_pendente = None  # (fd, instante) do primeiro clique do DEL
+
+    def del_simples(fd):
+        if modo_tv:
+            log("modo TV: DEL simples ignorado")
+            return
+        for v in (1, 0):
+            virt[fd].write(e.EV_KEY, TROCA, v)
+            virt[fd].syn()
 
     while True:
-        r, _, _ = select.select(list(fd2dev), [], [])
+        timeout = None
+        if del_pendente:
+            timeout = max(0.0, del_pendente[1] + JANELA - time.monotonic())
+        r, _, _ = select.select(list(fd2dev), [], [], timeout)
+        if del_pendente and time.monotonic() >= del_pendente[1] + JANELA:
+            del_simples(del_pendente[0])
+            del_pendente = None
         for fd in r:
             try:
                 eventos = list(fd2dev[fd].read())
@@ -258,11 +274,19 @@ def main():
                     continue
                 code, val = ev.code, ev.value
                 if code == TROCA:
-                    if val == 1:
+                    if val != 1:
+                        continue
+                    if del_pendente:
+                        del_pendente = None
                         modo_tv = not modo_tv
                         log("modo", "TV" if modo_tv else "Kodi")
                         kodi_aviso("Controle", "Agora controlando a TV" if modo_tv else "De volta ao Kodi")
+                    else:
+                        del_pendente = (fd, time.monotonic())
                     continue
+                if del_pendente and val == 1:  # outra tecla: o DEL era clique simples
+                    del_simples(del_pendente[0])
+                    del_pendente = None
                 if modo_tv:
                     nome = MAPA.get(code)
                     if val == 1 or (val == 2 and nome in REPETE):
