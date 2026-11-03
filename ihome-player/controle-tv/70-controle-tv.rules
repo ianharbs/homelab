@@ -1,0 +1,3 @@
+# Esconde do Kodi (libinput) o receptor XING WEI; o serviço controle-tv lê ele
+# e repassa as teclas por um controle virtual. O mouse (air mouse) continua direto.
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{id/vendor}=="1915", ATTRS{id/product}=="1025", ATTRS{name}!="*Mouse", ENV{LIBINPUT_IGNORE_DEVICE}="1"
