@@ -26,6 +26,7 @@ PSK = open(os.environ.get("TV_PSK_FILE", "/etc/controle-tv/psk")).read().strip()
 KODI_RPC = ("127.0.0.1", 9090)
 JANELA = 0.6  # s para a segunda tecla da combinação
 COMBO = {e.KEY_HOMEPAGE, e.KEY_BACKSPACE}
+HDMI_KODI = 4  # segurar Home no modo Kodi põe a TV nesta entrada
 
 # Códigos IRCC padrão das Bravia (atualizados pelo getRemoteControllerInfo da TV)
 IRCC = {
@@ -117,12 +118,40 @@ class TV:
             self.fila.append(nome)
             self.cv.notify()
 
+    def _rpc(self, servico, metodo, params, versao="1.0"):
+        raw = self._post(f"/sony/{servico}", json.dumps(
+            {"method": metodo, "id": 1, "params": params, "version": versao}),
+            {"Content-Type": "application/json", "X-Auth-PSK": PSK})
+        d = json.loads(raw)
+        if "error" in d:
+            raise RuntimeError(d["error"])
+        return d.get("result")
+
+    def entrada(self, porta):
+        with self.cv:
+            self.fila.append(("hdmi", porta))
+            self.cv.notify()
+
+    def _hdmi(self, porta):
+        try:
+            if self._rpc("system", "getPowerStatus", [])[0].get("status") != "active":
+                self._rpc("system", "setPowerStatus", [{"status": True}])
+                log("TV ligada")
+                time.sleep(4)
+            self._rpc("avContent", "setPlayContent", [{"uri": f"extInput:hdmi?port={porta}"}])
+            log("TV <- HDMI", porta)
+        except Exception as ex:
+            log("TV falhou HDMI", porta, ex)
+
     def _loop(self):
         while True:
             with self.cv:
                 while not self.fila:
                     self.cv.wait()
                 nome = self.fila.pop(0)
+            if isinstance(nome, tuple):  # ("hdmi", porta)
+                self._hdmi(nome[1])
+                continue
             if not self.codigos_ok:
                 self._atualiza_codigos()
             codigo = IRCC.get(nome)
@@ -194,7 +223,10 @@ def main():
             else:
                 log("modo TV: tecla sem mapa", e.KEY.get(code, code))
         else:
+            log("modo Kodi:", e.KEY.get(code, code))
             emite_kodi(fd, code)
+            if code == e.KEY_HOMEPAGE:  # o controle manda Home ao segurar o Voltar/Home
+                tv.entrada(HDMI_KODI)
 
     def alterna():
         nonlocal modo_tv
