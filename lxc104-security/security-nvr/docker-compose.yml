@@ -12,6 +12,9 @@ services:
     shm_size: "512mb"
     devices:
       - /dev/dri/renderD128:/dev/dri/renderD128
+    # CT unprivileged: root do container não tem acesso ao renderD128 sem o grupo render (gid 993 mapeado no CT)
+    group_add:
+      - "993"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIG_PATH}/frigate/config:/config
