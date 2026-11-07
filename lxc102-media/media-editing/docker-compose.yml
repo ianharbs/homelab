@@ -106,7 +106,8 @@ services:
       - media_net
   # Avisa no Telegram quando filme/episódio fica DISPONÍVEL (importado + legenda PT ou áudio PT),
   # agrupando os episódios da mesma série. Sonarr/Radarr chamam por Webhook (On File Import);
-  # a legenda é conferida no Bazarr. Segredos (tokens/chaves) em ${CONFIG_PATH}/midia-notify/secrets.env.
+  # a legenda é conferida no Bazarr. Segredos (tokens/chaves) em ${CONFIG_PATH}/midia-notify/secrets.env,
+  # lido pelo próprio script (fora do git).
   midia-notify:
     image: python:3.12-alpine
     container_name: midia-notify
@@ -115,9 +116,6 @@ services:
       - TZ=${TZ}
       - PYTHONUNBUFFERED=1
       - DB_PATH=/state/notify.db
-    env_file:
-      - path: ${CONFIG_PATH}/midia-notify/secrets.env
-        required: false
     volumes:
       - ./midia-notify/notify.py:/app/notify.py:ro
       - ${CONFIG_PATH}/midia-notify:/state

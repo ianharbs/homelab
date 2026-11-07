@@ -19,6 +19,21 @@ import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+def load_secrets(path):
+    """Segredos ficam fora do git, em /state/secrets.env (lido aqui, não por env_file do compose)."""
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    if v.strip() or k.strip() not in os.environ:
+                        os.environ[k.strip()] = v.strip()
+    except FileNotFoundError:
+        pass
+
+
+load_secrets(os.environ.get("SECRETS_FILE", "/state/secrets.env"))
 E = os.environ.get
 PORT = int(E("PORT", "8095"))
 DB_PATH = E("DB_PATH", "/state/notify.db")
