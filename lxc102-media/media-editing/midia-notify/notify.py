@@ -27,7 +27,7 @@ def load_secrets(path):
                 line = line.strip()
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
-                    if v.strip() or k.strip() not in os.environ:
+                    if not os.environ.get(k.strip()):  # variável de ambiente tem prioridade
                         os.environ[k.strip()] = v.strip()
     except FileNotFoundError:
         pass
@@ -49,6 +49,15 @@ RADARR, RADARR_KEY = E("RADARR_URL", "http://radarr:7878"), E("RADARR_API_KEY", 
 BAZARR, BAZARR_KEY = E("BAZARR_URL", "http://bazarr:6767"), E("BAZARR_API_KEY", "")
 JELLYFIN, JELLYFIN_KEY = E("JELLYFIN_URL", "http://jellyfin:8096"), E("JELLYFIN_API_KEY", "")
 JELLYFIN_PUBLIC = E("JELLYFIN_PUBLIC_URL", "https://jf.ihome.dev.br").rstrip("/")
+SEERR, SEERR_KEY = E("SEERR_URL", "http://seerr:5055"), E("SEERR_API_KEY", "")
+
+
+def kv(s):  # "a=1,b=2" -> {"a": "1", "b": "2"}  (chaves em minúsculas)
+    return {k.strip().lower(): v.strip() for k, v in (p.split("=", 1) for p in s.split(",") if "=" in p)}
+
+
+REQ_NAMES = kv(E("REQUESTER_NAMES", ""))  # usuário do Seerr -> nome bonito
+REQ_TG = kv(E("REQUESTER_TELEGRAM", ""))  # usuário do Seerr -> id do Telegram (menciona de verdade)
 TG_TOKEN, TG_CHAT = E("TELEGRAM_TOKEN", ""), E("TELEGRAM_CHAT_ID", "")
 TG_THREAD = E("TELEGRAM_THREAD_ID", "")
 PT_AUDIO = {"por", "pob", "pt", "pb"}
@@ -289,6 +298,49 @@ def jellyfin_link(item):
     return f"{JELLYFIN_PUBLIC}/web/#/search?query={urllib.parse.quote(item['title'] or '')}"
 
 
+_req_cache = {"at": 0, "data": []}
+
+
+def seerr_requests():
+    if not SEERR_KEY:
+        return []
+    if time.time() - _req_cache["at"] > 300:
+        try:
+            res = http("GET", f"{SEERR}/api/v1/request?take=1000&filter=all&sort=added", {"X-Api-Key": SEERR_KEY})
+            _req_cache.update(at=time.time(), data=res.get("results", []))
+        except Exception as e:
+            log.warning("seerr: %s", e)
+    return _req_cache["data"]
+
+
+def requesters(head, items):
+    """Quem pediu no Seerr (série: só pedidos que incluem as temporadas avisadas)."""
+    if not head.get("provider"):
+        return []
+    prov, pid = head["provider"].split(":")
+    seasons = {i["season"] for i in items}
+    out = []
+    for r in seerr_requests():
+        m = r.get("media") or {}
+        if r.get("status") == 3 or str(m.get(f"{prov}Id")) != pid:  # 3 = recusado
+            continue
+        if head["kind"] == "ep":
+            rs = {s.get("seasonNumber") for s in r.get("seasons") or []}
+            if rs and not rs & seasons:
+                continue
+        u = r.get("requestedBy") or {}
+        name = u.get("displayName") or u.get("jellyfinUsername") or u.get("username") or u.get("email")
+        if name and name not in out:
+            out.append(name)
+    return out
+
+
+def who(name):
+    nice = esc(REQ_NAMES.get(name.lower(), name))
+    tg = REQ_TG.get(name.lower())
+    return f'<a href="tg://user?id={tg}">{nice}</a>' if tg else nice
+
+
 def caption(head, items):
     h = esc(head["title"] or "?")
     if head["kind"] == "test":
@@ -315,6 +367,9 @@ def caption(head, items):
         lines.append("✅ Disponível (alguns episódios ainda sem legenda)")
     else:
         lines.append("✅ Disponível e legendado")
+    req = requesters(head, items)
+    if req:
+        lines.append("🙋 Pedido por " + " e ".join(who(n) for n in req))
     lines.append(f'<a href="{jellyfin_link(head)}">▶️ Assistir no Jellyfin</a>')
     return "\n".join(lines)
 

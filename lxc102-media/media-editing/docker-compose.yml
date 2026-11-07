@@ -117,7 +117,7 @@ services:
       - PYTHONUNBUFFERED=1
       - DB_PATH=/state/notify.db
     volumes:
-      - ./midia-notify/notify.py:/app/notify.py:ro
+      - ./midia-notify:/app:ro
       - ${CONFIG_PATH}/midia-notify:/state
     command: python /app/notify.py
     expose:
