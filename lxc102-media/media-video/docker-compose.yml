@@ -28,6 +28,9 @@ services:
       - /usr/lib/x86_64-linux-gnu/libOpenCL.so.1:/usr/lib/x86_64-linux-gnu/libOpenCL.so.1:ro
       - /usr/lib/x86_64-linux-gnu/libigc.so.1:/usr/lib/x86_64-linux-gnu/libigc.so.1:ro
       - /usr/lib/x86_64-linux-gnu/libigdfcl.so.1:/usr/lib/x86_64-linux-gnu/libigdfcl.so.1:ro
+      # runtime OpenCL da Intel vem do CT (a imagem ubu2604 parou de trazê-lo; sem ele o tone mapping HDR falha)
+      - /usr/lib/x86_64-linux-gnu/intel-opencl:/usr/lib/x86_64-linux-gnu/intel-opencl:ro
+      - /usr/lib/x86_64-linux-gnu/libigdgmm.so.12:/usr/lib/x86_64-linux-gnu/libigdgmm.so.12:ro
     ports:
       - 8096:8096
       - 8920:8920
