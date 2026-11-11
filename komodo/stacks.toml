@@ -181,7 +181,7 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "media-editing"
-description = "Bazarr, Lingarr, Profilarr, Seerr"
+description = "Bazarr, Lingarr, Profilarr, Seerr, midia-notify, legenda-revisor"
 tags = ["midia", "srv-media"]
 [stack.config]
 links = ["http://192.168.10.20:5055", "http://192.168.10.20:6767", "http://192.168.10.20:9876", "http://192.168.10.20:6868"]

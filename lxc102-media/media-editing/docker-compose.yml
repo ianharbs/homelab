@@ -125,3 +125,26 @@ services:
     networks:
       - media_net
     restart: unless-stopped
+
+  # Revisa as legendas que o Lingarr traduz (EN -> PT-BR) com o Claude Sonnet 5.5 e corrige os erros
+  # de sentido/contexto. Backup do .srt original em /data/data/backup/legendas, relatórios e custo em
+  # ${CONFIG_PATH}/legenda-revisor (ANTHROPIC_API_KEY em secrets.env, fora do git). Teto: US$ 10/mês.
+  # Acervo antigo: docker exec legenda-revisor python /app/revisor.py revisar "/data/tv/Série"
+  legenda-revisor:
+    build: ./legenda-revisor
+    image: legenda-revisor:local
+    pull_policy: build
+    container_name: legenda-revisor
+    user: "${PUID}:${PGID}"
+    environment:
+      - TZ=${TZ}
+      - PYTHONUNBUFFERED=1
+      - MONTHLY_BUDGET_USD=10
+      - NEW_RESERVE_USD=4
+    volumes:
+      - ./legenda-revisor:/app:ro
+      - ${CONFIG_PATH}/legenda-revisor:/state
+      - ${CONFIG_PATH}/lingarr:/lingarr:ro
+      - ${DATA_PATH}/data:/data
+    network_mode: bridge
+    restart: unless-stopped
