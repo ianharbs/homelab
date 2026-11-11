@@ -46,7 +46,7 @@ def load_secrets(path):
 load_secrets(os.environ.get("SECRETS_FILE", "/state/secrets.env"))
 E = os.environ.get
 MODEL = E("MODEL", "claude-sonnet-5-5")
-EFFORT = E("EFFORT", "low")  # low | medium | high  (mais alto = mais caro)
+EFFORT = E("EFFORT", "medium")  # low | medium | high  (mais alto = mais caro)
 BUDGET = float(E("MONTHLY_BUDGET_USD", "10"))
 RESERVE = float(E("NEW_RESERVE_USD", "4"))  # acervo antigo para quando o gasto do mês chega em BUDGET-RESERVE
 POLL = int(E("POLL_SECONDS", "120"))
@@ -245,15 +245,24 @@ Corrija quando houver:
 - nomes próprios, marcas e lugares que não deveriam ter sido traduzidos.
 
 NÃO corrija:
-- escolhas de estilo, sinônimos ou frases que já estão corretas e naturais: se uma pessoa razoável aceitaria a tradução, deixe como está;
-- pontuação ou maiúsculas sem impacto no sentido;
+- escolhas de estilo, sinônimos ou frases que já estão corretas e naturais: se uma pessoa razoável aceitaria a tradução, deixe como está (ex.: "Você me salvou" para "You're a lifesaver" está certo);
+- só quebra de linha, espaços, pontuação, aspas ou maiúsculas;
+- palavras em outro idioma que o original também usa (espanhol, francês...): deixe como estão;
 - erros que já vêm do texto em inglês.
+Nunca acrescente informação que não está no inglês nem explique a piada dentro da legenda.
 
 Ao corrigir, devolva o texto PT COMPLETO do bloco já corrigido:
 - mantenha as mesmas tags e marcações do PT atual (<i>, </i>, {\\an8}, ♪) nas mesmas posições;
 - use "\\n" para quebra de linha; no máximo 2 linhas, cerca de 42 caracteres por linha; mantenha o número de linhas do PT atual sempre que der;
 - diálogo com dois falantes continua com "-" no início de cada linha;
 - português brasileiro natural e falado, coerente com o tom da cena.
+
+Antes de devolver, releia cada correção: ela precisa estar em português impecável e ser claramente melhor que a atual.
+
+"confianca":
+- "alta": erro objetivo que qualquer revisor humano corrigiria (sentido errado, gênero errado, nome traduzido, texto corrompido/duplicado, bloco não traduzido, gíria entendida ao pé da letra);
+- "media": provavelmente melhor, mas a atual é defensável;
+- "baixa": questão de gosto. Só as de confiança alta são aplicadas; na dúvida, use "media".
 
 Em "motivo" explique em até 15 palavras, em português. Se não houver nada a corrigir, devolva a lista vazia. Corrija o mínimo necessário."""
 
@@ -267,13 +276,14 @@ SCHEMA = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["id", "pt", "tipo", "motivo"],
+                "required": ["id", "pt", "tipo", "confianca", "motivo"],
                 "properties": {
                     "id": {"type": "integer"},
                     "pt": {"type": "string"},
                     "tipo": {"type": "string", "enum": [
                         "sentido", "contexto", "nao_traduzido", "genero_concordancia",
                         "inconsistencia", "nome_proprio", "gramatica", "outro"]},
+                    "confianca": {"type": "string", "enum": ["alta", "media", "baixa"]},
                     "motivo": {"type": "string"},
                 },
             },
@@ -370,6 +380,11 @@ def validate(fix, pblock, eblock):
         return None, "texto vazio"
     if new == [l.strip() for l in old]:
         return None, "igual ao atual"
+    letters = lambda ls: re.sub(r"[\W_]+", "", TAG.sub("", " ".join(ls))).lower()
+    if letters(new) == letters([l.strip() for l in old]):
+        return None, "só pontuação/quebra de linha"
+    if fix.get("confianca") != "alta":
+        return None, f"confiança {fix.get('confianca')} (só relatório)"
     if len(new) > 2 and len(new) > len(old):
         return None, f"{len(new)} linhas"
     if sorted(TAG.findall("\n".join(new))) != sorted(TAG.findall("\n".join(old))):
@@ -410,7 +425,7 @@ def review_file(con, row, limit, apply=True):
         fixes += [f for f in got if lo <= f.get("id", -1) < hi]
 
     now = dt.datetime.now().isoformat(timespec="seconds")
-    applied = []
+    applied, suggested = [], []
     for f in fixes:
         e, p = pairs[f["id"]]
         new, why = validate(f, p, e)
@@ -421,11 +436,13 @@ def review_file(con, row, limit, apply=True):
         if new:
             applied.append((f, e, list(p["lines"]), new))
             p["lines"] = new
+        elif why.startswith("confiança") and f.get("confianca") == "media":
+            suggested.append((f, e, list(p["lines"]), f["pt"].split("\n")))
         else:
             log.info("  correção do bloco %s rejeitada (%s): %s", p["num"], why, f["pt"])
     con.commit()
 
-    write_report(path, label, applied, cost)
+    write_report(path, label, applied, cost, suggested)
     if applied and apply and not DRY_RUN:
         backup(path)
         tmp = path + ".revisor.tmp"
@@ -447,7 +464,7 @@ def backup(path):
     shutil.copy2(path, dst)
 
 
-def write_report(path, label, applied, cost):
+def write_report(path, label, applied, cost, suggested=()):
     d = os.path.join(REPORT_DIR, month())
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, label + ".md"), "w", encoding="utf-8") as fh:
@@ -456,6 +473,11 @@ def write_report(path, label, applied, cost):
         for f, e, old, new in applied:
             fh.write(f"- **{f['tipo']}** — {f['motivo']}\n  - EN: {flat(e['lines']) if e else ''}\n"
                      f"  - antes: {flat(old)}\n  - depois: {flat(new)}\n")
+        if suggested:
+            fh.write(f"\n## Sugestões não aplicadas (confiança média): {len(suggested)}\n\n")
+            for f, e, old, new in suggested:
+                fh.write(f"- **{f['tipo']}** — {f['motivo']}\n  - EN: {flat(e['lines']) if e else ''}\n"
+                         f"  - atual: {flat(old)}\n  - sugestão: {flat(new)}\n")
 
 
 # ---------------------------------------------------------------- worker / comandos
