@@ -204,12 +204,21 @@ def enqueue(con, path, source, priority, force=False):
 def poll_lingarr(con):
     """Traduções concluídas (status 2) com id maior que o último visto. 1ª execução começa do máximo atual
     (o acervo antigo entra pelo comando `revisar`, para não gastar o orçamento de uma vez)."""
+    # O Lingarr grava em modo WAL: as linhas novas ficam no local.db-wal até o checkpoint. O banco montado
+    # é só leitura (e o -shm é do root), então copia banco + WAL para /tmp e abre a cópia, que aplica o WAL.
+    # Uma cópia pega no meio de uma escrita no máximo perde os últimos frames (checksum), e o próximo poll pega.
+    snap = "/tmp/lingarr-snap"
     try:
-        lg = sqlite3.connect(f"file:{LINGARR_DB}?mode=ro&immutable=1", uri=True, timeout=5)
+        shutil.rmtree(snap, ignore_errors=True)
+        os.makedirs(snap)
+        for suf in ("", "-wal"):
+            if os.path.exists(LINGARR_DB + suf):
+                shutil.copyfile(LINGARR_DB + suf, os.path.join(snap, "local.db" + suf))
+        lg = sqlite3.connect(os.path.join(snap, "local.db"), timeout=5)
         rows = lg.execute("select id, translated_subtitle from translation_requests "
                           "where status=2 and translated_subtitle is not null order by id").fetchall()
         lg.close()
-    except sqlite3.Error as e:
+    except (sqlite3.Error, OSError) as e:
         log.warning("não consegui ler o banco do Lingarr (%s), tento de novo depois", e)
         return
     last = meta(con, "lingarr_last_id")
