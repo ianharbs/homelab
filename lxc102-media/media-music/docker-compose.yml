@@ -1,6 +1,16 @@
 networks:
   media_net:
     external: true
+  # VLAN 1 (casa) via eth1 do CT 102 (net1, sem IP no CT): só o SpotConnect usa
+  vlan1:
+    driver: macvlan
+    driver_opts:
+      parent: eth1
+    ipam:
+      config:
+        - subnet: 192.168.0.0/24
+          gateway: 192.168.0.1
+          ip_range: 192.168.0.15/32
 
 services:
   navidrome:
@@ -190,17 +200,20 @@ services:
 
   # Spotify Connect -> UPnP: faz o receptor UPnP "Sistema HiFi" (UAPP no Redmi 15C ligado ao DAC
   # Fosi ZH3) aparecer como dispositivo no app do Spotify. Descoberta UPnP e Spotify Connect usam
-  # multicast, que não passa entre VLANs: roda em host network presa ao eth1 do CT (VLAN 1,
-  # 192.168.0.14). FLAC para o renderer (o Spotify chega em Vorbis 320 e é só re-embalado).
+  # multicast, que não passa entre VLANs: macvlan com interface ÚNICA na VLAN 1 (192.168.0.15).
+  # Em host network o mDNS dele entrava no grupo pelo eth0 (VLAN 10) e o Spotify não o via.
+  # FLAC para o renderer (o Spotify chega em Vorbis 320 e é só re-embalado).
   spotconnect:
     image: giof71/spotconnect:latest
     container_name: spotconnect
-    network_mode: host
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.15
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - SPOTCONNECT_MODE=upnp
-      - NETWORK_SELECT=192.168.0.14
+      - NETWORK_SELECT=192.168.0.15
       - ENABLE_AUTO_NETWORK=no
       - VORBIS_BITRATE=320
       - OUTPUT_CODEC=flc
