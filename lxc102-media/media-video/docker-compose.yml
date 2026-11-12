@@ -35,7 +35,8 @@ services:
       - 8096:8096
       - 8920:8920
       - 7359:7359/udp
-      - 1900:1900/udp
+      # 1900/udp (DLNA) removida: Jellyfin 10.9+ não tem DLNA embutido e o plugin não está
+      # instalado; a porta ficava presa no docker-proxy e impedia o SpotConnect (media-music) de subir.
     networks:
       - media_net
 
