@@ -187,3 +187,23 @@ services:
       sh -c "pip install -q --user --disable-pip-version-check mutagen==1.47.0 &&
              while true; do python /app/lyrics.py; sleep 86400; done"
     restart: unless-stopped
+
+  # Spotify Connect -> UPnP: faz o receptor UPnP "Sistema HiFi" (UAPP no Redmi 15C ligado ao DAC
+  # Fosi ZH3) aparecer como dispositivo no app do Spotify. Descoberta UPnP e Spotify Connect usam
+  # multicast, que não passa entre VLANs: roda em host network presa ao eth1 do CT (VLAN 1,
+  # 192.168.0.14). FLAC para o renderer (o Spotify chega em Vorbis 320 e é só re-embalado).
+  spotconnect:
+    image: giof71/spotconnect:latest
+    container_name: spotconnect
+    network_mode: host
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - SPOTCONNECT_MODE=upnp
+      - NETWORK_SELECT=192.168.0.14
+      - ENABLE_AUTO_NETWORK=no
+      - VORBIS_BITRATE=320
+      - OUTPUT_CODEC=flc
+    volumes:
+      - ${CONFIG_PATH}/spotconnect:/config
+    restart: unless-stopped
