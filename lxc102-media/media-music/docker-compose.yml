@@ -26,6 +26,9 @@ services:
       - ND_PLUGINS_AUTORELOAD=true
       - ND_AGENTS=audiomuseai,lastfm,deezer,apple-music
       - ND_DEVARTISTINFOTIMETOLIVE=1s
+      # uma pasta = um álbum: o DroppedNeedle às vezes casa faixas da mesma pasta com edições
+      # diferentes no MusicBrainz e o padrão (musicbrainz_albumid|...) dividia o álbum em 2-3
+      - ND_PID_ALBUM=folder
     volumes:
       - ${CONFIG_PATH}/navidrome:/data
       # rw: o plugin Musixmatch grava a letra (.lrc/.txt) ao lado da faixa quando ela é tocada
