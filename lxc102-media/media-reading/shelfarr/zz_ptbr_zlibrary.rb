@@ -166,6 +166,61 @@ Rails.application.config.after_initialize do
     end
   end)
 
+  # 3b. Trava contra "título = nome da série".
+  # O ReleaseScorer dá título 100 sempre que o título pedido aparece como frase
+  # inteira no nome do release. Quando o livro tem o mesmo nome da série
+  # ("Trono de Vidro"), TODOS os volumes casam ("Coroa da Meia Noite: Trono de
+  # vidro - Volume 2") e o auto-select escolhia qualquer um (15/11, pedido #64).
+  # Se o release traz outro número de volume ou palavras a mais além do
+  # título pedido, a nota de título cai para 60 (vai p/ seleção manual em vez
+  # de baixar o livro errado).
+  module PtBrTitleGuard
+    VOLUME_WORDS = %w[vol volume livro book tomo parte part].freeze
+
+    module_function
+
+    def tokens(text)
+      PtBrZlib.normalize(text).scan(/[[:alnum:]]+/)
+    end
+
+    def suspicious?(release_title, book)
+      title = book.title.to_s
+      return false if title.blank?
+
+      author_tokens = tokens(book.author).select { |t| t.size >= 3 }
+      main = release_title.to_s.sub(/(\s*(\[[^\]]*\]|\([^)]*\)))+\s*\z/, "")
+      parts = main.split(/\s+-\s+/)
+      parts.pop if parts.size > 1 && (tokens(parts.last) & author_tokens).any?
+      main_tokens = tokens(parts.join(" "))
+      title_tokens = tokens(title)
+
+      extra = main_tokens - title_tokens - VOLUME_WORDS - author_tokens
+      other_number = extra.any? { |t| t.match?(/\d/) && !t.match?(/\A0*1\z/) }
+      return true if other_number
+
+      # Qualquer palavra a mais ("Trono de vidro: Rainha das Sombras", "Box",
+      # "Edição completa") vira seleção manual. Na dúvida, melhor perguntar do
+      # que baixar o volume errado. O nome da série nem sempre vem no pedido,
+      # então não dá para limitar isso só aos casos título = série.
+      extra.any? { |t| !t.match?(/\d/) && t.size >= 3 }
+    end
+  end
+
+  ReleaseScorer.prepend(Module.new do
+    private
+
+    def calculate_title_score
+      original = super
+      begin
+        return original if original < 90
+        PtBrTitleGuard.suspicious?(@search_result.title, @book) ? 60 : original
+      rescue StandardError => e
+        Rails.logger.warn "[PtBrTitleGuard] #{e.class}: #{e.message}"
+        original
+      end
+    end
+  end)
+
   # 4. Não apaga o idioma do Z-Library quando o título não indica nenhum.
   SearchResult.prepend(Module.new do
     def calculate_score!
