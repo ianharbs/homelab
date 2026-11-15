@@ -70,6 +70,8 @@ services:
       - ${CONFIG_PATH}/shelfarr/libation_control:/run/shelfarr-libation:ro
       # títulos em pt-BR nos resultados do Hardcover (ver shelfarr/zz_ptbr_titles.rb)
       - ./shelfarr/zz_ptbr_titles.rb:/rails/config/initializers/zz_ptbr_titles.rb:ro
+      # preferência por edição brasileira no Z-Library (ver shelfarr/zz_ptbr_zlibrary.rb)
+      - ./shelfarr/zz_ptbr_zlibrary.rb:/rails/config/initializers/zz_ptbr_zlibrary.rb:ro
     environment:
       - TZ=${TZ}
       - PUID=${PUID}
