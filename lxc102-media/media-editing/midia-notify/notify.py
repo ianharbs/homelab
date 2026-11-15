@@ -1,4 +1,10 @@
-"""midia-notify: avisa no Telegram quando um filme/episódio está DISPONÍVEL (importado + legendado).
+"""midia-notify: centrais de mídia no Telegram (bot @iHomeSCbot).
+
+Cada tipo tem seu canal (TELEGRAM_CHAT_SERIES/FILMES/LIVROS/MUSICA, ver common.py):
+  séries/filmes  -> avisa quando está DISPONÍVEL (importado + legendado) — este arquivo
+  livros         -> webhook do Shelfarr (POST /shelfarr) — on_shelfarr()
+  música         -> álbuns novos no Navidrome — musica.py
+  status         -> perguntas respondidas por IA com dados do Sonarr/Radarr/Shelfarr/Navidrome — statusbot.py
 
 Fluxo:
   Sonarr/Radarr (Webhook, evento On File Import) -> POST /sonarr | /radarr -> item "pendente" no SQLite
@@ -19,22 +25,10 @@ import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-def load_secrets(path):
-    """Segredos ficam fora do git, em /state/secrets.env (lido aqui, não por env_file do compose)."""
-    try:
-        with open(path) as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    if not os.environ.get(k.strip()):  # variável de ambiente tem prioridade
-                        os.environ[k.strip()] = v.strip()
-    except FileNotFoundError:
-        pass
+from common import E, esc, http, post  # noqa: E402  (carrega /state/secrets.env)
+import musica  # noqa: E402
+import statusbot  # noqa: E402
 
-
-load_secrets(os.environ.get("SECRETS_FILE", "/state/secrets.env"))
-E = os.environ.get
 PORT = int(E("PORT", "8095"))
 DB_PATH = E("DB_PATH", "/state/notify.db")
 POLL = int(E("POLL_SECONDS", "300"))
@@ -58,8 +52,9 @@ def kv(s):  # "a=1,b=2" -> {"a": "1", "b": "2"}  (chaves em minúsculas)
 
 REQ_NAMES = kv(E("REQUESTER_NAMES", ""))  # usuário do Seerr -> nome bonito
 REQ_TG = kv(E("REQUESTER_TELEGRAM", ""))  # usuário do Seerr -> id do Telegram (menciona de verdade)
-TG_TOKEN, TG_CHAT = E("TELEGRAM_TOKEN", ""), E("TELEGRAM_CHAT_ID", "")
-TG_THREAD = E("TELEGRAM_THREAD_ID", "")
+SHELFARR_TOKEN = E("SHELFARR_WEBHOOK_TOKEN", "")
+KAVITA_PUBLIC = E("KAVITA_PUBLIC_URL", "https://kavita.ihome.dev.br")
+ABS_PUBLIC = E("ABS_PUBLIC_URL", "https://audiobook.ihome.dev.br")
 PT_AUDIO = {"por", "pob", "pt", "pb"}
 
 logging.basicConfig(level=E("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
@@ -68,22 +63,6 @@ lock = threading.Lock()
 
 
 # ---------------------------------------------------------------- util
-def http(method, url, headers=None, body=None, timeout=20):
-    data = None
-    headers = dict(headers or {})
-    if body is not None:
-        data = json.dumps(body).encode()
-        headers["Content-Type"] = "application/json"
-    req = urllib.request.Request(url, data=data, method=method, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        raw = r.read()
-    return json.loads(raw) if raw.strip() else None
-
-
-def esc(s):
-    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
 def db():
     c = sqlite3.connect(DB_PATH)
     c.row_factory = sqlite3.Row
@@ -165,6 +144,36 @@ def on_radarr(p):
                     poster=poster, provider=f"tmdb:{m.get('tmdbId')}" if m.get("tmdbId") else None)])
 
 
+BOOK_EVENTS = {"request_completed", "request_failed", "test"}
+
+
+def on_shelfarr(p):
+    """Shelfarr (Configurações > Webhook): livro baixado/importado ou que falhou -> central de livros."""
+    ev = p.get("event")
+    if ev not in BOOK_EVENTS:
+        return
+    if ev == "test":
+        post("livros", "🔔 <b>Teste do Shelfarr</b>\nNotificações de livros funcionando.")
+        return
+    b, u = p.get("book") or {}, p.get("user") or {}
+    audio = b.get("book_type") == "audiobook"
+    head = f"{'🎧' if audio else '📚'} <b>{esc(b.get('title') or '?')}</b>"
+    if b.get("author"):
+        head += f"\n✍️ {esc(b['author'])}"
+    lines = [head]
+    if ev == "request_completed":
+        lines.append("✅ Disponível" + (" (audiolivro)" if audio else ""))
+    else:
+        lines.append("❌ Não consegui baixar" + (f": {esc(p.get('message'))}" if p.get("message") else ""))
+    if u.get("username"):
+        lines.append("🙋 Pedido por " + who(u["username"]))
+    if ev == "request_completed":
+        lines.append(f'<a href="{ABS_PUBLIC if audio else KAVITA_PUBLIC}">'
+                     f'{"🎧 Ouvir no Audiobookshelf" if audio else "📖 Ler no Kavita"}</a>')
+    post("livros", "\n".join(lines), photo=b.get("cover_url"))
+    log.info("livro %s: %s", ev, b.get("title"))
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -178,6 +187,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/health"):
             return self.reply(200)
+        if self.path.startswith("/chats"):  # canais/grupos onde o bot foi adicionado (para achar os ids)
+            body = json.dumps(statusbot.known_chats(), ensure_ascii=False, indent=1)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            return self.wfile.write(body.encode())
         if self.path.startswith("/pending"):
             with db() as c:
                 rows = [dict(r) for r in c.execute("SELECT * FROM item WHERE sent_at IS NULL ORDER BY imported_at")]
@@ -197,7 +212,9 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             return self.reply(400, "bad json")
         try:
-            if p.get("eventType") == "Test":
+            if url.path == "/shelfarr":
+                on_shelfarr(p)
+            elif p.get("eventType") == "Test":
                 log.info("teste recebido de %s", url.path)
                 send({"kind": "test", "title": f"Teste do {url.path.strip('/').capitalize()}"}, [])
             elif url.path == "/sonarr":
@@ -375,26 +392,7 @@ def caption(head, items):
 
 
 def send(head, items):
-    text = caption(head, items)
-    if not (TG_TOKEN and TG_CHAT):
-        log.info("[sem Telegram configurado] mensagem:\n%s", text)
-        return True
-    base = f"https://api.telegram.org/bot{TG_TOKEN}"
-    msg = {"chat_id": TG_CHAT, "parse_mode": "HTML"}
-    if TG_THREAD:
-        msg["message_thread_id"] = int(TG_THREAD)
-    try:
-        if head.get("poster"):
-            try:
-                http("POST", f"{base}/sendPhoto", body={**msg, "photo": head["poster"], "caption": text})
-                return True
-            except Exception as e:
-                log.warning("sendPhoto falhou (%s), mandando só texto", e)
-        http("POST", f"{base}/sendMessage", body={**msg, "text": text, "link_preview_options": {"is_disabled": True}})
-        return True
-    except Exception as e:
-        log.error("telegram: %s", e)
-        return False
+    return post("series" if head["kind"] == "ep" else "filmes", caption(head, items), photo=head.get("poster"))
 
 
 def flush_ready():
@@ -434,5 +432,7 @@ def worker():
 if __name__ == "__main__":
     init_db()
     threading.Thread(target=worker, daemon=True).start()
-    log.info("ouvindo em :%d (telegram %s)", PORT, "ok" if TG_TOKEN and TG_CHAT else "NÃO configurado")
+    threading.Thread(target=musica.worker, daemon=True).start()
+    threading.Thread(target=statusbot.worker, daemon=True).start()
+    log.info("ouvindo em :%d", PORT)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
