@@ -178,11 +178,21 @@ def pedidos_recentes(ip):
 
 
 def criar_pedido(nome, email, recado, ip):
+    """Cria o pedido. Envio repetido (clique duplo, F5) do mesmo IP+nome em 30 min devolve o pedido já existente."""
     token = secrets.token_urlsafe(24)
+    desde = (datetime.now() - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
     with db_lock, db() as con:
-        cur = con.execute("INSERT INTO pedidos (token,nome,email,recado,ip,criado) VALUES (?,?,?,?,?,?)",
-                          (token, nome, email, recado, ip, now()))
-        pid = cur.lastrowid
+        dup = con.execute("SELECT id FROM pedidos WHERE ip=? AND lower(nome)=lower(?) AND criado>=? "
+                          "AND status IN ('pendente','aprovado') ORDER BY id LIMIT 1", (ip, nome, desde)).fetchone()
+        if dup:
+            pid = None
+        else:
+            cur = con.execute("INSERT INTO pedidos (token,nome,email,recado,ip,criado) VALUES (?,?,?,?,?,?)",
+                              (token, nome, email, recado, ip, now()))
+            pid = cur.lastrowid
+    if pid is None:
+        log.info("pedido repetido de %s (%s) -> #%s", nome, ip, dup["id"])
+        return get_pedido(id=dup["id"])
     p = get_pedido(id=pid)
     log.info("pedido #%s de %s (%s)", pid, nome, ip)
     tg_send_pedido(p)
