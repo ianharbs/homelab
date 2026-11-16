@@ -1,0 +1,44 @@
+# TLS termina na Cloudflare; o cloudflared fala HTTP com o Caddy.
+{
+	auto_https off
+	admin off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	encode zstd gzip
+	header {
+		-Server
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Content-Type-Options nosniff
+	}
+
+	# Wizarr: só as páginas públicas do convite/assistente (lista de permitidos, a partir do url_map da v2026.10.1).
+	# Admin, settings, API, usuários e scan NÃO são encaminhados (admin: http://192.168.10.90:5690 pela LAN).
+	@wizarr path /j/* /join /jf/join /invitation/process /wizard /wizard/* /static/* /cinema-posters /image-proxy /reset/*
+	handle @wizarr {
+		reverse_proxy wizarr:5690 {
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+		}
+	}
+
+	# Pedido de cadastro + aprovação
+	handle /cadastro* {
+		reverse_proxy cadastro:8080 {
+			header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		}
+	}
+
+	# Todo o resto = Jellyfin (inclui os links do plugin Compartilhar em /Share/v/…)
+	handle {
+		reverse_proxy 192.168.10.20:8096 {
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+			flush_interval -1
+		}
+	}
+}

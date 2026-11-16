@@ -1035,3 +1035,19 @@ CONFIG_PATH=[[CONFIG_PATH]]
 TZ=[[TZ]]
 """
 
+[[stack]]
+name = "public"
+description = "Entrada pública isolada: túnel Cloudflare próprio, Caddy, Wizarr e cadastro com aprovação (video.ihome.dev.br)"
+tags = ["publico", "srv-public"]
+[stack.config]
+links = ["https://video.ihome.dev.br", "https://video.ihome.dev.br/cadastro", "http://192.168.10.90:5690"]
+server = "srv-public"
+repo = "ianharbs/homelab"
+git_account = "ianharbs"
+branch = "main"
+run_directory = "lxc109-public/public"
+file_paths = ["docker-compose.yml"]
+auto_pull = true
+project_name = "public"
+poll_for_updates = false
+auto_update = true

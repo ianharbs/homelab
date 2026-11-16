@@ -1,0 +1,65 @@
+# CT 109 srv-public — entrada pública isolada (video.ihome.dev.br).
+# Cloudflare Tunnel próprio → Caddy → Jellyfin (192.168.10.20:8096) / Wizarr / cadastro.
+# O firewall do Proxmox (/etc/pve/firewall/109.fw) só deixa este CT falar com a internet e com o Jellyfin:8096.
+name: public
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    env_file: /opt/docker/cloudflared/tunnel.env   # TUNNEL_TOKEN=… (fora do git e do Komodo)
+    depends_on: [caddy]
+    networks: [public]
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/docker/caddy/data:/data
+      - /opt/docker/caddy/config:/config
+    networks: [public]
+
+  wizarr:
+    image: ghcr.io/wizarrrr/wizarr:latest
+    container_name: wizarr
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Sao_Paulo
+      - TRUST_PROXY_HEADERS=true
+      - PROXY_FIX_X_FOR=1
+      - PROXY_FIX_X_PROTO=1
+      - PROXY_FIX_X_HOST=1
+    volumes:
+      - /opt/docker/wizarr:/data
+    ports:
+      - "5690:5690"   # admin do Wizarr, só pela LAN (o firewall do CT bloqueia o resto)
+    networks: [public]
+
+  cadastro:
+    build: ./cadastro
+    image: local/cadastro:latest
+    pull_policy: build
+    container_name: cadastro
+    restart: unless-stopped
+    env_file: /opt/docker/cadastro/secrets.env
+    environment:
+      - TZ=America/Sao_Paulo
+      - PUBLIC_URL=https://video.ihome.dev.br
+      - WIZARR_URL=http://wizarr:5690
+      - JELLYFIN_URL=http://192.168.10.20:8096
+      - LIBRARIES=Filmes,Séries,Coleções
+      - MAX_SESSIONS=2
+      - PRIORITY_USERS=ianharbs,Anapgo
+      - MAX_GUEST_TRANSCODES=2
+    volumes:
+      - /opt/docker/cadastro:/data
+    networks: [public]
+
+networks:
+  public:
