@@ -27,15 +27,23 @@ import time
 import unicodedata
 from pathlib import Path
 
-from models.common import ServiceStatus
-from repositories.protocols.download_client import (
+import sys
+
+# DroppedNeedle v3 roda o plugin num processo próprio com o Python da imagem, sem pip:
+# httpx, cryptography e mutagen ficam em vendor/ (install-vendor.sh).
+sys.path.insert(0, str(Path(__file__).resolve().parent / "vendor"))
+
+import httpx  # noqa: E402
+from droppedneedle_plugin import (  # noqa: E402
     DownloadMaterialization,
     DownloadTaskStatus,
     EnqueueRequest,
+    IndexerResult,
     MountDiagnosis,
+    PluginSearchResult,
+    ServiceStatus,
     TaskHandle,
 )
-from repositories.protocols.indexer import IndexerResult, PluginSearchResult
 
 SOURCE_KEY = "plugin:deezer"
 DEFAULT_DOWNLOAD_DIR = "/data/downloads/deezer"
@@ -91,24 +99,24 @@ def _same_artist(wanted: str, candidate: str) -> bool:
 
 
 def _album_match(artist: str, album: str, candidate_title: str) -> float:
-    try:
-        from services.native.acquisition.scoring_core import album_match
-    except ImportError:
-        return 1.0 if album.lower() in candidate_title.lower() else 0.0
-    return float(album_match(artist, album, candidate_title))
+    """Palavras do artista + álbum presentes no título (o scoring_core da v2 não existe mais na v3)."""
+    wanted = set(_norm(artist).split()) | set(_norm(album).split())
+    if not wanted:
+        return 0.0
+    return round(len(wanted & set(_norm(candidate_title).split())) / len(wanted), 4)
 
 
 def _select_edition(releases: list[dict], track_count: int) -> str | None:
-    try:
-        from repositories.musicbrainz_base import select_edition
-    except ImportError:
-        ranked = sorted(
-            (abs(sum(int(m.get("track-count") or 0) for m in r.get("media") or []) - track_count), r["id"])
-            for r in releases
-            if r.get("id")
-        )
-        return ranked[0][1] if ranked else None
-    return select_edition(releases, track_count)
+    """Edição com o nº de faixas mais próximo; empate -> oficial, mais antiga (como o select_edition da v2)."""
+    def key(r: dict) -> tuple:
+        tracks = sum(int(m.get("track-count") or 0) for m in r.get("media") or [])
+        return (abs(tracks - track_count), r.get("status") != "Official", r.get("date") or "9999")
+    ranked = sorted((r for r in releases if r.get("id")), key=key)
+    return ranked[0]["id"] if ranked else None
+
+
+def _lucene(value: str) -> str:
+    return str(value).replace("\\", "\\\\").replace('"', '\\"')
 
 
 def _credit(credits: list[dict]) -> str:
@@ -178,7 +186,7 @@ class _Job:
 class Deezer:
     def __init__(self, context) -> None:  # noqa: ANN001 - PluginContext
         self._ctx = context
-        self._http = context.http
+        self._http = httpx.AsyncClient(follow_redirects=True, timeout=30.0)
         self._log = context.logger
         self._jobs: dict[str, _Job] = {}
         self._sem: asyncio.Semaphore | None = None
@@ -200,7 +208,9 @@ class Deezer:
 
     @property
     def _download_dir(self) -> Path:
-        return Path(self._setting("download_dir", DEFAULT_DOWNLOAD_DIR))
+        # v3 só importa arquivos dentro de ctx.data_dir ou da pasta da configuração "downloads_dir":
+        # sem ela, usa a pasta de dados do plugin.
+        return Path(self._setting("downloads_dir") or Path(self._ctx.data_dir) / "downloads")
 
     @property
     def _formats(self) -> list[str]:
@@ -352,7 +362,7 @@ class Deezer:
         cached = self._cached(key)
         if cached is not None:
             return cached or None  # type: ignore[return-value]
-        from repositories.musicbrainz_base import escape_lucene_phrase as esc
+        esc = _lucene
 
         found = await self._mb(
             "release-group", query=f'releasegroup:"{esc(album)}" AND artist:"{esc(artist)}"', limit=10
@@ -956,7 +966,7 @@ class Deezer:
         downloaded = sum(int(f["bytes"]) for f in job.files)
         return DownloadTaskStatus(
             task_id=job.key,
-            status=self._status_of(job),
+            status="completed" if self._status_of(job) == "partial" else self._status_of(job),  # v3: sem "partial"
             files_total=total,
             files_completed=len(done),
             files_failed=len(failed),
@@ -1000,9 +1010,9 @@ class Deezer:
             state=state,
             mount_root=str(root),
             workspace_path=str(job.directory),
-            # No per-file evidence: DroppedNeedle 2.15 only fingerprints Soulseek files,
-            # so listing them here strands cleanup in "materialization_fingerprint_missing".
-            file_paths=[],
+            # v3 importa a lista de arquivos prontos (caminhos absolutos dentro de downloads_dir)
+            file_paths=[str(Path(f["local"]).resolve()) for f in job.files if f.get("state") == "done" and f.get("local")]
+            if state == "completed" else [],
             mount_healthy=healthy,
         )
 

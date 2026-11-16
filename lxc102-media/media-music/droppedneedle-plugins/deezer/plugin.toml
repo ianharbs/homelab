@@ -1,7 +1,7 @@
 [plugin]
 name = "deezer"
-version = "1.0.0"
-api_version = 1
+version = "2.0.0"
+api_version = 2
 entrypoint = "plugin:Deezer"
 capabilities = ["indexer", "download_client"]
 display_name = "Deezer (direct)"
@@ -34,9 +34,9 @@ label = "Accept MP3 320 when FLAC is missing / Aceitar MP3 320 sem FLAC"
 help = "yes/no (default no). With 'no', a track without FLAC counts as missing. / sim/não (padrão não)."
 
 [[settings]]
-key = "download_dir"
+key = "downloads_dir"
 label = "Staging folder / Pasta temporária"
-help = "Path inside the DroppedNeedle container. Default: /data/downloads/deezer"
+help = "Path inside the DroppedNeedle container, e.g. /data/downloads/deezer. Empty: the plugin data folder (plugins/.data/deezer/downloads)."
 
 [[settings]]
 key = "max_parallel"
