@@ -20,6 +20,7 @@ import urllib.parse
 from datetime import datetime, timezone
 
 from common import CHANNELS, E, TG_GROUP, TG_TOKEN, TOPICS, forum_id, http, kv_get, kv_set, log, norm, tg, topic_id
+import lancamentos
 import musica
 
 SONARR, SONARR_KEY = E("SONARR_URL", "http://sonarr:8989"), E("SONARR_API_KEY", "")
@@ -517,12 +518,16 @@ def fallback(question):
 HELP = ("Pergunte o status de qualquer mídia, por exemplo:\n"
         "• cadê o filme Duna parte 2?\n• status da série Severance temporada 2\n• o livro Trono de Vidro já chegou?\n"
         "• tem o álbum Clube da Esquina?\n\nComandos: /fila (o que está baixando), /recentes (o que chegou), "
-        "/filme, /serie, /livro, /musica seguidos do nome.")
+        "/filme, /serie, /livro, /musica seguidos do nome.\n"
+        "Lançamentos das bandas favoritas: /seguindo (lista), /seguir <banda>, /naoseguir <banda>.")
 COMMANDS = {"/fila": lambda a: fila_downloads(), "/recentes": lambda a: recentes(int(a) if a.isdigit() else 3),
             "/filme": lambda a: status_filme(a) if a else "Uso: /filme <nome>",
             "/serie": lambda a: fallback("serie " + a) if a else "Uso: /serie <nome> [temporada N]",
             "/livro": lambda a: status_livro(a) if a else "Uso: /livro <nome ou autor>",
-            "/musica": lambda a: status_musica(a) if a else "Uso: /musica <artista ou álbum>"}
+            "/musica": lambda a: status_musica(a) if a else "Uso: /musica <artista ou álbum>",
+            "/seguir": lambda a: lancamentos.cmd_follow(a) if a else "Uso: /seguir <banda>",
+            "/naoseguir": lambda a: lancamentos.cmd_unfollow(a) if a else "Uso: /naoseguir <banda>",
+            "/seguindo": lambda a: lancamentos.cmd_list()}
 
 
 def answer(text):

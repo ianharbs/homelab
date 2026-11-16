@@ -3,7 +3,7 @@
 Cada tipo tem seu canal (TELEGRAM_CHAT_SERIES/FILMES/LIVROS/MUSICA, ver common.py):
   séries/filmes  -> avisa quando está DISPONÍVEL (importado + legendado) — este arquivo
   livros         -> webhook do Shelfarr (POST /shelfarr) — on_shelfarr()
-  música         -> álbuns novos no Navidrome — musica.py
+  música         -> álbuns novos no Navidrome — musica.py; lançamentos das bandas favoritas (Deezer) — lancamentos.py
   status         -> perguntas respondidas por IA com dados do Sonarr/Radarr/Shelfarr/Navidrome — statusbot.py
 
 Fluxo:
@@ -26,6 +26,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from common import E, esc, http, post  # noqa: E402  (carrega /state/secrets.env)
+import lancamentos  # noqa: E402
 import musica  # noqa: E402
 import statusbot  # noqa: E402
 
@@ -433,6 +434,7 @@ if __name__ == "__main__":
     init_db()
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=musica.worker, daemon=True).start()
+    threading.Thread(target=lancamentos.worker, daemon=True).start()
     threading.Thread(target=statusbot.worker, daemon=True).start()
     log.info("ouvindo em :%d", PORT)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
