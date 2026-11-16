@@ -24,10 +24,3 @@ alert_types = [
   "ActionFailed",
   "AwsBuilderTerminationFailed",
 ]
-
-## Antigo alerter do ntfy (criado pela API em 22/10, fora do git). A sync não apaga
-## (delete = false): fica desligado aqui; pode ser excluído na UI depois.
-[[alerter]]
-name = "ntfy"
-[alerter.config]
-enabled = false
