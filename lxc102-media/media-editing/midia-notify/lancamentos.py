@@ -77,10 +77,13 @@ def followed():
 def deezer_id(key, name):
     with db() as c:
         r = c.execute("SELECT dz_id FROM dz_artist WHERE key=?", (key,)).fetchone()
-    if r:
+    if r and r["dz_id"]:
         return r["dz_id"]
     res = dz(f"search/artist?q={urllib.parse.quote(name)}&limit=10").get("data", [])
-    same = [a for a in res if norm(a["name"]) == key]
+    if not res and key.startswith("the "):
+        res = dz(f"search/artist?q={urllib.parse.quote(name[4:])}&limit=10").get("data", [])
+    bare = lambda k: k[4:] if k.startswith("the ") else k  # noqa: E731  ("The Red Army Choir" = "Red Army Choir")
+    same = [a for a in res if bare(norm(a["name"])) == bare(key)]
     pick = max(same, key=lambda a: a.get("nb_fan", 0)) if same else None
     with db() as c:
         c.execute("INSERT OR REPLACE INTO dz_artist VALUES (?,?,?,?)", (key, name, pick["id"] if pick else 0, 0))

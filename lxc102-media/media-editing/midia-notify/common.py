@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import re
 import sqlite3
 import unicodedata
 import urllib.request
@@ -107,7 +108,8 @@ def esc(s):
 
 def norm(s):
     """minúsculas, sem acento e sem pontuação (para comparar títulos)."""
-    s = unicodedata.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"[\u2010-\u2015\u2212]", "-", str(s or ""))  # hífens tipográficos (Anti‐Flag) viram espaço
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
     return " ".join("".join(c if c.isalnum() else " " for c in s).split())
 
 
