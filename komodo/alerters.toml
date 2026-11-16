@@ -1,0 +1,33 @@
+## Alertas do Komodo → stack-watch (CT 105) → tópico "Homelab" do Telegram.
+## O filtro fino (o que é falha, o que é ação manual, carência, repetição) fica no stack-watch;
+## aqui só cortamos na origem o que nunca interessa.
+
+[[alerter]]
+name = "telegram"
+description = "Falhas e atualizações manuais → stack-watch → Telegram (tópico Homelab)"
+[alerter.config]
+enabled = true
+endpoint.type = "Custom"
+endpoint.params.url = "http://stack-watch:8096/komodo"
+alert_types = [
+  "ServerUnreachable",
+  "ServerDisk",
+  "ServerVersionMismatch",
+  "StackStateChange",
+  "ContainerStateChange",
+  "StackImageUpdateAvailable",
+  "DeploymentImageUpdateAvailable",
+  "ResourceSyncPendingUpdates",
+  "BuildFailed",
+  "RepoBuildFailed",
+  "ProcedureFailed",
+  "ActionFailed",
+  "AwsBuilderTerminationFailed",
+]
+
+## Antigo alerter do ntfy (criado pela API em 22/10, fora do git). A sync não apaga
+## (delete = false): fica desligado aqui; pode ser excluído na UI depois.
+[[alerter]]
+name = "ntfy"
+[alerter.config]
+enabled = false

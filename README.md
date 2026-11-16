@@ -83,7 +83,7 @@ pve3 · 192.168.10.4 · Xeon E5-2680 v4 · 32 GB · sem GPU
   │    ├── komodo             → komodo-core, komodo-ferretdb, komodo-postgres
   │    ├── monitor-home       → homepage (config versionada em homepage/, sem segredos)
   │    ├── monitor-media      → jellystat
-  │    ├── monitor-notify     → ntfy
+  │    ├── monitor-notify     → stack-watch (alertas do Komodo → Telegram)
   │    ├── monitor-server     → grafana, loki, prometheus, blackbox, pve-exporter, scrutiny (+ influxdb)
   │    └── stack-agents       → cadvisor, docker-socket-proxy, promtail, speedtest-exporter
   │
@@ -154,7 +154,7 @@ Excludes configurados (`/etc/vzdump.conf`): `var/lib/containerd`, `var/lib/docke
 - **SFTPGo** acessa `/opt/docker` de todos os LXCs via SFTP com virtual folders. Permissões gerenciadas via ACL (`setfacl`) em cada LXC.
 - **Secrets** são únicos por serviço — não reutilizar entre serviços distintos. Gere com `openssl rand -hex 32`.
 - **VPN (gluetun):** qBittorrent, Prowlarr e FlareSolverr usam a rede do `gluetun` (NordVPN/WireGuard, servidor no Brasil), com kill-switch: se a VPN cair, eles ficam sem internet. As portas (8080, 9696, 8191) ficam publicadas no gluetun e os nomes `qbittorrent`/`prowlarr`/`flaresolverr` continuam valendo na `media_net`. A chave fica em `/opt/docker/gluetun/gluetun.env` no srv-media; a NordVPN não faz port forwarding.
-- **Notificações (ntfy):** `https://ntfy.ihome.dev.br`, acesso fechado. Tópico `homelab` = Proxmox (webhook `ntfy` + matcher `ntfy-tudo` em Datacenter → Notifications) e Komodo (Alerter `ntfy`). Tópico `midia` = Sonarr (importação concluída), Radarr (filme importado) e Bazarr (legenda baixada). Quem publica usa o token do usuário `alertas` (só escrita nesses tópicos); para outro tópico: `docker exec ntfy ntfy access alertas <tópico> write-only`.
+- **Notificações (Telegram):** grupo iHome, bot @iHomeSCbot. Tópico **Homelab** = só falhas e ação manual: Komodo (Alerter `telegram` → `stack-watch` em monitor-notify, que filtra, repete a cada 6 h até resolver e avisa quando volta) e Proxmox (webhook `telegram`, só warning/erro, em Datacenter → Notifications). Mídia (Séries/Filmes/Livros/Música) é do `midia-notify` (lxc102). O ntfy foi removido em 16/11/2026.
 - **Acesso externo:** os serviços passam pelo Nginx Proxy Manager (lxc101) + Cloudflare Tunnel. A lista de domínios e destinos está em `.ignore/Proxies.txt`.
 
 

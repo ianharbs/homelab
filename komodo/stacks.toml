@@ -820,10 +820,10 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "monitor-notify"
-description = "ntfy (notificações push)"
+description = "stack-watch: alertas do Komodo → Telegram (tópico Homelab)"
 tags = ["monitor", "srv-monitor"]
 [stack.config]
-links = ["http://192.168.10.50:8070"]
+links = []
 server = "srv-monitor"
 repo = "ianharbs/homelab"
 git_account = "ianharbs"

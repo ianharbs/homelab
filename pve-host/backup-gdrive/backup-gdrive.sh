@@ -7,7 +7,7 @@
 #    - paperless/atual                                 (o export do passo 1)
 #    Apagado/alterado vai para <app>/_removidos/<data> no Drive e é apagado de vez depois de RETENCAO_DIAS.
 # Antes de subir fotos confere o espaço livre no Drive (os 400 GB são divididos com Gmail e Google Fotos).
-# Falha ou pouco espaço → aviso pelas notificações do Proxmox (ntfy, tópico homelab).
+# Falha ou pouco espaço → aviso pelas notificações do Proxmox (Telegram, tópico Homelab).
 set -uo pipefail
 
 FOTOS=/mnt/pve/media/data/photos

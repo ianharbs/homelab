@@ -314,18 +314,7 @@
 # MÍDIA — DOWNLOADS
 # ============================================================
 - Mídia — Downloads:
-
-    - Gluetun:
-        icon: sh-gluetun
-        description: NordVPN (qBittorrent, Prowlarr, FlareSolverr)
-        server: docker-srv-media
-        container: gluetun
-        widget:
-          type: gluetun
-          url: http://192.168.10.20:8008
-          key: "{{HOMEPAGE_VAR_GLUETUN_KEY}}"
-          fields: ["public_ip", "region", "country"]
-
+    
     - SABnzbd:
         icon: sh-sabnzbd
         href: https://nzbd.ihome.dev.br
@@ -371,6 +360,17 @@
           type: prowlarr
           url: http://192.168.10.20:9696
           key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
+
+    - Gluetun:
+        icon: sh-gluetun
+        description: NordVPN (qBittorrent, Prowlarr, FlareSolverr)
+        server: docker-srv-media
+        container: gluetun
+        widget:
+          type: gluetun
+          url: http://192.168.10.20:8008
+          key: "{{HOMEPAGE_VAR_GLUETUN_KEY}}"
+          fields: ["public_ip", "region", "country"]
 
 # ============================================================
 # MÍDIA — AUTOMAÇÃO (*ARR)
@@ -520,33 +520,19 @@
 # ============================================================
 - Ferramentas & IA:
 
-    - Actual Budget:
-        icon: sh-actual-budget
-        href: https://finances.ihome.dev.br
-        description: Finanças
-        server: docker-srv-apps
-        container: actual_budget
-
-    - BentoPDF:
-        icon: sh-bentopdf
-        href: https://pdf.ihome.dev.br
-        description: Ferramentas de PDF
-        server: docker-srv-apps
-        container: bentopdf
-
-    - Marreta:
-        icon: sh-marreta
-        href: https://pw.ihome.dev.br
-        description: Remove paywall
-        server: docker-srv-apps
-        container: marreta
-
     - SFTPGo:
         icon: sh-sftpgo
         href: https://file.ihome.dev.br
         description: Arquivos (web, SFTP e WebDAV)
         server: docker-srv-apps
         container: sftpgo
+
+    - Actual Budget:
+        icon: sh-actual-budget
+        href: https://finances.ihome.dev.br
+        description: Finanças
+        server: docker-srv-apps
+        container: actual_budget
 
     - n8n:
         icon: sh-n8n
@@ -561,6 +547,20 @@
         description: Chat com modelos locais (Ollama)
         server: docker-srv-ai
         container: open-webui
+
+    - BentoPDF:
+        icon: sh-bentopdf
+        href: https://pdf.ihome.dev.br
+        description: Ferramentas de PDF
+        server: docker-srv-apps
+        container: bentopdf
+
+    - Marreta:
+        icon: sh-marreta
+        href: https://pw.ihome.dev.br
+        description: Remove paywall
+        server: docker-srv-apps
+        container: marreta
 
     - pgAdmin:
         icon: sh-pgadmin
@@ -627,13 +627,6 @@
           url: http://192.168.10.50:3005
           key: "{{HOMEPAGE_VAR_JELLYSTAT_KEY}}"
           days: 30
-
-    - ntfy:
-        icon: sh-ntfy
-        href: https://ntfy.ihome.dev.br
-        description: Notificações push (tópico homelab)
-        server: docker-srv-monitor
-        container: ntfy
 
 # ============================================================
 # HOME ASSISTANT & IOT

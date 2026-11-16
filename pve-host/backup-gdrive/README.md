@@ -15,7 +15,7 @@ Roda todo dia às 05:00 (`backup-gdrive.timer`), depois do vzdump (03:00) e das 
 - Antes de subir fotos o script compara o que falta enviar com o espaço livre do Drive. Os 400 GB do Google One
   são divididos com Gmail e Google Fotos, e foto importada do Google Fotos conta duas vezes até ser apagada de lá.
   Se não couber, as fotos não sobem e chega um aviso.
-- Avisos (erro e Drive com menos de 40 GB livres) chegam pelas notificações do Proxmox → ntfy (tópico `homelab`),
+- Avisos (erro e Drive com menos de 40 GB livres) chegam pelas notificações do Proxmox → Telegram (grupo iHome, tópico Homelab),
   com o template `/etc/pve/notification-templates/default/homelab-backup-*.txt.hbs`.
 - Durante o dia (07:00–23:00) o envio é limitado a 4 MB/s para não ocupar a internet.
 

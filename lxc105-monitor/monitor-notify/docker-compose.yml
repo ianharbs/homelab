@@ -1,44 +1,18 @@
-# ntfy: notificações push do homelab (app ntfy no Android, conectado direto em https://ntfy.ihome.dev.br).
-# - Acesso fechado (deny-all): só usuários/tokens criados com `docker exec ntfy ntfy user|token|access ...`.
-# - Tópico "homelab": Proxmox, Komodo e demais alertas publicam com o token do usuário "alertas".
+# Notificações do homelab → tópico "Homelab" do grupo iHome no Telegram (bot @iHomeSCbot).
+# O ntfy foi removido em 16/11/2026 (não estava sendo usado na prática).
+#
+# stack-watch: recebe os alertas do Komodo (alerter "telegram", endpoint Custom
+# http://stack-watch:8096/komodo, pela monitor_net) e do Proxmox (webhook "telegram", só
+# warning/erro, http://192.168.10.50:8096/pve?token=…) e manda só falhas (as do Komodo repetem a
+# cada 6 h até resolver) e atualizações que pedem ação manual.
+# Código em stack-watch/watch.py; segredos em ${CONFIG_PATH}/stack-watch/secrets.env (lido pelo
+# script). Mudou só o .py? `docker restart stack-watch` (o Komodo não redeploya sem mudar o compose).
+# Estado atual: curl http://stack-watch:8096/ de dentro da monitor_net.
 networks:
   monitor_net:
     external: true
 
 services:
-  ntfy:
-    image: binwiederhier/ntfy:v2
-    container_name: ntfy
-    restart: unless-stopped
-    command: serve
-    user: ${PUID}:${PGID}
-    environment:
-      - TZ=${TZ}
-      - NTFY_BASE_URL=https://ntfy.ihome.dev.br
-      - NTFY_LISTEN_HTTP=:8080
-      - NTFY_BEHIND_PROXY=true
-      - NTFY_CACHE_FILE=/var/lib/ntfy/cache.db
-      - NTFY_CACHE_DURATION=72h
-      - NTFY_AUTH_FILE=/var/lib/ntfy/user.db
-      - NTFY_AUTH_DEFAULT_ACCESS=deny-all
-      - NTFY_ATTACHMENT_CACHE_DIR=/var/lib/ntfy/attachments
-      - NTFY_ENABLE_LOGIN=true
-    volumes:
-      - ${CONFIG_PATH}/ntfy:/var/lib/ntfy
-    ports:
-      - 8070:8080
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --tries=1 http://localhost:8080/v1/health -O - | grep -q '\"healthy\":true'"]
-      interval: 60s
-      timeout: 10s
-      start_period: 20s
-      retries: 3
-    networks:
-      - monitor_net
-
-  # Alerta insistente (prioridade alta, repete a cada 6 h) quando container das stacks do Komodo
-  # fica fora do ar. Código em stack-watch/watch.py; segredos em ${CONFIG_PATH}/stack-watch/secrets.env
-  # (lido pelo script). Mudou só o .py? `docker restart stack-watch` (Komodo não redeploya).
   stack-watch:
     image: python:3.12-alpine
     container_name: stack-watch
@@ -47,11 +21,11 @@ services:
     command: ["python", "-u", "/app/watch.py"]
     environment:
       - TZ=${TZ}
-      - IGNORE=apps-tasks/vikunja
+      - IGNORE=apps-tasks
+    ports:
+      - 192.168.10.50:8096:8096   # só p/ o webhook do Proxmox (/pve exige token); /komodo recusa quem vem de fora
     volumes:
       - ./stack-watch:/app:ro
       - ${CONFIG_PATH}/stack-watch:/state
-    depends_on:
-      - ntfy
     networks:
       - monitor_net
