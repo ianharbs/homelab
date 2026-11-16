@@ -245,21 +245,45 @@ def pedidos_recentes(ip):
         return con.execute("SELECT COUNT(*) FROM pedidos WHERE ip=? AND criado>=?", (ip, desde)).fetchone()[0]
 
 
+BLOQUEIO_EMAIL_DIAS = 7
+
+
+class Bloqueado(Exception):
+    """Pedido recusado sem criar registro; a mensagem vai para o formulário."""
+
+
 def criar_pedido(nome, email, recado, ip):
-    """Cria o pedido. Envio repetido (clique duplo, F5) do mesmo IP+nome em 30 min devolve o pedido já existente."""
+    """Cria o pedido (verificação e inserção atômicas).
+
+    - mesmo IP+nome em 30 min ainda pendente/aprovado (clique duplo, F5) -> devolve o pedido existente;
+    - mesmo e-mail com pedido pendente/aprovado nos últimos 7 dias -> devolve o pedido existente;
+    - mesmo e-mail rejeitado nos últimos 7 dias -> Bloqueado até completar 7 dias do pedido;
+    - e-mail que já virou conta -> Bloqueado.
+    """
+    email = email.strip().lower()
     token = secrets.token_urlsafe(24)
-    desde = (datetime.now() - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+    agora = datetime.now()
+    desde30m = (agora - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+    desde7d = (agora - timedelta(days=BLOQUEIO_EMAIL_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
     with db_lock, db() as con:
-        dup = con.execute("SELECT id FROM pedidos WHERE ip=? AND lower(nome)=lower(?) AND criado>=? "
-                          "AND status IN ('pendente','aprovado') ORDER BY id LIMIT 1", (ip, nome, desde)).fetchone()
-        if dup:
-            pid = None
-        else:
+        if con.execute("SELECT 1 FROM pedidos WHERE lower(email)=? AND status='concluido'", (email,)).fetchone():
+            raise Bloqueado("Este e-mail já tem uma conta. Entre direto pelo site ou pelo app Jellyfin.")
+        dup = (con.execute("SELECT id FROM pedidos WHERE ip=? AND lower(nome)=lower(?) AND criado>=? "
+                           "AND status IN ('pendente','aprovado') ORDER BY id LIMIT 1", (ip, nome, desde30m)).fetchone()
+               or con.execute("SELECT id FROM pedidos WHERE lower(email)=? AND criado>=? "
+                              "AND status IN ('pendente','aprovado') ORDER BY id LIMIT 1", (email, desde7d)).fetchone())
+        if not dup:
+            rej = con.execute("SELECT criado FROM pedidos WHERE lower(email)=? AND criado>=? AND status='rejeitado' "
+                              "ORDER BY criado DESC LIMIT 1", (email, desde7d)).fetchone()
+            if rej:
+                libera = datetime.strptime(rej["criado"][:19], "%Y-%m-%d %H:%M:%S") + timedelta(days=BLOQUEIO_EMAIL_DIAS)
+                raise Bloqueado("Você já fez um pedido recentemente. Tente novamente a partir de "
+                                f"{libera.strftime('%d/%m')} às {libera.strftime('%H:%M')}.")
             cur = con.execute("INSERT INTO pedidos (token,nome,email,recado,ip,criado) VALUES (?,?,?,?,?,?)",
                               (token, nome, email, recado, ip, now()))
             pid = cur.lastrowid
-    if pid is None:
-        log.info("pedido repetido de %s (%s) -> #%s", nome, ip, dup["id"])
+    if dup:
+        log.info("pedido repetido de %s <%s> (%s) -> #%s", nome, email, ip, dup["id"])
         return get_pedido(id=dup["id"])
     p = get_pedido(id=pid)
     log.info("pedido #%s de %s (%s)", pid, nome, ip)
@@ -605,7 +629,10 @@ class H(BaseHTTPRequestHandler):
                 return self.send(400, form_page("E-mail inválido.", nome, email, recado))
             if pedidos_recentes(self.ip()) >= 3:
                 return self.send(429, form_page("Muitos pedidos deste endereço. Tente amanhã.", nome, email, recado))
-            p = criar_pedido(nome, email, recado, self.ip())
+            try:
+                p = criar_pedido(nome, email, recado, self.ip())
+            except Bloqueado as e:
+                return self.send(429, form_page(str(e), nome, email, recado))
             return self.redirect(f"/cadastro/s/{p['token']}")
         m = re.fullmatch(r"/cadastro/admin/(\d+)", path)
         if m:
