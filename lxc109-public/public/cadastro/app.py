@@ -175,9 +175,12 @@ def mail_convite(p):
 
 def mail_rejeicao(p):
     primeiro = p["nome"].split()[0]
-    corpo = f"Oi, {html.escape(primeiro)}. Obrigado pelo interesse, mas desta vez seu pedido de acesso não foi aprovado."
-    texto = f"Oi, {primeiro}. Obrigado pelo interesse, mas desta vez seu pedido de acesso não foi aprovado.\n"
-    return send_mail(p["email"], "Sobre seu pedido de acesso", mail_layout("Pedido não aprovado", corpo), texto)
+    msg = ("Obrigado pelo interesse! No momento não temos vaga disponível. "
+           "Tente fazer o cadastro novamente na semana que vem.")
+    corpo = f"Oi, {html.escape(primeiro)}. {msg}"
+    texto = f"Oi, {primeiro}. {msg}\n\n{PUBLIC_URL}/cadastro\n"
+    return send_mail(p["email"], "Sobre seu pedido de acesso",
+                     mail_layout("Sem vagas no momento", corpo, "Pedir de novo", f"{PUBLIC_URL}/cadastro"), texto)
 
 
 def set_email_status(pid, st):
@@ -504,7 +507,7 @@ def status_page(p):
 <h1>Pedido enviado, {html.escape(p['nome'].split()[0])}!</h1>
 <p>Assim que for aprovado, você recebe o convite por e-mail (confira o spam) e esta página também mostra o botão para criar sua conta. Ela se atualiza sozinha.</p>{guarde}""", refresh=30)
     if p["status"] == "rejeitado":
-        return page("Pedido não aprovado", '<span class="badge no">Não aprovado</span><h1>Pedido não aprovado</h1><p>Desculpe, este pedido não foi aprovado.</p>')
+        return page("Sem vagas no momento", '<span class="badge no">Sem vagas</span><h1>Sem vagas no momento</h1><p>Obrigado pelo interesse! No momento não temos vaga disponível. Tente fazer o cadastro novamente na semana que vem.</p>')
     if p["status"] == "aprovado":
         return page("Pedido aprovado", f"""<span class="badge ok">Aprovado</span>
 <h1>Pode criar sua conta!</h1>
