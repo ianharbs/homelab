@@ -57,6 +57,8 @@ services:
       - MAX_SESSIONS=2
       - PRIORITY_USERS=ianharbs,Anapgo
       - MAX_GUEST_TRANSCODES=2
+      - MAIL_FROM=iHome <convite@ihome.dev.br>
+      - MAIL_ON_REJECT=false
     volumes:
       - /opt/docker/cadastro:/data
     networks: [public]

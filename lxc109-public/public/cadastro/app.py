@@ -1,7 +1,7 @@
 """Cadastro com aprovação para o Jellyfin (video.ihome.dev.br/cadastro).
 
 Fluxo: visitante pede acesso -> DM no Telegram para o admin com Aprovar/Rejeitar (links assinados) ->
-aprovado: convite de uso único no Wizarr, mostrado na página de status do visitante -> visitante cria a conta
+aprovado: convite de uso único no Wizarr, enviado por e-mail (Resend) e mostrado na página de status -> visitante cria a conta
 no Wizarr -> este serviço aplica as permissões fixas no Jellyfin e avisa o admin.
 
 Também roda o "guardião de prioridade": se um usuário prioritário estiver assistindo, convidados ficam
@@ -43,6 +43,9 @@ MAX_GUEST_TRANSCODES = int(E("MAX_GUEST_TRANSCODES", "2"))
 INVITE_DAYS = 7
 DB_PATH = E("DB_PATH", "/data/cadastro.db")
 OPEN = E("ACCEPT_REQUESTS", "true").lower() == "true"
+RESEND_KEY = E("RESEND_API_KEY", "")
+MAIL_FROM = E("MAIL_FROM", "iHome <convite@ihome.dev.br>")
+MAIL_ON_REJECT = E("MAIL_ON_REJECT", "false").lower() == "true"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("cadastro")
@@ -80,6 +83,9 @@ def init_db():
             CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
             """
         )
+        cols = {r[1] for r in con.execute("PRAGMA table_info(pedidos)")}
+        if "email_status" not in cols:
+            con.execute("ALTER TABLE pedidos ADD COLUMN email_status TEXT")
 
 
 def http_json(method, url, body=None, headers=None, timeout=20):
@@ -124,6 +130,62 @@ def fmt(ts):
         return ts or ""
 
 
+# ----------------------------------------------------------------------------- e-mail
+def send_mail(to, subject, html_body, text_body):
+    """Envia pelo Resend. Retorna 'enviado' ou a mensagem de erro (ou None se não configurado)."""
+    if not RESEND_KEY or not to:
+        return None
+    try:
+        r = http_json("POST", "https://api.resend.com/emails",
+                      {"from": MAIL_FROM, "to": [to], "subject": subject, "html": html_body, "text": text_body},
+                      {"Authorization": f"Bearer {RESEND_KEY}", "User-Agent": "ihome-cadastro/1.0"})
+        log.info("e-mail '%s' para %s: %s", subject, to, (r or {}).get("id"))
+        return "enviado"
+    except urllib.error.HTTPError as e:
+        msg = f"erro {e.code}: {e.read()[:200].decode('utf-8', 'replace')}"
+    except Exception as e:  # noqa: BLE001
+        msg = f"erro: {e}"
+    log.warning("e-mail para %s falhou: %s", to, msg)
+    return msg
+
+
+def mail_layout(titulo, corpo_html, botao_txt=None, botao_url=None):
+    botao = (f'''<tr><td style="padding:8px 0 24px"><a href="{html.escape(botao_url)}" style="display:inline-block;background:#00a4dc;color:#ffffff;text-decoration:none;font-weight:600;padding:13px 24px;border-radius:9px">{html.escape(botao_txt)}</a></td></tr>'''
+             if botao_url else "")
+    return f'''<!doctype html><html lang="pt-BR"><body style="margin:0;padding:0;background:#f2f4f7">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f4f7;padding:32px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:14px;padding:28px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1d2330;font-size:16px;line-height:1.5">
+<tr><td style="font-size:22px;font-weight:700;padding-bottom:10px">{html.escape(titulo)}</td></tr>
+<tr><td style="padding-bottom:16px;color:#3c4453">{corpo_html}</td></tr>
+{botao}
+<tr><td style="font-size:12.5px;color:#7a8394;border-top:1px solid #e6e9ef;padding-top:14px">iHome · {html.escape(PUBLIC_URL.replace("https://", ""))}</td></tr>
+</table></td></tr></table></body></html>'''
+
+
+def mail_convite(p):
+    primeiro = p["nome"].split()[0]
+    corpo = (f"Oi, {html.escape(primeiro)}! Seu pedido de acesso foi <b>aprovado</b>.<br><br>"
+             f"Use o botão abaixo para escolher seu usuário e senha. O convite vale por {INVITE_DAYS} dias e só pode ser usado uma vez.<br><br>"
+             f"Depois é só entrar em <a href=\"{PUBLIC_URL}\" style=\"color:#0086b3\">{html.escape(PUBLIC_URL.replace('https://', ''))}</a> "
+             "ou usar o app Jellyfin (celular/TV) com esse endereço de servidor.")
+    texto = (f"Oi, {primeiro}! Seu pedido de acesso foi aprovado.\n\nCrie sua conta (vale {INVITE_DAYS} dias, uso único):\n"
+             f"{p['convite_url']}\n\nDepois entre em {PUBLIC_URL} ou use o app Jellyfin com esse endereço de servidor.\n")
+    return send_mail(p["email"], "Seu acesso foi aprovado 🎬", mail_layout("Acesso aprovado!", corpo, "Criar minha conta", p["convite_url"]), texto)
+
+
+def mail_rejeicao(p):
+    primeiro = p["nome"].split()[0]
+    corpo = f"Oi, {html.escape(primeiro)}. Obrigado pelo interesse, mas desta vez seu pedido de acesso não foi aprovado."
+    texto = f"Oi, {primeiro}. Obrigado pelo interesse, mas desta vez seu pedido de acesso não foi aprovado.\n"
+    return send_mail(p["email"], "Sobre seu pedido de acesso", mail_layout("Pedido não aprovado", corpo), texto)
+
+
+def set_email_status(pid, st):
+    if st is not None:
+        with db_lock, db() as con:
+            con.execute("UPDATE pedidos SET email_status=? WHERE id=?", (st, pid))
+
+
 # ----------------------------------------------------------------------------- telegram
 def tg_text(p):
     linhas = [
@@ -140,6 +202,9 @@ def tg_text(p):
         "rejeitado": "\n❌ <b>Rejeitado</b>.",
         "concluido": f"\n🎉 <b>Conta criada</b>: {html.escape(p['jf_usuario'] or '')}",
     }.get(p["status"], "")
+    em = p["email_status"] if "email_status" in p.keys() else None
+    if em:
+        st += "\n📧 e-mail enviado" if em == "enviado" else f"\n⚠️ e-mail falhou: {html.escape(em[:120])}"
     return "\n".join(linhas) + st
 
 
@@ -233,6 +298,7 @@ def aprovar(pid):
         con.execute("UPDATE pedidos SET status='aprovado', decidido=?, convite_codigo=?, convite_url=?, convite_expira=? WHERE id=?",
                     (now(), inv["code"], url, inv.get("expires") or "", pid))
     log.info("pedido #%s aprovado, convite %s", pid, inv["code"])
+    set_email_status(pid, mail_convite(get_pedido(id=pid)))
     tg_update(pid)
     return get_pedido(id=pid)
 
@@ -244,6 +310,8 @@ def rejeitar(pid):
     with db_lock, db() as con:
         con.execute("UPDATE pedidos SET status='rejeitado', decidido=? WHERE id=?", (now(), pid))
     log.info("pedido #%s rejeitado", pid)
+    if MAIL_ON_REJECT:
+        set_email_status(pid, mail_rejeicao(get_pedido(id=pid)))
     tg_update(pid)
     return get_pedido(id=pid)
 
@@ -418,10 +486,10 @@ def form_page(err="", nome="", email="", recado=""):
     e = f'<div class="err">{html.escape(err)}</div>' if err else ""
     return page("Pedir acesso", f"""
 <h1>Pedir acesso</h1>
-<p>Preencha e aguarde a aprovação. Depois você mesmo escolhe o usuário e a senha.</p>
+<p>Preencha e aguarde a aprovação. O convite chega por e-mail e você mesmo escolhe o usuário e a senha.</p>
 <form method="post" action="/cadastro" autocomplete="on">
 <label for="nome">Seu nome</label><input id="nome" name="nome" required maxlength="80" value="{html.escape(nome)}">
-<label for="email">E-mail (opcional)</label><input id="email" name="email" type="email" maxlength="120" value="{html.escape(email)}">
+<label for="email">E-mail (o convite chega por aqui)</label><input id="email" name="email" type="email" required maxlength="120" value="{html.escape(email)}">
 <label for="recado">Quem é você / como conhece a gente?</label><textarea id="recado" name="recado" maxlength="500" required>{html.escape(recado)}</textarea>
 <input class="hp" name="site" tabindex="-1" autocomplete="off" aria-hidden="true">
 {e}<button class="btn" type="submit">Enviar pedido</button>
@@ -434,13 +502,13 @@ def status_page(p):
     if p["status"] == "pendente":
         return page("Pedido enviado", f"""<span class="badge pend">Aguardando aprovação</span>
 <h1>Pedido enviado, {html.escape(p['nome'].split()[0])}!</h1>
-<p>Assim que for aprovado, esta página mostra o botão para criar sua conta. Ela se atualiza sozinha.</p>{guarde}""", refresh=30)
+<p>Assim que for aprovado, você recebe o convite por e-mail (confira o spam) e esta página também mostra o botão para criar sua conta. Ela se atualiza sozinha.</p>{guarde}""", refresh=30)
     if p["status"] == "rejeitado":
         return page("Pedido não aprovado", '<span class="badge no">Não aprovado</span><h1>Pedido não aprovado</h1><p>Desculpe, este pedido não foi aprovado.</p>')
     if p["status"] == "aprovado":
         return page("Pedido aprovado", f"""<span class="badge ok">Aprovado</span>
 <h1>Pode criar sua conta!</h1>
-<p>Use o botão abaixo para escolher usuário e senha. O convite vale por {INVITE_DAYS} dias e só pode ser usado uma vez.</p>
+<p>Use o botão abaixo para escolher usuário e senha (o mesmo link foi para o seu e-mail). O convite vale por {INVITE_DAYS} dias e só pode ser usado uma vez.</p>
 <a class="btn" href="{html.escape(p['convite_url'])}">Criar minha conta</a>{guarde}""")
     return page("Conta criada", f"""<span class="badge ok">Conta criada</span>
 <h1>Tudo pronto!</h1>
@@ -528,9 +596,9 @@ class H(BaseHTTPRequestHandler):
             nome, email, recado = (f.get("nome", "").strip()[:80], f.get("email", "").strip()[:120], f.get("recado", "").strip()[:500])
             if f.get("site"):  # honeypot
                 return self.send(200, page("Pedido enviado", "<h1>Pedido enviado</h1><p>Obrigado!</p>"))
-            if len(nome) < 2 or len(recado) < 3:
-                return self.send(400, form_page("Preencha nome e recado.", nome, email, recado))
-            if email and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+            if len(nome) < 2 or len(recado) < 3 or not email:
+                return self.send(400, form_page("Preencha nome, e-mail e recado.", nome, email, recado))
+            if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
                 return self.send(400, form_page("E-mail inválido.", nome, email, recado))
             if pedidos_recentes(self.ip()) >= 3:
                 return self.send(429, form_page("Muitos pedidos deste endereço. Tente amanhã.", nome, email, recado))
