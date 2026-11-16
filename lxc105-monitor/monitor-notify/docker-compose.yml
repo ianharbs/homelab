@@ -35,3 +35,23 @@ services:
       retries: 3
     networks:
       - monitor_net
+
+  # Alerta insistente (prioridade alta, repete a cada 6 h) quando container das stacks do Komodo
+  # fica fora do ar. Código em stack-watch/watch.py; segredos em ${CONFIG_PATH}/stack-watch/secrets.env
+  # (lido pelo script). Mudou só o .py? `docker restart stack-watch` (Komodo não redeploya).
+  stack-watch:
+    image: python:3.12-alpine
+    container_name: stack-watch
+    restart: unless-stopped
+    user: ${PUID}:${PGID}
+    command: ["python", "-u", "/app/watch.py"]
+    environment:
+      - TZ=${TZ}
+      - IGNORE=apps-tasks/vikunja
+    volumes:
+      - ./stack-watch:/app:ro
+      - ${CONFIG_PATH}/stack-watch:/state
+    depends_on:
+      - ntfy
+    networks:
+      - monitor_net
