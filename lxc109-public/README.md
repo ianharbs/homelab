@@ -13,7 +13,7 @@ Cloudflare ── túnel próprio "ihome_viewer" (d570db09-…) ── cloudflar
 
 ## Isolamento
 - **Firewall do Proxmox** (`/etc/pve/firewall/109.fw`, ligado em 16/11 com `cluster.fw` em política ACCEPT
-  para não afetar mais nada): saída só para `192.168.10.20:8096` e internet (bloqueia o ipset `privadas`);
+  para não afetar mais nada): saída só para `192.168.10.20:8096` (Jellyfin), `192.168.10.50:9120` (Komodo Core, Periphery conecta para fora) e internet (bloqueia o ipset `privadas`);
   entrada só `5690/tcp` e ping vindos da LAN; anti-spoofing de IP/MAC.
 - **Banda**: `net0 rate=60` (60 MB/s ≈ 480 Mbps de 803 de upload) — sobra banda para a casa.
 - Wizarr admin/settings/API **não** são encaminhados pelo Caddy (lista de permitidos tirada do url_map
