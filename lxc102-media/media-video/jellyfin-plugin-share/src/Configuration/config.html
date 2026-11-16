@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <title>Compartilhar</title>
+</head>
+<body>
+<div id="jfShareConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+    <div data-role="content">
+        <div class="content-primary">
+            <h2 class="sectionTitle">Compartilhar</h2>
+            <p>Links públicos para séries, temporadas, episódios e filmes. Quem tem o link assiste e baixa sem conta no Jellyfin.
+               O botão <b>Compartilhar</b> aparece na página do item e no menu <b>⋮</b> (precisa do plugin File Transformation).</p>
+
+            <form id="jfShareForm">
+                <div class="inputContainer">
+                    <input is="emby-input" type="url" id="PublicBaseUrl" label="URL pública do Jellyfin" placeholder="https://jf.exemplo.com">
+                    <div class="fieldDescription">Usada para montar os links. Vazio = o endereço que estiver no navegador de quem cria o link.</div>
+                </div>
+                <div class="inputContainer">
+                    <input is="emby-input" type="number" id="DefaultDays" min="0" max="3650" label="Validade sugerida (dias, 0 = sem validade)">
+                </div>
+                <div class="inputContainer">
+                    <input is="emby-input" type="number" id="MaxStreamsPerLink" min="1" max="20" label="Reproduções simultâneas por link">
+                    <div class="fieldDescription">Cada reprodução pode abrir uma transcodificação; limita o abuso de um link vazado.</div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="OnlyAdmins">
+                        <span>Somente administradores podem compartilhar</span>
+                    </label>
+                </div>
+                <button is="emby-button" type="submit" class="raised button-submit block emby-button"><span>Salvar</span></button>
+            </form>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:2.5em;flex-wrap:wrap">
+                <h2 class="sectionTitle" style="margin:0">Links</h2>
+                <div style="display:flex;gap:8px">
+                    <button is="emby-button" type="button" class="raised emby-button" id="jfShareRefresh"><span>Atualizar</span></button>
+                    <button is="emby-button" type="button" class="raised emby-button" id="jfSharePurge"><span>Remover expirados</span></button>
+                </div>
+            </div>
+            <div id="jfShareList" style="margin-top:1em"></div>
+        </div>
+    </div>
+
+    <style>
+        #jfShareList table{width:100%;border-collapse:collapse;font-size:.92em}
+        #jfShareList th,#jfShareList td{text-align:left;padding:.55em .5em;border-bottom:1px solid rgba(128,128,128,.25);vertical-align:middle}
+        #jfShareList th{opacity:.7;font-weight:500}
+        #jfShareList .exp{opacity:.5}
+        #jfShareList .tag{font-size:.8em;padding:.1em .5em;border-radius:1em;background:rgba(128,128,128,.25);margin-left:.4em}
+        #jfShareList .tag.bad{background:#7a2a2a;color:#fff}
+        #jfShareList button{margin:0 .15em}
+        #jfShareList .muted{opacity:.65;font-size:.9em}
+        @media (max-width:800px){#jfShareList .hide-sm{display:none}}
+    </style>
+
+    <script type="text/javascript">
+        (function () {
+            var pluginId = '8f3c2a61-5d4e-4b7a-9c1e-2a6f0d9b7e41';
+            var page = document.querySelector('#jfShareConfigPage');
+            var TYPES = { Series: 'Série', Season: 'Temporada', Episode: 'Episódio', Movie: 'Filme' };
+
+            function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+            function fmt(d) { return d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'; }
+
+            function call(method, path) {
+                return fetch(ApiClient.getUrl(path), {
+                    method: method,
+                    headers: { 'Authorization': 'MediaBrowser Token="' + ApiClient.accessToken() + '"' }
+                }).then(function (r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.status === 204 ? null : r.json();
+                });
+            }
+
+            function loadList() {
+                var box = page.querySelector('#jfShareList');
+                call('GET', 'Share/Links').then(function (links) {
+                    if (!links.length) { box.innerHTML = '<p class="muted">Nenhum link criado ainda.</p>'; return; }
+                    box.innerHTML = '<table><thead><tr><th>Item</th><th class="hide-sm">Criado</th><th>Expira</th><th class="hide-sm">Acessos</th><th class="hide-sm">Último acesso</th><th></th></tr></thead><tbody>' +
+                        links.map(function (l) {
+                            return '<tr class="' + (l.expired ? 'exp' : '') + '">' +
+                                '<td><a is="emby-linkbutton" class="button-link" href="#/details?id=' + l.itemId + '">' + esc(l.itemName) + '</a>' +
+                                '<span class="tag">' + esc(TYPES[l.itemType] || l.itemType) + '</span>' + (l.expired ? '<span class="tag bad">expirado</span>' : '') +
+                                '<div class="muted">por ' + esc(l.createdBy) + ' · id ' + esc(l.id) + '</div></td>' +
+                                '<td class="hide-sm">' + fmt(l.createdAt) + '</td>' +
+                                '<td>' + (l.expiresAt ? fmt(l.expiresAt) : 'sem validade') + '</td>' +
+                                '<td class="hide-sm">' + l.views + '</td>' +
+                                '<td class="hide-sm">' + fmt(l.lastAccess) + '</td>' +
+                                '<td style="white-space:nowrap">' +
+                                (l.expired ? '' : '<button is="emby-button" type="button" class="raised emby-button" data-copy="' + esc(l.url) + '" title="Copiar link"><span>Copiar</span></button>') +
+                                '<button is="emby-button" type="button" class="raised emby-button" data-revoke="' + esc(l.id) + '" data-name="' + esc(l.itemName) + '" style="background:#a33;color:#fff"><span>Revogar</span></button>' +
+                                '</td></tr>';
+                        }).join('') + '</tbody></table>';
+                }).catch(function (e) { box.innerHTML = '<p>Erro carregando links: ' + esc(e.message) + '</p>'; });
+            }
+
+            page.querySelector('#jfShareList').addEventListener('click', function (e) {
+                var b = e.target.closest('button');
+                if (!b) return;
+                if (b.dataset.copy) {
+                    var done = function () { Dashboard.alert({ message: 'Link copiado.' }); };
+                    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(b.dataset.copy).then(done);
+                    else { window.prompt('Copie o link:', b.dataset.copy); }
+                }
+                if (b.dataset.revoke) {
+                    if (!window.confirm('Revogar o link de "' + b.dataset.name + '"? Quem tem o link perde o acesso na hora.')) return;
+                    call('DELETE', 'Share/Links/' + encodeURIComponent(b.dataset.revoke)).then(loadList)
+                        .catch(function (err) { Dashboard.alert({ message: 'Erro: ' + err.message }); });
+                }
+            });
+
+            page.querySelector('#jfShareRefresh').addEventListener('click', loadList);
+            page.querySelector('#jfSharePurge').addEventListener('click', function () {
+                call('POST', 'Share/Links/RemoveExpired').then(function (r) {
+                    Dashboard.alert({ message: r.removed + ' link(s) expirado(s) removido(s).' });
+                    loadList();
+                });
+            });
+
+            page.addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    page.querySelector('#PublicBaseUrl').value = config.PublicBaseUrl || '';
+                    page.querySelector('#DefaultDays').value = config.DefaultDays;
+                    page.querySelector('#OnlyAdmins').checked = config.OnlyAdmins;
+                    page.querySelector('#MaxStreamsPerLink').value = config.MaxStreamsPerLink;
+                    Dashboard.hideLoadingMsg();
+                });
+                loadList();
+            });
+
+            page.querySelector('#jfShareForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    config.PublicBaseUrl = page.querySelector('#PublicBaseUrl').value.trim();
+                    config.DefaultDays = parseInt(page.querySelector('#DefaultDays').value, 10) || 0;
+                    config.OnlyAdmins = page.querySelector('#OnlyAdmins').checked;
+                    config.MaxStreamsPerLink = parseInt(page.querySelector('#MaxStreamsPerLink').value, 10) || 3;
+                    ApiClient.updatePluginConfiguration(pluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                });
+                return false;
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

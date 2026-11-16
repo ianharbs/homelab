@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Jellyfin.Plugin.Share</AssemblyName>
+    <RootNamespace>Jellyfin.Plugin.Share</RootNamespace>
+    <Version>1.0.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- DLLs do próprio Jellyfin, copiadas do container para ./refs pelo build.sh -->
+    <JfRefs>$(MSBuildThisFileDirectory)../refs</JfRefs>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="MediaBrowser.Common"><HintPath>$(JfRefs)/MediaBrowser.Common.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="MediaBrowser.Controller"><HintPath>$(JfRefs)/MediaBrowser.Controller.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="MediaBrowser.Model"><HintPath>$(JfRefs)/MediaBrowser.Model.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Jellyfin.Data"><HintPath>$(JfRefs)/Jellyfin.Data.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Jellyfin.Database.Implementations"><HintPath>$(JfRefs)/Jellyfin.Database.Implementations.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Jellyfin.Extensions"><HintPath>$(JfRefs)/Jellyfin.Extensions.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Jellyfin.Api"><HintPath>$(JfRefs)/Jellyfin.Api.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(JfRefs)/Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Web\*" />
+    <EmbeddedResource Include="Configuration\config.html" />
+  </ItemGroup>
+</Project>
