@@ -137,7 +137,7 @@ services:
       - TZ=${TZ}
       - WHISPER__COMPUTE_TYPE=int8
       - WHISPER__CPU_THREADS=4
-      - STT_MODEL_TTL=-1
+      - WHISPER__TTL=-1  # nunca descarrega o modelo (padrão: 300 s parado)
     volumes:
       - ${CONFIG_PATH}/whisper:/home/ubuntu/.cache/huggingface/hub
     ports:

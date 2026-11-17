@@ -163,6 +163,10 @@ def _interpreta(texto, ctx):
     tv = lambda c, v=None: [{"tipo": "tv", "comando": c, "valor": v}]
     rep = lambda c, v=None: [{"tipo": "reproducao", "comando": c, "valor": v}]
 
+    # --- tela inicial (do Kodi ou da TV, conforme o modo)
+    if re.search(r"\b(menu principal|menu inicial|tela inicial|tela principal|pagina inicial|inicio|home)\b", t):
+        return [{"tipo": "menu", "comando": "inicio"}]
+
     # --- TV
     if re.search(r"\b(volta|voltar|vai|ir) (pro|para o|ao) kodi\b|\babr\w* o kodi\b|^kodi$", t):
         return tv("kodi")

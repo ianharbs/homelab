@@ -498,6 +498,13 @@ def ouvir_e_executar(kodi_rpc, kodi_aviso, tv, modo_tv, volta_ao_kodi, cancelar=
                 mensagens.append(_reproducao(a, kodi_rpc, pid) or _confirmacao(a, tocando))
             elif tipo == "tv":
                 mensagens.append(_tv(a, tv, volta_ao_kodi) or _confirmacao(a, tocando))
+            elif tipo == "menu":
+                if modo_tv:
+                    tv.envia("Home")
+                    mensagens.append("Tela inicial da TV")
+                else:
+                    kodi_rpc("Input.Home")
+                    mensagens.append("Menu principal")
             elif tipo == "aviso":
                 mensagens.append(a.get("texto"))
             elif tipo == "casa":
