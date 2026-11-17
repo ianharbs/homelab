@@ -126,3 +126,25 @@ services:
       - media_net
     restart: unless-stopped
 
+  # Reconhecimento de voz (faster-whisper "small", int8, CPU) para o assistente do controle do
+  # iHome Player (ihome-player/controle-tv/assistente.py). API estilo OpenAI em :8010
+  # (/v1/audio/transcriptions). Limitado a 4 CPUs com prioridade baixa para não atrapalhar o Jellyfin;
+  # só trabalha ~1 s por comando de voz. Modelos em ${CONFIG_PATH}/whisper (dono 1000:1000).
+  whisper:
+    image: ghcr.io/speaches-ai/speaches:latest-cpu
+    container_name: whisper
+    environment:
+      - TZ=${TZ}
+      - WHISPER__COMPUTE_TYPE=int8
+      - WHISPER__CPU_THREADS=4
+      - STT_MODEL_TTL=-1
+    volumes:
+      - ${CONFIG_PATH}/whisper:/home/ubuntu/.cache/huggingface/hub
+    ports:
+      - "8010:8000"
+    cpus: 4
+    cpu_shares: 256
+    mem_limit: 2g
+    networks:
+      - media_net
+    restart: unless-stopped

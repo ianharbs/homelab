@@ -22,6 +22,8 @@ import urllib.request
 import evdev
 from evdev import ecodes as e
 
+import assistente
+
 NOME_RECEPTOR = "XING WEI 2.4G USB USB Composite Device"
 TV_IP = os.environ.get("TV_IP", "192.168.0.12")  # reserva DHCP no Omada; se mudar, TV.descobre() acha
 TV_MODELO = "XBR-55X905E"
@@ -30,10 +32,11 @@ PSK = open(os.environ.get("TV_PSK_FILE", "/etc/controle-tv/psk")).read().strip()
 KODI_RPC = ("127.0.0.1", 9090)
 TROCA = e.KEY_BACKSPACE  # botão DEL: um clique alterna Kodi <-> TV (não vai mais ao Kodi)
 HDMI_KODI = 4  # segurar Home no modo Kodi põe a TV nesta entrada
-# No vídeo (modo Kodi): PgUp/PgDown = legenda anterior/próxima; o botão do microfone
-# (manda KEY_SEARCH e KEY_VOICECOMMAND alternadamente) faz PgUp/PgDown trocarem o áudio, até apertar de novo.
+# No vídeo (modo Kodi): PgUp/PgDown = legenda anterior/próxima; o microfone duas vezes
+# (manda KEY_SEARCH e KEY_VOICECOMMAND alternadamente) faz PgUp/PgDown trocarem o áudio, até repetir.
 FAIXA = {e.KEY_PAGEUP: "previous", e.KEY_PAGEDOWN: "next"}
 MICROFONE = {e.KEY_SEARCH, e.KEY_VOICECOMMAND}
+JANELA_MIC = 0.4  # s: microfone uma vez = assistente de voz; duas vezes dentro disso = legenda/áudio
 
 # Códigos IRCC padrão das Bravia (atualizados pelo getRemoteControllerInfo da TV)
 IRCC = {
@@ -301,12 +304,52 @@ def main():
     fd2dev = {d.fd: d for d in devs}
 
     tv = TV()
-    modo_tv = False
+    estado = {"tv": False, "ouvindo": False}  # modo TV? assistente ocupado?
     modo_audio = False  # True: PgUp/PgDown trocam o áudio no vídeo (alterna com o microfone)
     engolidas = set()  # teclas tratadas aqui: o repete/solta delas também não vai ao Kodi
+    mic_pendente = None  # (fd, instante, código, cancelar) do 1º clique do microfone
+
+    def volta_ao_kodi():
+        if estado["tv"]:
+            estado["tv"] = False
+            log("modo Kodi (assistente)")
+        tv.entrada(HDMI_KODI)
+
+    def assistente_thread(cancelar):
+        try:
+            assistente.ouvir_e_executar(kodi_rpc, kodi_aviso, tv, estado["tv"], volta_ao_kodi,
+                                        cancelar=cancelar, espera=JANELA_MIC)
+        except Exception as ex:
+            log("assistente falhou:", ex)
+        finally:
+            estado["ouvindo"] = False
+
+    def mic_duplo(fd, code):
+        """Microfone duas vezes: no vídeo alterna legenda/áudio; fora dele vai ao Kodi como antes."""
+        nonlocal modo_audio
+        if estado["tv"]:
+            return
+        try:
+            pid = kodi_no_video()
+        except Exception as ex:
+            log("Kodi RPC falhou:", ex)
+            pid = None
+        if pid is not None:
+            modo_audio = not modo_audio
+            log("PgUp/PgDown agora trocam", "áudio" if modo_audio else "legenda")
+            kodi_aviso("PgUp / PgDown", "Trocam o áudio" if modo_audio else "Trocam a legenda", 2000)
+        else:
+            for v in (1, 0):
+                virt[fd].write(e.EV_KEY, code, v)
+                virt[fd].syn()
 
     while True:
-        r, _, _ = select.select(list(fd2dev), [], [])
+        timeout = None
+        if mic_pendente:
+            timeout = max(0.0, mic_pendente[1] + JANELA_MIC - time.monotonic())
+        r, _, _ = select.select(list(fd2dev), [], [], timeout)
+        if mic_pendente and time.monotonic() >= mic_pendente[1] + JANELA_MIC:
+            mic_pendente = None  # foi um clique só: o assistente (já gravando) segue
         for fd in r:
             try:
                 eventos = list(fd2dev[fd].read())
@@ -315,18 +358,37 @@ def main():
                 sys.exit(1)
             for ev in eventos:
                 if ev.type != e.EV_KEY:
-                    if not modo_tv:
+                    if not estado["tv"]:
                         virt[fd].write(ev.type, ev.code, ev.value)
                     continue
                 code, val = ev.code, ev.value
                 if code == TROCA:
                     if val != 1:
                         continue
-                    modo_tv = not modo_tv
-                    log("modo", "TV" if modo_tv else "Kodi")
-                    kodi_aviso("Controle", "Agora controlando a TV" if modo_tv else "De volta ao Kodi")
+                    estado["tv"] = not estado["tv"]
+                    log("modo", "TV" if estado["tv"] else "Kodi")
+                    kodi_aviso("Controle", "Agora controlando a TV" if estado["tv"] else "De volta ao Kodi")
                     continue
-                if modo_tv:
+                if code in MICROFONE:  # nos dois modos: 1 clique = assistente, 2 = legenda/áudio
+                    if val != 1:
+                        continue
+                    if mic_pendente:  # 2º clique: cancela a gravação que começou no 1º
+                        if mic_pendente[3]:
+                            mic_pendente[3].set()
+                        mic_pendente = None
+                        mic_duplo(fd, code)
+                    else:
+                        cancelar = None
+                        if not estado["ouvindo"]:  # já começa a gravar para não cortar a 1ª palavra
+                            estado["ouvindo"] = True
+                            cancelar = threading.Event()
+                            log("assistente: ouvindo")
+                            threading.Thread(target=assistente_thread, args=(cancelar,), daemon=True).start()
+                        mic_pendente = (fd, time.monotonic(), code, cancelar)
+                    continue
+                if mic_pendente and val == 1:  # outra tecla: o microfone era clique simples
+                    mic_pendente = None
+                if estado["tv"]:
                     nome = MAPA.get(code)
                     if val == 1 or (val == 2 and nome in REPETE):
                         if nome:
@@ -334,7 +396,7 @@ def main():
                         else:
                             log("modo TV: tecla sem mapa", e.KEY.get(code, code))
                 else:
-                    if code in FAIXA or code in MICROFONE:
+                    if code in FAIXA:
                         if val != 1:
                             if code in engolidas:
                                 if val == 0:
@@ -349,13 +411,7 @@ def main():
                             if pid is not None:
                                 engolidas.add(code)
                                 try:
-                                    if code in MICROFONE:
-                                        modo_audio = not modo_audio
-                                        log("PgUp/PgDown agora trocam", "áudio" if modo_audio else "legenda")
-                                        kodi_aviso("PgUp / PgDown", "Trocam o áudio" if modo_audio
-                                                   else "Trocam a legenda", 2000)
-                                    else:
-                                        kodi_troca_faixa(pid, modo_audio, FAIXA[code])
+                                    kodi_troca_faixa(pid, modo_audio, FAIXA[code])
                                 except Exception as ex:
                                     log("troca de faixa falhou:", ex)
                                 continue
