@@ -1,5 +1,5 @@
 [Unit]
-Description=Controle do Kodi também na TV Sony (Home + DEL alterna)
+Description=Controle do Kodi também na TV Sony (DEL alterna)
 After=systemd-udevd.service network-online.target
 Wants=network-online.target
 Before=plasmalogin.service

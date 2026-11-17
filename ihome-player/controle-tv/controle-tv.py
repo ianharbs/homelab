@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """controle-tv: usa o controle XING WEI do iHome Player (Kodi) também na TV Sony.
 
-DEL duas vezes seguidas (até JANELA s) alterna; um DEL só continua indo ao Kodi:
+Um clique no DEL alterna:
   - modo Kodi: as teclas vão para um controle virtual (uinput) que o Kodi lê;
   - modo TV:   as teclas viram comandos IRCC enviados à Bravia pela rede (PSK).
 
@@ -28,9 +28,12 @@ TV_MODELO = "XBR-55X905E"
 REDE = "192.168.0."
 PSK = open(os.environ.get("TV_PSK_FILE", "/etc/controle-tv/psk")).read().strip()
 KODI_RPC = ("127.0.0.1", 9090)
-TROCA = e.KEY_BACKSPACE  # botão DEL: dois cliques alternam Kodi <-> TV; um clique vai ao Kodi
-JANELA = 0.5  # s entre os dois cliques do DEL
+TROCA = e.KEY_BACKSPACE  # botão DEL: um clique alterna Kodi <-> TV (não vai mais ao Kodi)
 HDMI_KODI = 4  # segurar Home no modo Kodi põe a TV nesta entrada
+# No vídeo (modo Kodi): PgUp/PgDown = legenda anterior/próxima; o botão do microfone
+# (manda KEY_SEARCH e KEY_VOICECOMMAND alternadamente) faz PgUp/PgDown trocarem o áudio, até apertar de novo.
+FAIXA = {e.KEY_PAGEUP: "previous", e.KEY_PAGEDOWN: "next"}
+MICROFONE = {e.KEY_SEARCH, e.KEY_VOICECOMMAND}
 
 # Códigos IRCC padrão das Bravia (atualizados pelo getRemoteControllerInfo da TV)
 IRCC = {
@@ -79,14 +82,70 @@ def log(*a):
     print(*a, flush=True)
 
 
-def kodi_aviso(titulo, msg):
+def kodi_aviso(titulo, msg, tempo=3000):
     try:
         req = {"jsonrpc": "2.0", "id": 1, "method": "GUI.ShowNotification",
-               "params": {"title": titulo, "message": msg, "displaytime": 3000}}
+               "params": {"title": titulo, "message": msg, "displaytime": tempo}}
         with socket.create_connection(KODI_RPC, timeout=2) as s:
             s.sendall(json.dumps(req).encode())
     except OSError as ex:
         log("aviso Kodi falhou:", ex)
+
+
+def kodi_rpc(metodo, params=None):
+    """Chamada JSON-RPC (TCP 9090) esperando a resposta; ignora notificações que o Kodi mande no meio."""
+    req = {"jsonrpc": "2.0", "id": 7, "method": metodo, "params": params or {}}
+    with socket.create_connection(KODI_RPC, timeout=1) as s:
+        s.sendall(json.dumps(req).encode())
+        buf, dec = "", json.JSONDecoder()
+        while True:
+            pedaco = s.recv(65536)
+            if not pedaco:
+                raise OSError("Kodi fechou a conexão")
+            buf += pedaco.decode(errors="replace")
+            while buf.strip():
+                buf = buf.lstrip()
+                try:
+                    obj, fim = dec.raw_decode(buf)
+                except ValueError:
+                    break  # JSON incompleto: lê mais
+                buf = buf[fim:]
+                if obj.get("id") == 7:
+                    if "error" in obj:
+                        raise RuntimeError(obj["error"])
+                    return obj.get("result")
+
+
+def kodi_no_video():
+    """playerid do vídeo se o Kodi está na tela do vídeo (cheia ou OSD), senão None."""
+    r = kodi_rpc("XBMC.GetInfoBooleans", {"booleans": [
+        "Window.IsActive(fullscreenvideo)", "Window.IsActive(videoosd)"]})
+    if not any(r.values()):
+        return None
+    for p in kodi_rpc("Player.GetActivePlayers"):
+        if p.get("type") == "video":
+            return p["playerid"]
+    return None
+
+
+def _nome_faixa(f):
+    if not f:
+        return "nenhuma"
+    nome = f.get("name") or ""
+    lingua = f.get("language") or ""
+    return " · ".join(x for x in (lingua, nome) if x) or f"faixa {f.get('index', '?')}"
+
+
+def kodi_troca_faixa(pid, audio, direcao):
+    """direcao = 'next' ou 'previous'; troca a legenda (ligando-a) ou o áudio e avisa qual ficou."""
+    if audio:
+        kodi_rpc("Player.SetAudioStream", {"playerid": pid, "stream": direcao})
+        f = kodi_rpc("Player.GetProperties", {"playerid": pid, "properties": ["currentaudiostream"]})
+        kodi_aviso("Áudio", _nome_faixa(f.get("currentaudiostream")), 1500)
+    else:
+        kodi_rpc("Player.SetSubtitle", {"playerid": pid, "subtitle": direcao, "enable": True})
+        f = kodi_rpc("Player.GetProperties", {"playerid": pid, "properties": ["currentsubtitle"]})
+        kodi_aviso("Legenda", _nome_faixa(f.get("currentsubtitle")), 1500)
 
 
 class TV:
@@ -243,24 +302,11 @@ def main():
 
     tv = TV()
     modo_tv = False
-    del_pendente = None  # (fd, instante) do primeiro clique do DEL
-
-    def del_simples(fd):
-        if modo_tv:
-            log("modo TV: DEL simples ignorado")
-            return
-        for v in (1, 0):
-            virt[fd].write(e.EV_KEY, TROCA, v)
-            virt[fd].syn()
+    modo_audio = False  # True: PgUp/PgDown trocam o áudio no vídeo (alterna com o microfone)
+    engolidas = set()  # teclas tratadas aqui: o repete/solta delas também não vai ao Kodi
 
     while True:
-        timeout = None
-        if del_pendente:
-            timeout = max(0.0, del_pendente[1] + JANELA - time.monotonic())
-        r, _, _ = select.select(list(fd2dev), [], [], timeout)
-        if del_pendente and time.monotonic() >= del_pendente[1] + JANELA:
-            del_simples(del_pendente[0])
-            del_pendente = None
+        r, _, _ = select.select(list(fd2dev), [], [])
         for fd in r:
             try:
                 eventos = list(fd2dev[fd].read())
@@ -276,17 +322,10 @@ def main():
                 if code == TROCA:
                     if val != 1:
                         continue
-                    if del_pendente:
-                        del_pendente = None
-                        modo_tv = not modo_tv
-                        log("modo", "TV" if modo_tv else "Kodi")
-                        kodi_aviso("Controle", "Agora controlando a TV" if modo_tv else "De volta ao Kodi")
-                    else:
-                        del_pendente = (fd, time.monotonic())
+                    modo_tv = not modo_tv
+                    log("modo", "TV" if modo_tv else "Kodi")
+                    kodi_aviso("Controle", "Agora controlando a TV" if modo_tv else "De volta ao Kodi")
                     continue
-                if del_pendente and val == 1:  # outra tecla: o DEL era clique simples
-                    del_simples(del_pendente[0])
-                    del_pendente = None
                 if modo_tv:
                     nome = MAPA.get(code)
                     if val == 1 or (val == 2 and nome in REPETE):
@@ -295,6 +334,31 @@ def main():
                         else:
                             log("modo TV: tecla sem mapa", e.KEY.get(code, code))
                 else:
+                    if code in FAIXA or code in MICROFONE:
+                        if val != 1:
+                            if code in engolidas:
+                                if val == 0:
+                                    engolidas.discard(code)
+                                continue
+                        else:
+                            try:
+                                pid = kodi_no_video()
+                            except Exception as ex:
+                                log("Kodi RPC falhou:", ex)
+                                pid = None
+                            if pid is not None:
+                                engolidas.add(code)
+                                try:
+                                    if code in MICROFONE:
+                                        modo_audio = not modo_audio
+                                        log("PgUp/PgDown agora trocam", "áudio" if modo_audio else "legenda")
+                                        kodi_aviso("PgUp / PgDown", "Trocam o áudio" if modo_audio
+                                                   else "Trocam a legenda", 2000)
+                                    else:
+                                        kodi_troca_faixa(pid, modo_audio, FAIXA[code])
+                                except Exception as ex:
+                                    log("troca de faixa falhou:", ex)
+                                continue
                     virt[fd].write(e.EV_KEY, code, val)
                     if code == e.KEY_HOMEPAGE and val == 1:  # segurar Voltar/Home → TV na HDMI do Kodi
                         tv.entrada(HDMI_KODI)
