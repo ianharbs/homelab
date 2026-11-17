@@ -9,10 +9,12 @@ Chamado pelo controle-tv.py numa thread própria (ouvir_e_executar). Segredos (r
 """
 import array
 import base64
+import difflib
 import io
 import json
 import math
 import os
+import re
 import subprocess
 import threading
 import time
@@ -46,6 +48,7 @@ GRAVA_MAX = 10.0     # s no máximo
 DESCARTA = 0.3       # s iniciais descartados: o mic do controle dá um estalo ao ligar (virava "Até o")
 
 _biblioteca = {"quando": 0, "filmes": {}, "series": {}}
+_casa = {"quando": 0, "nomes": [], "palavras": {}, "luzes": {}}  # cômodos e aparelhos do Home Assistant
 _apps = {"quando": 0, "lista": []}
 
 
@@ -254,7 +257,8 @@ def _gemini(contexto, wav=None, texto=None, prazo=20.0):
 def transcreve(wav):
     """Texto falado, pelo Whisper do CT 102 (API estilo OpenAI). Exceção se o serviço não responder."""
     limite = uuid.uuid4().hex
-    campos = {"model": WHISPER_MODELO, "language": "pt", "prompt": VOCABULARIO, "response_format": "json"}
+    vocab = VOCABULARIO + (" Casa: " + ", ".join(_casa["nomes"][:40]) + "." if _casa["nomes"] else "")
+    campos = {"model": WHISPER_MODELO, "language": "pt", "prompt": vocab[:900], "response_format": "json"}
     corpo = b"".join(f'--{limite}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode()
                      for k, v in campos.items())
     corpo += (f'--{limite}\r\nContent-Disposition: form-data; name="file"; filename="fala.wav"\r\n'
@@ -276,7 +280,8 @@ def _silencio(segundos=0.5):
 
 
 def aquece():
-    """Carrega o modelo do Whisper (o 1º pedido demora ~2 s a mais)."""
+    """Carrega o modelo do Whisper (o 1º pedido demora ~2 s a mais) e os nomes da casa."""
+    _atualiza_casa()
     try:
         transcreve(_silencio())
         _log("Whisper pronto")
@@ -285,6 +290,65 @@ def aquece():
 
 
 # ---------------------------------------------------------------- execução
+
+def _atualiza_casa():
+    """Nomes de cômodos e aparelhos do HA (para o vocabulário do Whisper e corrigir a transcrição)."""
+    if time.time() - _casa["quando"] < 3600 and _casa["nomes"]:
+        return
+    modelo = ("{% for a in areas() %}{{ area_name(a) }}\n{% endfor %}"
+              "{% for s in states if s.domain in ['light','switch','climate','fan','cover','scene','script'] %}"
+              "{{ s.name }}\n{% endfor %}")
+    try:
+        token = open(HA_TOKEN).read().strip()
+        req = urllib.request.Request(f"{HA_URL}/api/template", data=json.dumps({"template": modelo}).encode(),
+                                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            linhas = [x.strip() for x in r.read().decode().splitlines() if x.strip()]
+    except Exception as ex:
+        _log("nomes do Home Assistant falharam:", ex)
+        return
+    ruido = ("channel", "modulo", "módulo", "echo", "switch", "não incomodar", "embaralhar", "repita", "kids")
+    nomes = list(dict.fromkeys(x for x in linhas if not any(r in x.lower() for r in ruido)))
+    verbos = ("liga", "desliga", "acende", "apaga", "abre", "fecha", "ativa", "desativa", "aumenta",
+              "abaixa", "todas", "todos", "luzes")
+    palavras = {}
+    for n in nomes:
+        for p in n.split():
+            q = comandos.norm(p)
+            if len(q) >= 5 and not q.startswith(verbos):
+                palavras[q] = p
+    luzes = {}  # "escritorio" → "Luz Escritório" (a pessoa fala só o nome: "liga escritório")
+    for n in linhas:
+        m = re.search(r"\bluz (.+)$", n, re.I)
+        if m:
+            luzes.setdefault(comandos.norm(m.group(1)), n)
+    _casa.update(quando=time.time(), nomes=nomes, palavras=palavras, luzes=luzes)
+    _log("casa:", len(nomes), "nomes")
+
+
+def corrige_casa(texto):
+    """Troca palavras parecidas com nomes do HA pelo nome certo ("escritória" → "Escritório")."""
+    saida = []
+    for p in texto.split():
+        n = comandos.norm(p)
+        if len(n) >= 5 and n not in _casa["palavras"] and not n.startswith(("liga", "desliga", "acend", "apag")):
+            perto = difflib.get_close_matches(n, list(_casa["palavras"]), n=1, cutoff=0.82)
+            if perto:
+                p = _casa["palavras"][perto[0]]
+        saida.append(p)
+    return " ".join(saida)
+
+
+def pedido_de_luz(texto):
+    """"liga escritório" → "liga Luz Escritório" quando existe uma luz com esse nome; senão o texto igual."""
+    m = re.match(r"(liga|ligar|ligue|acende|acender|acenda|desliga|desligar|desligue|apaga|apagar|apague)\s+"
+                 r"(?:a |o |as |os )?(?:luz |luzes |lampada )?(?:do |da |de |dos |das |no |na )?(.+)$",
+                 comandos.norm(texto))
+    if not m or not _casa["luzes"]:
+        return texto
+    perto = difflib.get_close_matches(m.group(2), list(_casa["luzes"]), n=1, cutoff=0.8)
+    return f"{m.group(1)} {_casa['luzes'][perto[0]]}" if perto else texto
+
 
 def _home_assistant(texto):
     """(resposta, entendeu?) do Assist do Home Assistant."""
@@ -426,6 +490,7 @@ def ouvir_e_executar(kodi_rpc, kodi_aviso, tv, modo_tv, volta_ao_kodi, cancelar=
     except Exception as ex:
         _log("biblioteca falhou:", ex)
     _atualiza_apps(tv)
+    _atualiza_casa()
     pid, tocando = _tocando(kodi_rpc)
     apps = [a["title"] for a in _apps["lista"]]
 
@@ -457,7 +522,10 @@ def ouvir_e_executar(kodi_rpc, kodi_aviso, tv, modo_tv, volta_ao_kodi, cancelar=
             r, origem = {"transcricao": texto, "acoes": acoes, "resposta": ""}, "regras"
         else:
             try:
-                fala, entendeu = _home_assistant(texto)
+                pedido = pedido_de_luz(corrige_casa(texto.rstrip(".!")))
+                if pedido != texto.rstrip(".!"):
+                    _log(f"corrigido para o HA: {pedido!r}")
+                fala, entendeu = _home_assistant(pedido)
                 if entendeu:
                     r, origem = {"transcricao": texto, "acoes": [], "resposta": fala}, "Home Assistant"
             except Exception as ex:
