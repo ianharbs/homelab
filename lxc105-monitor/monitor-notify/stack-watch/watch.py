@@ -111,6 +111,23 @@ def save_state():
     os.replace(tmp, STATE_FILE)
 
 
+def fmt_size(used_gb, total_gb):
+    if total_gb < 1024:
+        return f"{used_gb:.0f} de {total_gb:.0f} GB"
+    return f"{used_gb / 1024:.1f} de {total_gb / 1024:.1f} TB"
+
+
+# título de cada tipo de problema: (novo, repetido, resolvido)
+KINDS = {
+    "disk": ("💾 <b>Disco quase cheio</b>", "💾 <b>Disco ainda quase cheio</b>", "✅ <b>Disco normalizado</b>"),
+    "down": ("🚨 <b>Fora do ar</b>", "🚨 <b>Ainda fora do ar</b>", "✅ <b>Voltou</b>"),
+}
+
+
+def kind(key):
+    return "disk" if key.startswith("disk:") else "down"
+
+
 def open_problem(key, desc, grace=True):
     p = STATE["problems"].get(key)
     if p:
@@ -169,7 +186,7 @@ def handle_alert(alert):
         else:
             used, total = d.get("used_gb", 0), d.get("total_gb", 1) or 1
             open_problem(key, f"disco <b>{esc(d.get('path'))}</b> em {esc(name)}: "
-                              f"{used / total:.0%} ({used / 1024:.1f} de {total / 1024:.1f} TB)", grace=False)
+                              f"{used / total:.0%} ({fmt_size(used, total)})", grace=False)
     elif typ in FAIL_ONCE:
         if not resolved:
             msg = d.get("message") or d.get("err") or d.get("version") or ""
@@ -269,22 +286,32 @@ def tick():
 
     # resolvidos: avisa só se já tinha alertado
     back = [k for k, p in probs.items() if p.get("resolved") and p["last_alert"]]
-    if back:
-        lines = [f"• {probs[k]['desc'].split(':')[0]} — ficou {fmt_age(probs[k]['resolved'] - probs[k]['first'])} fora"
-                 for k in sorted(back)]
-        telegram("✅ <b>Voltou</b>\n" + "\n".join(lines))
+    for kd, (_, _, head_ok) in KINDS.items():
+        ks = sorted(k for k in back if kind(k) == kd)
+        if not ks:
+            continue
+        if kd == "disk":
+            lines = [f"• {probs[k]['desc'].split(':')[0]} — ficou cheio por {fmt_age(probs[k]['resolved'] - probs[k]['first'])}"
+                     for k in ks]
+        else:
+            lines = [f"• {probs[k]['desc'].split(':')[0]} — ficou {fmt_age(probs[k]['resolved'] - probs[k]['first'])} fora"
+                     for k in ks]
+        telegram(head_ok + "\n" + "\n".join(lines))
     for k in [k for k, p in probs.items() if p.get("resolved")]:
         del probs[k]
 
     due = [k for k, p in probs.items()
            if (not p.get("grace", True) or now - p["first"] >= GRACE_MIN * 60)
            and (not p["last_alert"] or now - p["last_alert"] >= REPEAT_H * 3600)]
-    if due:
-        repeat = all(probs[k]["last_alert"] for k in due)
-        lines = [f"• {probs[k]['desc']} — há {fmt_age(now - probs[k]['first'])}" for k in sorted(due)]
-        head = "🚨 <b>Ainda fora do ar</b>" if repeat else "🚨 <b>Fora do ar</b>"
+    for kd, (head_new, head_rep, _) in KINDS.items():
+        ks = sorted(k for k in due if kind(k) == kd)
+        if not ks:
+            continue
+        repeat = all(probs[k]["last_alert"] for k in ks)
+        lines = [f"• {probs[k]['desc']} — há {fmt_age(now - probs[k]['first'])}" for k in ks]
+        head = head_rep if repeat else head_new
         telegram(f"{head}\n" + "\n".join(lines) + f"\n\n<i>Repito a cada {REPEAT_H:g} h até resolver.</i>")
-        for k in due:
+        for k in ks:
             probs[k]["last_alert"] = now
 
     while STATE["once"]:
