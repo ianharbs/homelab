@@ -13,7 +13,7 @@ from collections import Counter
 from datetime import date, timedelta
 
 import musica
-from common import DB_PATH, E, esc, http, log, norm, post
+from common import DB_PATH, E, dn_album_link, esc, http, log, norm, post
 
 POLL_H = float(E("RELEASE_POLL_HOURS", "12"))
 TOP = int(E("RELEASE_TOP_PLAYED", "30"))
@@ -119,7 +119,7 @@ def announce(artist, rel, why):
     if not future and in_library(artist, rel["title"]):
         lines.append("✅ Já está na biblioteca")
     else:
-        lines.append('<a href="https://dn.ihome.dev.br">⬇️ Pedir no DroppedNeedle</a>')
+        lines.append(f'<a href="{esc(dn_album_link(artist, rel["title"]))}">⬇️ Pedir no DroppedNeedle</a>')
     lines.append(f'<a href="https://www.deezer.com/album/{rel["id"]}">🎧 Ver no Deezer</a>')
     return post("musica", "\n".join(lines), photo=rel.get("cover_xl") or rel.get("cover_big"))
 

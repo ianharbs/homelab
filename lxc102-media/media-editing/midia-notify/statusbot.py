@@ -19,7 +19,7 @@ import time
 import urllib.parse
 from datetime import datetime, timezone
 
-from common import CHANNELS, E, TG_GROUP, TG_TOKEN, TOPICS, forum_id, http, kv_get, kv_set, log, norm, tg, topic_id
+from common import CHANNELS, DN_PUBLIC, E, TG_GROUP, TG_TOKEN, TOPICS, forum_id, http, kv_get, kv_set, log, norm, tg, topic_id
 import lancamentos
 import musica
 
@@ -350,7 +350,7 @@ def status_musica(busca):
     for s in r.get("song", [])[:5]:
         lines.append(f"🎵 {s.get('artist')} — {s.get('title')} (álbum {s.get('album')})")
     return "\n".join(lines) or (f"Nada parecido com '{busca}' na biblioteca do Navidrome (pode ainda estar baixando "
-                                "no DroppedNeedle: https://dn.ihome.dev.br).")
+                                f"no DroppedNeedle: {DN_PUBLIC}/search?q={urllib.parse.quote(busca)}).")
 
 
 def fila_downloads():

@@ -4,7 +4,10 @@ import logging
 import os
 import re
 import sqlite3
+import time
 import unicodedata
+import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 
@@ -100,6 +103,33 @@ def http(method, url, headers=None, body=None, timeout=20, raw=False):
     if raw:
         return content
     return json.loads(content) if content.strip() else None
+
+
+DN_PUBLIC = E("DROPPEDNEEDLE_PUBLIC_URL", "https://dn.ihome.dev.br").rstrip("/")
+
+
+def dn_album_link(artist, title):
+    """Página do álbum no DroppedNeedle (/album/<release-group MusicBrainz>), onde se pede o download.
+    Álbum que o MusicBrainz ainda não tem (lançamento muito recente) cai na busca de álbuns do DN."""
+    t, a = (str(x).replace('"', " ").replace("\\", " ") for x in (title, artist))
+    q = f'releasegroup:"{t}" AND artist:"{a}"'
+    url = "https://musicbrainz.org/ws/2/release-group/?fmt=json&limit=5&query=" + urllib.parse.quote(q)
+    try:
+        for tries in range(3):  # MusicBrainz: 1 pedido/s, 503 quando passa disso
+            try:
+                r = http("GET", url, headers={"User-Agent": "midia-notify/1.0 (homelab)"}, timeout=15)
+                break
+            except urllib.error.HTTPError as e:
+                if e.code != 503 or tries == 2:
+                    raise
+                time.sleep(2)
+        for g in r.get("release-groups", []):
+            names = " ".join(norm(c.get("name")) for c in g.get("artist-credit", []) if isinstance(c, dict))
+            if g.get("score", 0) >= 90 and norm(g.get("title")) == norm(title) and norm(artist) in names:
+                return f"{DN_PUBLIC}/album/{g['id']}"
+    except Exception as e:
+        log.warning("MusicBrainz %s — %s: %s", artist, title, e)
+    return f"{DN_PUBLIC}/search/albums?q=" + urllib.parse.quote(f"{artist} {title}")
 
 
 def esc(s):
