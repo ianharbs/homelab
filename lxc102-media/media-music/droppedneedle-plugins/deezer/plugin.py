@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "vendor"))
 
 import httpx  # noqa: E402
 from droppedneedle_plugin import (  # noqa: E402
+    DownloadFileRef,
     DownloadMaterialization,
     DownloadTaskStatus,
     EnqueueRequest,
@@ -619,12 +620,15 @@ class Deezer:
 
     def _release(self, title: str, files: dict[str, dict], score: float) -> PluginSearchResult:
         fmts = {f["fmt"] for f in files.values()}
+        sizes = {name: int(f.pop("size", 0)) for name, f in files.items()}
         return PluginSearchResult(
             title=title,
-            size_bytes=sum(int(f.pop("size", 0)) for f in files.values()),
+            size_bytes=sum(sizes.values()),
             score=max(0.0, min(1.0, score)),
             quality_tier="lossless" if fmts == {"FLAC"} else "mp3_320",
-            files=[],  # folder mode: per-file plugin candidates fail to decode in DroppedNeedle 2.15
+            # Files mode (v3): DroppedNeedle sends back only the files it wants, so a
+            # single-track request against an album candidate fetches just that track.
+            files=[DownloadFileRef(username="deezer", filename=name, size=size) for name, size in sizes.items()],
             payload=json.dumps({"v": 1, "files": files}, ensure_ascii=False),
         )
 
@@ -865,6 +869,14 @@ class Deezer:
             raise RuntimeError("payload inválido") from exc
         if not mapping:
             raise RuntimeError("payload sem faixas")
+        wanted = {ref.filename for ref in request.files or [] if getattr(ref, "filename", "")}
+        if wanted:
+            picked = {name: spec for name, spec in mapping.items() if name in wanted}
+            if not picked:
+                raise RuntimeError(f"nenhum dos arquivos pedidos está no candidato: {sorted(wanted)[:3]}")
+            mapping = picked
+        if request.download_type == "track" and len(mapping) > 1:
+            self._log.warning("deezer: pedido de faixa sem lista de arquivos; baixando %d faixas", len(mapping))
         # job_name is per candidate (droppedneedle-<task>-<n>): a failover to the next
         # candidate must not reuse, and mix files into, the previous candidate's folder.
         key = request.job_name or f"deezer-{request.task_id}"
