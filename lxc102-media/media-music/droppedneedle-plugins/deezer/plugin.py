@@ -108,6 +108,15 @@ def _album_match(artist: str, album: str, candidate_title: str) -> float:
     return round(len(wanted & set(_norm(candidate_title).split())) / len(wanted), 4)
 
 
+
+def _album_name(found: str, requested: str) -> str:
+    """The requested title when the edition only adds a suffix ("Metalizer (Re-Armed)",
+    "Demon Days (Deluxe)"): DroppedNeedle's wrong_album gate compares the ALBUM tag
+    with the request, and re-stamps the real title from MusicBrainz on import."""
+    if requested and _bare(found) == _bare(requested):
+        return requested
+    return found
+
 def _select_edition(releases: list[dict], track_count: int) -> str | None:
     """Edição com o nº de faixas mais próximo; empate -> oficial, mais antiga (como o select_edition da v2)."""
     def key(r: dict) -> tuple:
@@ -340,13 +349,18 @@ class Deezer:
         return {}
 
     async def _search_tracks(self, artist: str, title: str, limit: int) -> dict:
-        """Advanced search with artist: + track: together started returning nothing
-        (Deezer, 2026-11); fall back to the plain "artist title" query. The callers
-        still check the artist and title of every hit."""
-        data = await self._api("search/track", q=f'artist:"{artist}" track:"{title}"', limit=limit)
-        if not data.get("data"):
-            data = await self._api("search/track", q=f"{artist} {title}", limit=limit)
-        return data
+        """Advanced (artist: + track:) and plain "artist title" searches, merged: since
+        2026-11 the advanced one returns nothing or only alternate versions."""
+        advanced = await self._api("search/track", q=f'artist:"{artist}" track:"{title}"', limit=limit)
+        plain = await self._api("search/track", q=f"{artist} {title}", limit=limit)
+        # The advanced search can return only demos/remixes and miss the original,
+        # so both lists are merged (callers score and filter every hit).
+        merged, seen = [], set()
+        for item in (advanced.get("data") or []) + (plain.get("data") or []):
+            if item.get("id") not in seen:
+                seen.add(item.get("id"))
+                merged.append(item)
+        return {"data": merged}
 
     async def _album_tracks(self, album_id: str) -> list[dict]:
         key = ("album", str(album_id))
@@ -594,7 +608,7 @@ class Deezer:
         tags = {
             "title": mb["title"],
             "artist": mb["artist"] or target["artist"],
-            "album": target["title"],
+            "album": _album_name(target["title"], target.get("requested_album", "")),
             "albumartist": album_artist,
             "tracknumber": str(mb["pos"]),
             "tracktotal": str(sum(1 for t in target["tracks"] if t["disc"] == mb["disc"])),
@@ -602,10 +616,11 @@ class Deezer:
             "disctotal": str(target["discs"]),
             "date": target["date"],
             "isrc": song.get("ISRC") or (mb["isrcs"][0] if mb["isrcs"] else ""),
-            "musicbrainz_albumid": target["release"],
+            # No release / release-track MBIDs: DroppedNeedle pins its own edition and
+            # rejects files tagged with another one (not_pinned_edition). It re-stamps
+            # the edition from MusicBrainz on import; group + recording ids still guide it.
             "musicbrainz_releasegroupid": target["rg"],
             "musicbrainz_trackid": mb["recording"],
-            "musicbrainz_releasetrackid": mb["release_track"],
             "musicbrainz_albumartistid": target["artist_id"],
             "deezer_id": str(song.get("SNG_ID", "")),
         }
@@ -713,7 +728,7 @@ class Deezer:
                     "id": str(song["SNG_ID"]), "fmt": fmt, "size": int(song.get(_FORMAT_KEY[fmt]) or 0),
                     "tags": {k: v for k, v in {
                         "title": song.get("SNG_TITLE", ""), "artist": song.get("ART_NAME", "") or name,
-                        "album": item.get("title", ""), "albumartist": artist, "tracknumber": str(pos),
+                        "album": _album_name(item.get("title", ""), album), "albumartist": artist, "tracknumber": str(pos),
                         "discnumber": str(disc), "date": str(song.get("PHYSICAL_RELEASE_DATE") or ""),
                         "isrc": song.get("ISRC", ""), "deezer_id": str(song["SNG_ID"]),
                         "_cover": COVER_URL.format(song["ALB_PICTURE"]) if song.get("ALB_PICTURE") else "",
@@ -762,6 +777,8 @@ class Deezer:
         target = None
         try:
             target = await self._target(artist_name, album_title, track_count)
+            if target:
+                target = {**target, "requested_album": album_title}
         except Exception as exc:  # noqa: BLE001 - MB down: Deezer-only matching still works
             self._log.warning("deezer: MusicBrainz falhou para %s - %s: %s", artist_name, album_title, exc)
         if target and (not track_count or len(target["tracks"]) == track_count):
