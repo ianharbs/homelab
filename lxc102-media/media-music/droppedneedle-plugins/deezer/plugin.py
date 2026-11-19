@@ -137,6 +137,26 @@ def _title_score(mb_title: str, dz_title: str, dz_version: str = "") -> float:
     return difflib.SequenceMatcher(None, _bare(mb_title), _bare(dz_title)).ratio()
 
 
+_VERSION_WORDS = {"live", "vivo", "acoustic", "acustico", "remix", "mix", "session", "sessions", "demo",
+                  "karaoke", "instrumental", "edit", "version", "versao", "unplugged", "cover", "tribute", "rehearsal"}
+
+
+def _track_score(wanted_title: str, dz: dict, duration: int | None = None, album: str | None = None) -> float:
+    """Exact title first; live/remix/session versions the request didn't ask for lose
+    to the original (the plain-text search fallback brings them up)."""
+    title, version = dz.get("title", ""), dz.get("title_version", "")
+    score = _title_score(wanted_title, dz.get("title_short") or title, "")
+    extra = set(_norm(f"{title} {version}").split()) - set(_norm(wanted_title).split())
+    if extra & _VERSION_WORDS:
+        score *= 0.6
+    if duration and dz.get("duration"):
+        diff = abs(int(dz["duration"]) - duration)
+        score *= 1.0 if diff <= 5 else 0.85 if diff <= 15 else 0.6
+    if album and _bare((dz.get("album") or {}).get("title", "")) == _bare(album):
+        score = min(1.0, score + 0.05)
+    return round(score, 4)
+
+
 def _blowfish_key(sng_id: str) -> bytes:
     digest = hashlib.md5(str(sng_id).encode()).hexdigest().encode()  # noqa: S324 - Deezer's scheme
     return bytes(digest[i] ^ digest[i + 16] ^ BF_SECRET[i] for i in range(16))
@@ -317,6 +337,15 @@ class Deezer:
                 return {}
             raise RuntimeError(f"api.deezer.com/{path}: {error.get('message')}")
         return {}
+
+    async def _search_tracks(self, artist: str, title: str, limit: int) -> dict:
+        """Advanced search with artist: + track: together started returning nothing
+        (Deezer, 2026-11); fall back to the plain "artist title" query. The callers
+        still check the artist and title of every hit."""
+        data = await self._api("search/track", q=f'artist:"{artist}" track:"{title}"', limit=limit)
+        if not data.get("data"):
+            data = await self._api("search/track", q=f"{artist} {title}", limit=limit)
+        return data
 
     async def _album_tracks(self, album_id: str) -> list[dict]:
         key = ("album", str(album_id))
@@ -531,7 +560,7 @@ class Deezer:
                     break
             if hit is None:
                 lookups += 1
-                data = await self._api("search/track", q=f'artist:"{artist}" track:"{_bare(mb["title"])}"', limit=10)
+                data = await self._search_tracks(artist, _bare(mb["title"]), 10)
                 candidates = [
                     {"SNG_ID": str(t["id"]), "SNG_TITLE": t.get("title", ""), "VERSION": t.get("title_version", ""),
                      "DURATION": t.get("duration", 0), "ISRC": ""}
@@ -740,13 +769,13 @@ class Deezer:
         return await self._unguided(artist_name, album_title, year, track_count)
 
     async def _search_single(self, artist_name: str, title: str) -> list[IndexerResult]:
-        data = await self._api("search/track", q=f'artist:"{artist_name}" track:"{title}"', limit=15)
+        data = await self._search_tracks(artist_name, title, 15)
         ranked = []
         for t in data.get("data") or []:
             name = (t.get("artist") or {}).get("name", "")
             if not _same_artist(artist_name, name):
                 continue
-            score = _album_match(artist_name, title, f"{name} - {t.get('title', '')}")
+            score = _track_score(title, t)
             if score >= MIN_RELEASE_SCORE:
                 ranked.append((score, t))
         ranked.sort(key=lambda pair: pair[0], reverse=True)
@@ -793,17 +822,13 @@ class Deezer:
     ) -> list[IndexerResult]:
         if not self.is_configured():
             return []
-        data = await self._api("search/track", q=f'artist:"{artist_name}" track:"{track_title}"', limit=15)
+        data = await self._search_tracks(artist_name, track_title, 15)
         ranked = []
         for t in data.get("data") or []:
             name = (t.get("artist") or {}).get("name", "")
             if not _same_artist(artist_name, name):
                 continue
-            score = _album_match(artist_name, track_title, f"{name} - {t.get('title', '')}")
-            if duration_seconds and t.get("duration") and abs(int(t["duration"]) - duration_seconds) > 5:
-                score *= 0.8
-            if album_title and _bare((t.get("album") or {}).get("title", "")) == _bare(album_title):
-                score = min(1.0, score + 0.05)
+            score = _track_score(track_title, t, duration_seconds, album_title)
             if score >= MIN_ALBUM_SCORE:
                 ranked.append((score, t))
         ranked.sort(key=lambda pair: pair[0], reverse=True)
