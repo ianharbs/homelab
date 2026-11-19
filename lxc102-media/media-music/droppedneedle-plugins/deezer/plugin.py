@@ -54,6 +54,7 @@ MEDIA_URL = "https://media.deezer.com/v1/get_url"
 COVER_URL = "https://e-cdns-images.dzcdn.net/images/cover/{}/1000x1000-000000-80-0-0.jpg"
 BF_SECRET = b"g4el58wc0zvf9na1"
 STATE_FILE = ".deezer-job.json"
+MB_UA = "DroppedNeedle-deezer-plugin/2.0 ( https://github.com/droppedneedle )"  # the MB mirror 403s browser and httpx UAs
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 MAX_ALBUM_CANDIDATES = 5
@@ -345,7 +346,9 @@ class Deezer:
             self._mb_throttle = _Throttle(1.05 if "musicbrainz.org" in self._mb_url else 0.15)
         for attempt in range(3):
             await self._mb_throttle.wait()
-            resp = await self._http.get(f"{self._mb_url}/{path}", params={**params, "fmt": "json"}, timeout=20.0)
+            resp = await self._http.get(
+                f"{self._mb_url}/{path}", params={**params, "fmt": "json"}, headers={"User-Agent": MB_UA}, timeout=20.0
+            )
             if resp.status_code in (429, 503):
                 await asyncio.sleep(1.5 * (attempt + 1))
                 continue
