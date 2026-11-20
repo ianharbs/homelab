@@ -1,9 +1,11 @@
-# qBittorrent, Prowlarr e FlareSolverr saem pela NordVPN (gluetun, WireGuard/NordLynx) com kill-switch:
+# Prowlarr e FlareSolverr saem pela NordVPN (gluetun, WireGuard/NordLynx) com kill-switch:
 # eles usam a rede do gluetun (network_mode: service:gluetun), então as portas ficam publicadas no gluetun
-# e os aliases qbittorrent/prowlarr/flaresolverr continuam valendo na media_net.
+# e os aliases prowlarr/flaresolverr continuam valendo na media_net.
+# O qBittorrent saiu da VPN em 20/11/2026: sem port forwarding na Nord ele não aceitava conexão de entrada
+# (tracker privado amigos-share com ratio ~0) e travava depois de cada reconexão do gluetun.
+# Agora sai pelo IP de casa; porta 54321 TCP+UDP encaminhada no ER605 → 192.168.10.20.
 # - Chave em ${CONFIG_PATH}/gluetun/gluetun.env (só no servidor, chmod 600): WIREGUARD_PRIVATE_KEY
 #   (sai do access token da Nord: GET https://api.nordvpn.com/v1/users/services/credentials -> nordlynx_private_key).
-# - A NordVPN não tem port forwarding: o torrent não recebe conexões de entrada.
 networks:
   media_net:
     external: true
@@ -26,7 +28,7 @@ services:
       - SERVER_COUNTRIES=Brazil
       # LAN (Postgres do srv-apps, SABnzbd) e media_net (Sonarr, Radarr...) fora do túnel
       - FIREWALL_OUTBOUND_SUBNETS=192.168.10.0/24,172.20.0.0/24
-      - FIREWALL_INPUT_PORTS=8080,9696,8191
+      - FIREWALL_INPUT_PORTS=9696,8191
       - UPDATER_PERIOD=24h
       # API do gluetun (widget do Homepage); papéis/API key em ${CONFIG_PATH}/gluetun/auth/config.toml
       - HTTP_CONTROL_SERVER_ADDRESS=:8000
@@ -42,14 +44,12 @@ services:
       start_interval: 5s
       retries: 3
     ports:
-      - 8080:8080   # qbittorrent
       - 9696:9696   # prowlarr
       - 8191:8191   # flaresolverr
       - 8008:8000   # API do gluetun
     networks:
       media_net:
         aliases:
-          - qbittorrent
           - prowlarr
           - flaresolverr
 
@@ -131,11 +131,12 @@ services:
       - ${CONFIG_PATH}/qbittorrent:/config
       - ${DATA_PATH}/data:/data
       - ${DOWNLOAD_PATH}:/downloads
-    network_mode: service:gluetun
-    depends_on:
-      gluetun:
-        condition: service_healthy
-        restart: true
+    ports:
+      - 8080:8080
+      - 54321:54321
+      - 54321:54321/udp
+    networks:
+      - media_net
 
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
