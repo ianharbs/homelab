@@ -127,6 +127,9 @@ services:
     depends_on:
       - audiomuse-redis
     restart: unless-stopped
+    # a análise noturna chegou a 3,4 GB e, junto com o vazamento do torrent-indexer,
+    # estourou os 20 GB do CT 102 em 20/11/2026 (thrashing travou backup e replicação)
+    mem_limit: 4g
 
   droppedneedle:
     image: ghcr.io/droppedneedle/droppedneedle:latest

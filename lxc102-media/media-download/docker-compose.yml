@@ -156,6 +156,8 @@ services:
     image: felipemarinho97/torrent-indexer:latest
     container_name: torrent-indexer
     restart: unless-stopped
+    # vazou 7 GB em 20/11/2026 e levou o CT 102 a thrashing (backup e replicação travaram)
+    mem_limit: 1g
     ports:
       - 7006:7006
     networks:
