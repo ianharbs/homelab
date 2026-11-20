@@ -36,6 +36,8 @@ services:
       - komodo-postgres
     environment:
       - FERRETDB_POSTGRESQL_URL=postgres://komodo:${KOMODO_DB_PASSWORD}@komodo-postgres:5432/postgres
+      # em INFO ele loga cada comando do Komodo: 4,4 GB de log em 5 semanas (20/11/2026)
+      - FERRETDB_LOG_LEVEL=warn
     volumes:
       - ${CONFIG_PATH}/komodo/ferretdb:/state
     networks:
