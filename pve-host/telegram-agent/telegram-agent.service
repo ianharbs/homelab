@@ -1,0 +1,18 @@
+[Unit]
+Description=telegram-agent: Claude Code pelo tópico Homelab do Telegram
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 -u /usr/local/lib/telegram-agent/agent.py
+Restart=on-failure
+RestartSec=10
+# o claude roda como root em /root/homelab (mesmas memórias/settings do terminal)
+Environment=HOME=/root
+Environment=PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# matar o serviço não pode matar um pedido no meio de um comando sem aviso: dá 60 s
+KillMode=mixed
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

@@ -6,6 +6,7 @@ Recebe mensagens por long polling (getUpdates) do @iHomeSCbot:
   - posts no canal TELEGRAM_CHAT_STATUS (alternativa a tópicos; o bot precisa ser admin do canal);
   - conversa privada com quem está em STATUS_ALLOWED_USERS / REQUESTER_TELEGRAM;
   - comandos/menções no grupo antigo (TELEGRAM_CHAT_ID).
+No tópico Homelab, o que o Ian escreve vai para o agente no pve (to_agent; pve-host/telegram-agent).
 Uma IA com API compatível com OpenAI (LLM_URL/LLM_API_KEY/LLM_MODEL; ex.: Gemini grátis) escolhe as
 ferramentas e escreve a resposta. Sem IA (ou se ela falhar), responde direto pelas ferramentas.
 O Ollama local (CPU) é lento demais para conversa (> 10 min por resposta em 15/11/2026).
@@ -34,6 +35,11 @@ DB_PATH = E("DB_PATH", "/state/notify.db")
 ALLOWED = {x.strip() for x in E("STATUS_ALLOWED_USERS", "").split(",") if x.strip()} | {
     p.split("=", 1)[1].strip() for p in E("REQUESTER_TELEGRAM", "").split(",") if "=" in p}
 BOT_NAME = {"username": ""}
+# Agente do homelab (pve-host/telegram-agent): mensagens dos AGENT_ADMINS no tópico AGENT_THREAD
+# (Homelab) e cliques nos botões "ag:…" vão para o Claude Code no pve em vez da central de status.
+AGENT_URL, AGENT_TOKEN = E("AGENT_URL", "").rstrip("/"), E("AGENT_TOKEN", "")
+AGENT_THREAD = E("AGENT_THREAD", "25")
+AGENT_ADMINS = {x.strip() for x in E("AGENT_ADMINS", "").split(",") if x.strip()}
 
 BOOK_STATUS = {"pending": "na fila para buscar", "searching": "procurando", "not_found": "não encontrado",
                "downloading": "baixando", "processing": "importando", "completed": "disponível",
@@ -583,7 +589,34 @@ def maybe_adopt(chat):
     return True
 
 
+def to_agent(u):
+    """Repassa o update ao agente no pve. True = era para o agente (repassado ou avisado do erro)."""
+    if not (AGENT_URL and AGENT_TOKEN):
+        return False
+    cq = u.get("callback_query")
+    if cq:
+        if not (cq.get("data") or "").startswith("ag:"):
+            return False
+    else:
+        m = u.get("message") or {}
+        if not (m.get("is_topic_message") and str(m.get("message_thread_id")) == AGENT_THREAD
+                and str(m.get("chat", {}).get("id")) == str(forum_id())
+                and str((m.get("from") or {}).get("id")) in AGENT_ADMINS):
+            return False
+    try:
+        http("POST", f"{AGENT_URL}/telegram?token={urllib.parse.quote(AGENT_TOKEN)}", body=u, timeout=15)
+    except Exception as e:
+        log.warning("agente do homelab: %s", e)
+        if cq:
+            tg("answerCallbackQuery", {"callback_query_id": cq["id"], "text": "Agente fora do ar"})
+        else:
+            reply(m["chat"]["id"], m["message_id"], f"⚠️ O agente no pve não respondeu ({e}).", AGENT_THREAD)
+    return True
+
+
 def handle(u):
+    if to_agent(u):
+        return
     if "my_chat_member" in u:  # bot adicionado/removido de um canal ou grupo: guarda o id
         m = u["my_chat_member"]
         ch, st = m["chat"], m["new_chat_member"]["status"]
@@ -655,7 +688,7 @@ def worker():
     while True:
         try:
             res = tg("getUpdates", {"offset": offset, "timeout": 50,
-                                    "allowed_updates": ["message", "channel_post", "my_chat_member"]}, timeout=70)
+                                    "allowed_updates": ["message", "channel_post", "my_chat_member", "callback_query"]}, timeout=70)
             for u in res.get("result", []):
                 offset = u["update_id"] + 1
                 kv_set("tg_offset", offset)
