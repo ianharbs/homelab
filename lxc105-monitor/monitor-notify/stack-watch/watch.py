@@ -23,7 +23,9 @@ O que vira mensagem:
 - Ignorado: auto-update que deu certo, CPU/RAM alta e o resto.
 
 Segredos em /state/secrets.env (lido pelo script): TELEGRAM_TOKEN, TELEGRAM_CHAT_ID,
-TELEGRAM_THREAD_ID, WEBHOOK_TOKEN (o do Proxmox; também guardado como secret do webhook no PVE). Variáveis de ambiente têm precedência.
+TELEGRAM_THREAD_ID, WEBHOOK_TOKEN (o do Proxmox; também guardado como secret do webhook no PVE),
+KOMODO_KEY/KOMODO_SECRET (só leitura: a cada 5 min confere o estado real e fecha o que já voltou).
+Variáveis de ambiente têm precedência.
 """
 import html
 import json
@@ -271,6 +273,31 @@ def fmt_age(sec):
     return (f"{d}d " if d else "") + (f"{h}h " if h or d else "") + f"{m}min"
 
 
+def komodo_read(typ):
+    req = urllib.request.Request(
+        KOMODO_URL + "/read", data=json.dumps({"type": typ, "params": {}}).encode(),
+        headers={"Content-Type": "application/json", "X-Api-Key": CFG["KOMODO_KEY"],
+                 "X-Api-Secret": CFG["KOMODO_SECRET"]})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.load(r)
+
+
+def reconcile():
+    """Fecha problema que o Komodo já dá como resolvido. Se o alerta de volta ("→ running" ou
+    ServerUnreachable resolvido) se perder — como em 20/11/2026, quando 8 stacks do srv-media
+    voltaram sem aviso e ficaram "fora do ar" aqui por 2,5 dias —, o estado real corrige."""
+    if not (CFG.get("KOMODO_KEY") and CFG.get("KOMODO_SECRET")):
+        return
+    ok = set()
+    for typ in ("ListStacks", "ListDeployments"):
+        ok |= {f"stack:{x['name']}" for x in komodo_read(typ) if (x.get("info") or {}).get("state") == "running"}
+    ok |= {f"server:{x['name']}" for x in komodo_read("ListServers") if (x.get("info") or {}).get("state") == "Ok"}
+    for k, p in STATE["problems"].items():
+        if k in ok and not p.get("resolved"):
+            log("estado real ok:", k)
+            close_problem(k)
+
+
 def check_komodo():
     try:
         with urllib.request.urlopen(KOMODO_URL + "/", timeout=15) as r:
@@ -278,6 +305,11 @@ def check_komodo():
         close_problem("komodo")
     except Exception as e:
         open_problem("komodo", f"<b>Komodo</b> não responde ({esc(type(e).__name__)}) — sem ele não chega nenhum alerta")
+        return
+    try:
+        reconcile()
+    except Exception as e:
+        log("reconciliação falhou:", e)
 
 
 def tick():
