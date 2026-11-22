@@ -61,6 +61,15 @@ def classify(tool, inp):
     return "edita arquivo", path
 
 
+def describe(tool, inp):
+    """Frase curta para a pergunta no Telegram (o comando em si só aparece em "Ver comando")."""
+    if tool == "Bash":
+        return inp.get("description", "")
+    path = inp.get("file_path") or inp.get("notebook_path") or "?"
+    verb = "Criar/substituir" if tool == "Write" else "Editar"
+    return f"{verb} o arquivo {path}"
+
+
 def main():
     job = os.environ.get("TG_AGENT_JOB")
     if not job:
@@ -73,7 +82,7 @@ def main():
     req = urllib.request.Request(
         os.environ.get("TG_AGENT_CONFIRM_URL", "http://127.0.0.1:8098/confirm"),
         data=json.dumps({"job": job, "tool": tool, "reason": why, "summary": summary,
-                         "description": inp.get("description", "")}).encode(),
+                         "description": describe(tool, inp)}).encode(),
         headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=900) as r:

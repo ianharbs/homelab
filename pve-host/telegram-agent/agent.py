@@ -71,7 +71,9 @@ SYSTEM = """Você está atendendo o Ian pelo Telegram (tópico Homelab do grupo 
 - Ele não vê os comandos nem as saídas, só a sua resposta final: diga o que achou, o que fez e o
   que falta, com números concretos.
 - Comandos que mudam algo passam por um hook que pergunta ao Ian no Telegram (botões ✅/❌). Se ele
-  negar, não tente de outro jeito: diga o que ia fazer e pare. Consultar, ler logs e
+  negar, não tente de outro jeito: diga o que ia fazer e pare. A pergunta mostra o campo
+  `description` do Bash: escreva-o SEMPRE em português, como frase para leigo dizendo o que vai
+  fazer, em quê e por quê (ex.: "Apagar os logs antigos do Jellyfin no CT 102 para liberar 3 GB"). Consultar, ler logs e
   `docker restart`/`docker start` não pedem confirmação.
 - Mudança grande, arriscada ou ambígua: investigue, explique o plano em poucas linhas e PARE,
   esperando ele responder (ele continua a conversa respondendo à sua mensagem).
@@ -317,6 +319,12 @@ def handle_callback(cq):
     p = PENDING.get(cid)
     if not p:
         ok_txt = "Essa confirmação já expirou."
+    elif verdict == "show":
+        try:
+            send(p["body"] + p["detail"], edit=p["msg_id"], markup=CONFIRM_KB(cid, shown=True), raw_html=True)
+        except Exception as e:
+            log("ver comando:", e)
+        ok_txt = "Comando mostrado"
     elif p["event"].is_set():
         ok_txt = "Já respondido."
     else:
@@ -329,6 +337,11 @@ def handle_callback(cq):
         pass
 
 
+def CONFIRM_KB(cid, shown=False):
+    row = [{"text": "✅ Pode", "callback_data": f"ag:ok:{cid}"}, {"text": "❌ Não", "callback_data": f"ag:no:{cid}"}]
+    return {"inline_keyboard": [row] if shown else [row, [{"text": "🔎 Ver comando", "callback_data": f"ag:show:{cid}"}]]}
+
+
 def confirm(req):
     """Chamado pelo hook: pergunta no Telegram e espera o clique."""
     job = CURRENT.get("job") or {}
@@ -336,18 +349,17 @@ def confirm(req):
         return False
     cid = uuid.uuid4().hex[:10]
     ev = threading.Event()
-    PENDING[cid] = {"event": ev, "ok": False}
     what = req.get("summary") or ""
     if len(what) > 3000:
         what = what[:3000] + "\n…"
-    head = f"⚠️ <b>Posso fazer isto?</b> ({html.escape(req.get('tool', ''))}"
-    head += f" — {html.escape(req['reason'])})" if req.get("reason") else ")"
-    if req.get("description"):
-        head += "\n" + html.escape(req["description"])
-    body = head + "\n<pre>" + html.escape(what) + "</pre>"
-    kb = {"inline_keyboard": [[{"text": "✅ Pode", "callback_data": f"ag:ok:{cid}"},
-                               {"text": "❌ Não", "callback_data": f"ag:no:{cid}"}]]}
-    msg_id = send(body, reply_to=job.get("reply_to"), markup=kb, raw_html=True)
+    desc = (req.get("description") or "").strip() or f"rodar um comando que {req.get('reason') or 'muda algo'}"
+    body = f"⚠️ <b>A IA quer:</b> {html.escape(desc)}"
+    if req.get("reason"):
+        body += f"\n<i>({html.escape(req['reason'])})</i>"
+    detail = "\n<pre>" + html.escape(what) + "</pre>"
+    PENDING[cid] = {"event": ev, "ok": False, "body": body, "detail": detail, "msg_id": None}
+    msg_id = send(body, reply_to=job.get("reply_to"), markup=CONFIRM_KB(cid), raw_html=True)
+    PENDING[cid]["msg_id"] = msg_id
     remember(msg_id, job.get("session"))
     ev.wait(CONFIRM_TIMEOUT)
     ok = PENDING.pop(cid)["ok"]
