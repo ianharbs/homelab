@@ -1,3 +1,4 @@
+# DESLIGADA em 24/11/2026 (o celular passou a baixar pelo plugin do BookOrbit). Para religar: Deploy da stack no Komodo.
 # Syncthing: envia a biblioteca "Livros" do Kavita para o KOReader/Aleph do celular.
 # A pasta é montada só leitura e compartilhada como "Send Only": nada que o celular
 # faça volta para o servidor. Ignorados (.stignore na raiz da biblioteca): staging do

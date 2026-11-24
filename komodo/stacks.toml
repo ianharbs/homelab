@@ -297,7 +297,7 @@ TZ=[[TZ]]
 
 [[stack]]
 name = "media-sync"
-description = "Syncthing (biblioteca Livros do Kavita -> celular)"
+description = "Syncthing (biblioteca Livros do Kavita -> celular) - DESLIGADA desde 24/11/2026: o celular baixa pelo plugin do BookOrbit"
 tags = ["midia", "srv-media"]
 [stack.config]
 links = ["http://192.168.10.20:8384"]
@@ -310,7 +310,7 @@ file_paths = ["docker-compose.yml"]
 auto_pull = true
 project_name = "media-sync"
 poll_for_updates = false
-auto_update = true
+auto_update = false
 environment = """
 CONFIG_PATH=[[CONFIG_PATH]]
 DATA_PATH=[[DATA_PATH]]
