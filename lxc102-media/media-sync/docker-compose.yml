@@ -1,0 +1,27 @@
+# Syncthing: envia a biblioteca "Livros" do Kavita para o KOReader/Aleph do celular.
+# A pasta é montada só leitura e compartilhada como "Send Only": nada que o celular
+# faça volta para o servidor. Ignorados (.stignore na raiz da biblioteca): staging do
+# Shelfarr, .json e imagens soltas.
+services:
+  syncthing:
+    image: syncthing/syncthing:latest
+    container_name: syncthing
+    hostname: srv-media
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - STGUIADDRESS=0.0.0.0:8384
+    volumes:
+      - ${CONFIG_PATH}/syncthing:/var/syncthing
+      - ${DATA_PATH}/data/reading/books:/books:ro
+    ports:
+      - 8384:8384
+      - 22000:22000/tcp
+      - 22000:22000/udp
+    restart: unless-stopped
+    healthcheck:
+      test: curl -fkLsS -m 2 127.0.0.1:8384/rest/noauth/health | grep -o --color=never OK || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3

@@ -296,6 +296,30 @@ TZ=[[TZ]]
 """
 
 [[stack]]
+name = "media-sync"
+description = "Syncthing (biblioteca Livros do Kavita -> celular)"
+tags = ["midia", "srv-media"]
+[stack.config]
+links = ["http://192.168.10.20:8384"]
+server = "srv-media"
+repo = "ianharbs/homelab"
+git_account = "ianharbs"
+branch = "main"
+run_directory = "lxc102-media/media-sync"
+file_paths = ["docker-compose.yml"]
+auto_pull = true
+project_name = "media-sync"
+poll_for_updates = false
+auto_update = true
+environment = """
+CONFIG_PATH=[[CONFIG_PATH]]
+DATA_PATH=[[DATA_PATH]]
+PGID=[[PGID]]
+PUID=[[PUID]]
+TZ=[[TZ]]
+"""
+
+[[stack]]
 name = "media-tv"
 description = "Dispatcharr (IPTV)"
 tags = ["midia", "srv-media"]
