@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024"><defs><clipPath id="clipmask"><circle cx="256" cy="256" r="256"></circle></clipPath></defs><g clip-path="url(#clipmask)">
+<defs>
+<linearGradient id="a8bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC23D"></stop><stop offset="1" stop-color="#C2690A"></stop></linearGradient>
+<linearGradient id="a8b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#FFF0D4"></stop></linearGradient>
+<filter id="a8sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#5A2A0C" flood-opacity="0.4"></feDropShadow></filter>
+</defs>
+<rect width="512" height="512" fill="url(#a8bg)"></rect>
+<rect x="334" y="122" width="34" height="70" rx="8" fill="#FFE7BE"></rect>
+<path d="M256 96 L396 204 Q404 210 404 222 L404 400 Q404 418 386 418 L126 418 Q108 418 108 400 L108 222 Q108 210 116 204 Z" fill="url(#a8b)" filter="url(#a8sh)"></path>
+<path d="M96 214 L256 90 L416 214" fill="none" stroke="#8A3A0E" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M110 206 L256 94 L300 128" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.45"></path>
+<circle cx="160" cy="252" r="18" fill="#B45309"></circle>
+<path d="M151 252 L158 259 L170 245" fill="none" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path>
+<rect x="192" y="245" width="132" height="14" rx="7" fill="#F7D9A6"></rect>
+<circle cx="160" cy="304" r="18" fill="#B45309"></circle>
+<path d="M151 304 L158 311 L170 297" fill="none" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path>
+<rect x="192" y="297" width="110" height="14" rx="7" fill="#F7D9A6"></rect>
+<circle cx="160" cy="356" r="15" fill="none" stroke="#F7D9A6" stroke-width="6"></circle>
+<circle cx="160" cy="356" r="15" fill="none" stroke="#B45309" stroke-width="6" stroke-linecap="round" stroke-dasharray="56 94.3" transform="rotate(-90 160 356)"></circle>
+<rect x="192" y="349" width="84" height="14" rx="7" fill="#F7D9A6"></rect>
+<g filter="url(#a8sh)">
+<circle cx="364" cy="376" r="46" fill="none" stroke="#5A2A0C" stroke-width="22" stroke-dasharray="18 18.13"></circle>
+<circle cx="364" cy="376" r="40" fill="#7C3A12"></circle>
+</g>
+<circle cx="364" cy="376" r="28" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.35"></circle>
+<circle cx="364" cy="376" r="15" fill="#FFF0D4"></circle>
+</g></svg>

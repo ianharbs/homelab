@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024"><defs><clipPath id="clipmask"><circle cx="256" cy="256" r="256"></circle></clipPath></defs><g clip-path="url(#clipmask)">
+<defs>
+<linearGradient id="a3bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF6B6B"></stop><stop offset="1" stop-color="#D62839"></stop></linearGradient>
+<linearGradient id="a3b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A3D46"></stop><stop offset="1" stop-color="#17181C"></stop></linearGradient>
+<clipPath id="a3cb"><rect x="128" y="224" width="256" height="184" rx="26"></rect></clipPath>
+<clipPath id="a3ct"><rect x="128" y="160" width="256" height="50" rx="14"></rect></clipPath>
+<filter id="a3sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#6B0F1A" flood-opacity="0.5"></feDropShadow></filter>
+</defs>
+<rect width="512" height="512" fill="url(#a3bg)"></rect>
+<g filter="url(#a3sh)">
+<rect x="128" y="224" width="256" height="184" rx="26" fill="url(#a3b)"></rect>
+<g clip-path="url(#a3cb)" fill="#FFFFFF">
+<polygon points="150,224 182,224 160,268 128,268"></polygon><polygon points="214,224 246,224 224,268 192,268"></polygon><polygon points="278,224 310,224 288,268 256,268"></polygon><polygon points="342,224 374,224 352,268 320,268"></polygon>
+</g>
+<rect x="128" y="266" width="256" height="4" fill="#0E0F12"></rect>
+<g transform="rotate(-12 140 214)">
+<rect x="128" y="160" width="256" height="50" rx="14" fill="url(#a3b)"></rect>
+<g clip-path="url(#a3ct)" fill="#FFFFFF">
+<polygon points="160,160 192,160 170,210 138,210"></polygon><polygon points="224,160 256,160 234,210 202,210"></polygon><polygon points="288,160 320,160 298,210 266,210"></polygon><polygon points="352,160 384,160 362,210 330,210"></polygon>
+</g>
+<rect x="140" y="164" width="236" height="4" rx="2" fill="#FFFFFF" opacity="0.35"></rect>
+</g>
+</g>
+<circle cx="146" cy="216" r="11" fill="#E5E7EB"></circle>
+<circle cx="143" cy="213" r="4" fill="#FFFFFF"></circle>
+<path d="M236 306 L292 338 L236 370 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round"></path>
+<rect x="140" y="232" width="4" height="160" rx="2" fill="#FFFFFF" opacity="0.12"></rect>
+</g></svg>

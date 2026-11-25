@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="imagens/icones/png/quadrado/ihome-01-comunidade-ihome-quadrado.png" alt="iHome" width="160">
+</p>
+
 # homelab
 Configurações Docker Compose do homelab rodando em Proxmox VE (cluster `iHomeCluster`), distribuídos em 3 nós, com HA (ZFS replicado) para os LXCs de gateway e apps.
 

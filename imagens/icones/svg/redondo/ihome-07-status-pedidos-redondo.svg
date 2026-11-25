@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024"><defs><clipPath id="clipmask"><circle cx="256" cy="256" r="256"></circle></clipPath></defs><g clip-path="url(#clipmask)">
+<defs>
+<linearGradient id="a7bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22C58B"></stop><stop offset="1" stop-color="#057A55"></stop></linearGradient>
+<linearGradient id="a7b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#E2F7EC"></stop></linearGradient>
+<linearGradient id="a7k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B6B4F"></stop><stop offset="1" stop-color="#053B2C"></stop></linearGradient>
+<filter id="a7sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#022C1F" flood-opacity="0.4"></feDropShadow></filter>
+</defs>
+<rect width="512" height="512" fill="url(#a7bg)"></rect>
+<g transform="translate(-14 0)">
+<rect x="136" y="108" width="240" height="304" rx="30" fill="url(#a7b)" filter="url(#a7sh)"></rect>
+<rect x="152" y="118" width="208" height="5" rx="2.5" fill="#FFFFFF"></rect>
+<rect x="200" y="86" width="112" height="50" rx="18" fill="url(#a7k)"></rect>
+<rect x="232" y="98" width="48" height="14" rx="7" fill="#8FE3C0"></rect>
+<circle cx="182" cy="180" r="20" fill="#10B981"></circle>
+<path d="M172 180 L180 188 L193 172" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+<rect x="216" y="172" width="128" height="16" rx="8" fill="#BFE8D5"></rect>
+<circle cx="182" cy="244" r="20" fill="#10B981"></circle>
+<path d="M172 244 L180 252 L193 236" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+<rect x="216" y="236" width="104" height="16" rx="8" fill="#BFE8D5"></rect>
+<circle cx="182" cy="308" r="17" fill="none" stroke="#CDEFE0" stroke-width="6"></circle>
+<circle cx="182" cy="308" r="17" fill="none" stroke="#10B981" stroke-width="6" stroke-linecap="round" stroke-dasharray="64 107" transform="rotate(-90 182 308)"></circle>
+<rect x="216" y="300" width="84" height="16" rx="8" fill="#BFE8D5"></rect>
+<g filter="url(#a7sh)">
+<circle cx="352" cy="372" r="46" fill="none" stroke="#064E3B" stroke-width="22" stroke-dasharray="18 18.13"></circle>
+<circle cx="352" cy="372" r="40" fill="#0A5C44"></circle>
+</g>
+<circle cx="352" cy="372" r="28" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.35"></circle>
+<circle cx="352" cy="372" r="15" fill="#E2F7EC"></circle>
+</g>
+</g></svg>

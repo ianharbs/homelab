@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024"><defs><clipPath id="clipmask"><rect width="512" height="512" rx="112"></rect></clipPath></defs><g clip-path="url(#clipmask)">
+<defs>
+<linearGradient id="a5bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F8BFF"></stop><stop offset="1" stop-color="#1E3FD9"></stop></linearGradient>
+<linearGradient id="a5n" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#D3E1FF"></stop></linearGradient>
+<filter id="a5sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#0B1F7A" flood-opacity="0.45"></feDropShadow></filter>
+</defs>
+<rect width="512" height="512" fill="url(#a5bg)"></rect>
+<circle cx="256" cy="256" r="176" fill="none" stroke="#A9C8FF" stroke-width="10" stroke-linecap="round" stroke-dasharray="90 186.5" opacity="0.55" transform="rotate(-30 256 256)"></circle>
+<circle cx="256" cy="256" r="206" fill="none" stroke="#A9C8FF" stroke-width="8" stroke-linecap="round" stroke-dasharray="60 263.6" opacity="0.35" transform="rotate(15 256 256)"></circle>
+<g transform="translate(-12 0)">
+<g filter="url(#a5sh)" fill="url(#a5n)">
+<rect x="232" y="150" width="26" height="204" rx="6"></rect>
+<rect x="352" y="120" width="26" height="204" rx="6"></rect>
+<path d="M232 156 Q232 150 238 149 L372 121 Q378 120 378 126 L378 166 Q378 172 372 173 L238 201 Q232 202 232 196 Z"></path>
+<ellipse cx="204" cy="354" rx="48" ry="38" transform="rotate(-22 204 354)"></ellipse>
+<ellipse cx="324" cy="324" rx="48" ry="38" transform="rotate(-22 324 324)"></ellipse>
+</g>
+<path d="M242 158 L368 132" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"></path>
+<ellipse cx="188" cy="340" rx="16" ry="9" fill="#FFFFFF" transform="rotate(-22 188 340)"></ellipse>
+<ellipse cx="308" cy="310" rx="16" ry="9" fill="#FFFFFF" transform="rotate(-22 308 310)"></ellipse>
+</g>
+</g></svg>
