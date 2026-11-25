@@ -216,6 +216,30 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == "/whatsapp":  # GOWA assina o corpo (HMAC), não manda o token na URL
             raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
             return self.reply(whatsapp.on_webhook(raw, self.headers.get("X-Hub-Signature-256")))
+        if url.path == "/homelab":  # mensagens p/ o grupo 🖥️ Homelab: stack-watch (CT 105) e agente (pve)
+            tok = urllib.parse.parse_qs(url.query).get("token", [""])[0]
+            if not tok or tok not in {E("HOMELAB_TOKEN", ""), E("AGENT_TOKEN", "")} - {""}:
+                return self.reply(403, "forbidden")
+            try:
+                p = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+                jid = whatsapp.group_of("homelab")
+                text = p.get("text") or ""
+                if p.get("fmt") != "wa":  # HTML do Telegram (stack-watch)
+                    text = whatsapp.to_wa(text)
+                if p.get("edit"):
+                    whatsapp.api("POST", f"/message/{p['edit']}/update", {"phone": jid, "message": text})
+                    mid = p["edit"]
+                else:
+                    r = whatsapp.send_text(jid, text, reply_to=p.get("reply_to") or None)
+                    mid = (r.get("results") or {}).get("message_id")
+            except Exception as e:
+                log.exception("homelab: %s", e)
+                return self.reply(500, "error")
+            body = json.dumps({"message_id": mid}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            return self.wfile.write(body)
         if url.path == "/cadastro":  # pedidos de acesso do CT 109, com token próprio
             if not CADASTRO_TOKEN or urllib.parse.parse_qs(url.query).get("token", [""])[0] != CADASTRO_TOKEN:
                 return self.reply(403, "forbidden")

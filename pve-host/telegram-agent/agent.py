@@ -63,6 +63,9 @@ CLAUDE = CFG.get("CLAUDE_BIN", "/root/.local/bin/claude")
 JOB_TIMEOUT = int(CFG.get("JOB_TIMEOUT_MIN", "30")) * 60
 CONFIRM_TIMEOUT = int(CFG.get("CONFIRM_TIMEOUT_MIN", "10")) * 60
 STATE_FILE = CFG.get("STATE_FILE", "/var/lib/telegram-agent/state.json")
+# WhatsApp (grupo 🖥️ Homelab, desde 25/11/2026): o midia-notify repassa as mensagens do Ian (POST /whatsapp)
+# e manda as respostas (POST {WA_NOTIFY}/homelab?token=AGENT_TOKEN, devolve o message_id).
+WA_NOTIFY = CFG.get("WA_NOTIFY_URL", "http://192.168.10.20:8095").rstrip("/")
 HOOK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "confirm_hook.py")
 
 SYSTEM = """Você está atendendo o Ian pelo Telegram (tópico Homelab do grupo iHome), não pelo terminal.
@@ -110,7 +113,7 @@ def save_state():
     # guarda só as 2000 mensagens mais recentes
     ms = STATE["msg_session"]
     if len(ms) > 2000:
-        for k in sorted(ms, key=int)[:-2000]:
+        for k in list(ms)[:-2000]:  # ordem de chegada (ids do WhatsApp não são números)
             del ms[k]
     tmp = STATE_FILE + ".tmp"
     with open(tmp, "w") as f:
@@ -200,6 +203,45 @@ def send(text, reply_to=None, edit=None, markup=None, raw_html=False):
     return None
 
 
+def md_to_wa(s):
+    """Markdown do Claude -> formatação do WhatsApp (*negrito*, ```bloco```, `código`)."""
+    s = re.sub(r"\*\*([^*\n]+)\*\*", r"*\1*", s)
+    s = re.sub(r"^#{1,6}\s+(.+)$", r"*\1*", s, flags=re.M)
+    s = re.sub(r"^(\s*)[-*]\s+", r"\1• ", s, flags=re.M)
+    s = re.sub(r"\[([^\]\n]+)\]\((https?://[^)\s]+)\)", r"\1: \2", s)
+    return s.strip()
+
+
+def wa_send(text, reply_to=None, edit=None, raw=False):
+    """Manda (ou edita) no grupo 🖥️ Homelab via midia-notify. Devolve o id da mensagem."""
+    body = {"text": text if raw else md_to_wa(text), "fmt": "wa"}
+    if reply_to:
+        body["reply_to"] = reply_to
+    if edit:
+        body["edit"] = edit
+    req = urllib.request.Request(f"{WA_NOTIFY}/homelab?token={urllib.parse.quote(AGENT_TOKEN)}",
+                                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.load(r).get("message_id")
+    except Exception as e:
+        if edit:  # edição só vale até 15 min no WhatsApp: manda como nova
+            return wa_send(text, reply_to=reply_to, raw=raw)
+        raise
+
+
+def out_send(job, text, reply_to=None, edit=None, markup=None, raw_html=False):
+    """Envia pelo canal do pedido (telegram | whatsapp)."""
+    if (job or {}).get("canal") == "wa":
+        if raw_html:
+            text = html.unescape(re.sub(r"<pre>(.*?)</pre>", r"```\1```", text, flags=re.S))
+            text = re.sub(r"</?b>", "*", text)
+            text = re.sub(r"</?i>", "_", text)
+            text = re.sub(r"<[^>]+>", "", text)
+        return wa_send(text, reply_to=reply_to, edit=edit, raw=raw_html)
+    return send(text, reply_to=reply_to, edit=edit, markup=markup, raw_html=raw_html)
+
+
 def typing_until(stop):
     while not stop.wait(5):
         try:
@@ -211,6 +253,7 @@ def typing_until(stop):
 # ---------------------------------------------------------------- execução
 def run_job(job):
     m = job["msg"]
+    wa = job.get("canal") == "wa"
     text = (m.get("text") or m.get("caption") or "").strip()
     rep = m.get("reply_to_message") or {}
     session = STATE["msg_session"].get(str(rep.get("message_id"))) if rep else None
@@ -219,21 +262,25 @@ def run_job(job):
         quoted = (rep.get("text") or rep.get("caption") or "").strip()
         if quoted:
             prompt = f"(Em resposta a esta mensagem do grupo:)\n<<<\n{quoted[:6000]}\n>>>\n\n{text}"
-    placeholder = send("🔍 vendo…" if not session else "🔍 continuando…", reply_to=m["message_id"])
+    placeholder = out_send(job, "🔍 vendo…" if not session else "🔍 continuando…", reply_to=m["message_id"])
     remember(placeholder, session)
     job_id = uuid.uuid4().hex[:12]
-    CURRENT["job"] = {"id": job_id, "reply_to": m["message_id"], "session": session}
+    CURRENT["job"] = {"id": job_id, "reply_to": m["message_id"], "session": session, "canal": job.get("canal")}
     settings = {"hooks": {"PreToolUse": [{
         "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
         "hooks": [{"type": "command", "command": f"python3 {HOOK}", "timeout": CONFIRM_TIMEOUT + 60}]}]}}
+    system = SYSTEM.replace("pelo Telegram (tópico Homelab do grupo iHome)", "pelo WhatsApp (grupo 🖥️ Homelab)") \
+        .replace("no Telegram (botões ✅/❌)", "no WhatsApp (ele responde sim/não)") \
+        .replace("Não mande mensagem no Telegram", "Não mande mensagem no WhatsApp nem no Telegram") if wa else SYSTEM
     cmd = [CLAUDE, "-p", prompt, "--output-format", "json", "--permission-mode", "auto",
-           "--permission-prompts", "none", "--append-system-prompt", SYSTEM, "--settings", json.dumps(settings)]
+           "--permission-prompts", "none", "--append-system-prompt", system, "--settings", json.dumps(settings)]
     if session:
         cmd += ["--resume", session]
     env = dict(os.environ, TG_AGENT_JOB=job_id, TG_AGENT_CONFIRM_URL=f"http://127.0.0.1:{CONFIRM_PORT}/confirm")
     log("pedido", job_id, "sessão", session or "nova", "-", text[:120])
     stop = threading.Event()
-    threading.Thread(target=typing_until, args=(stop,), daemon=True).start()
+    if not wa:
+        threading.Thread(target=typing_until, args=(stop,), daemon=True).start()
     t0 = time.time()
     result, new_session, err = "", session, None
     try:
@@ -272,9 +319,9 @@ def run_job(job):
     parts = chunks(result)
     if mins >= 1:
         parts[-1] += f"\n\n⏱️ {mins:.0f} min"
-    ids = [send(parts[0], edit=placeholder)]
+    ids = [out_send(job, parts[0], edit=placeholder)]
     for p in parts[1:]:
-        ids.append(send(p, reply_to=m["message_id"]))
+        ids.append(out_send(job, p, reply_to=m["message_id"]))
     for i in ids:
         remember(i, new_session)
 
@@ -287,27 +334,54 @@ def worker():
         except Exception as e:
             log("erro no pedido:", e)
             try:
-                send(f"❌ deu erro no agente: {e}", reply_to=job["msg"]["message_id"])
+                out_send(job, f"❌ deu erro no agente: {e}", reply_to=job["msg"]["message_id"])
             except Exception:
                 pass
 
 
-def handle_message(m):
+def handle_message(m, canal="tg"):
+    job = {"msg": m, "canal": canal}
     text = (m.get("text") or "").strip()
     if text.split("@")[0] in ("/parar", "/stop"):
         p = CURRENT.get("proc")
         if p and p.poll() is None:
             p.terminate()
-            send("⏹️ parando o pedido atual.", reply_to=m["message_id"])
+            out_send(job, "⏹️ parando o pedido atual.", reply_to=m["message_id"])
         else:
-            send("Nada rodando agora.", reply_to=m["message_id"])
+            out_send(job, "Nada rodando agora.", reply_to=m["message_id"])
         return
     if not text:
         return
     ahead = JOBS.qsize() + (1 if CURRENT.get("proc") else 0)
-    JOBS.put({"msg": m})
+    JOBS.put(job)
     if ahead:
-        send(f"⏳ na fila ({ahead} na frente).", reply_to=m["message_id"])
+        out_send(job, f"⏳ na fila ({ahead} na frente).", reply_to=m["message_id"])
+
+
+WA_SIM = {"sim", "s", "pode", "ok", "autorizo", "✅", "👍"}
+WA_NAO = {"nao", "não", "n", "nega", "negado", "❌", "👎"}
+
+
+def handle_whatsapp(b):
+    """Mensagem do Ian no grupo 🖥️ Homelab (repassada pelo midia-notify)."""
+    text, rid = (b.get("text") or "").strip(), str(b.get("replied_to_id") or "")
+    # resposta a uma confirmação pendente
+    for cid, p in list(PENDING.items()):
+        if rid and str(p.get("msg_id")) == rid:
+            w = re.sub(r"[.!]+$", "", text.lower()).strip()
+            if w == "ver":
+                out_send({"canal": "wa"}, p["body"] + p["detail"], reply_to=b["id"], raw_html=True)
+            elif w in WA_SIM or w in WA_NAO:
+                if not p["event"].is_set():
+                    p["ok"] = w in WA_SIM
+                    p["event"].set()
+            else:
+                out_send({"canal": "wa"}, "Responda *sim*, *não* ou *ver*.", reply_to=b["id"])
+            return
+    m = {"message_id": b["id"], "text": text}
+    if rid:
+        m["reply_to_message"] = {"message_id": rid, "text": b.get("quoted_body") or ""}
+    handle_message(m, canal="wa")
 
 
 def handle_callback(cq):
@@ -358,7 +432,11 @@ def confirm(req):
         body += f"\n<i>({html.escape(req['reason'])})</i>"
     detail = "\n<pre>" + html.escape(what) + "</pre>"
     PENDING[cid] = {"event": ev, "ok": False, "body": body, "detail": detail, "msg_id": None}
-    msg_id = send(body, reply_to=job.get("reply_to"), markup=CONFIRM_KB(cid), raw_html=True)
+    if job.get("canal") == "wa":
+        msg_id = out_send(job, body + "\n\nResponda esta mensagem com <b>sim</b> ou <b>não</b> (<b>ver</b> mostra o comando).",
+                          reply_to=job.get("reply_to"), raw_html=True)
+    else:
+        msg_id = send(body, reply_to=job.get("reply_to"), markup=CONFIRM_KB(cid), raw_html=True)
     PENDING[cid]["msg_id"] = msg_id
     remember(msg_id, job.get("session"))
     ev.wait(CONFIRM_TIMEOUT)
@@ -366,7 +444,10 @@ def confirm(req):
     verdict = "✅ autorizado" if ok else ("❌ negado" if ev.is_set() else "⌛ sem resposta em "
                                          f"{CONFIRM_TIMEOUT // 60} min — não fiz")
     try:
-        send(body + "\n" + verdict, edit=msg_id, markup={"inline_keyboard": []}, raw_html=True)
+        if job.get("canal") == "wa":
+            out_send(job, verdict, reply_to=msg_id)
+        else:
+            send(body + "\n" + verdict, edit=msg_id, markup={"inline_keyboard": []}, raw_html=True)
     except Exception:
         pass
     log("confirmação", req.get("tool"), verdict, "-", what[:100].replace("\n", " "))
@@ -396,6 +477,15 @@ class Handler(BaseHTTPRequestHandler):
             if ip != "127.0.0.1":
                 return self.reply(403)
             return self.reply(200, {"ok": confirm(body)})
+        if path == "/whatsapp":
+            token = urllib.parse.parse_qs(qs).get("token", [""])[0]
+            if not AGENT_TOKEN or token != AGENT_TOKEN or ip not in FORWARD_FROM:
+                log("recusado (whatsapp) de", ip)
+                return self.reply(403)
+            if not body.get("id"):
+                return self.reply(400)
+            handle_whatsapp(body)
+            return self.reply(200)
         if path == "/telegram":
             token = urllib.parse.parse_qs(qs).get("token", [""])[0]
             if not AGENT_TOKEN or token != AGENT_TOKEN or ip not in FORWARD_FROM:

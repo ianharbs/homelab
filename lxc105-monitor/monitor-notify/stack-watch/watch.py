@@ -22,6 +22,8 @@ O que vira mensagem:
   Resource Sync com mudanças pendentes.
 - Ignorado: auto-update que deu certo, CPU/RAM alta e o resto.
 
+Também manda para o grupo 🖥️ Homelab do WhatsApp se WA_HOMELAB_URL estiver no secrets.env
+(http://192.168.10.20:8095/homelab?token=HOMELAB_TOKEN do midia-notify).
 Segredos em /state/secrets.env (lido pelo script): TELEGRAM_TOKEN, TELEGRAM_CHAT_ID,
 TELEGRAM_THREAD_ID, WEBHOOK_TOKEN (o do Proxmox; também guardado como secret do webhook no PVE),
 KOMODO_KEY/KOMODO_SECRET (só leitura: a cada 5 min confere o estado real e fecha o que já voltou).
@@ -79,7 +81,22 @@ def esc(s):
     return html.escape(str(s), quote=False)
 
 
+def whatsapp(text):
+    """Também no grupo 🖥️ Homelab do WhatsApp (midia-notify no CT 102). WA_HOMELAB_URL vazio = desligado."""
+    url = CFG.get("WA_HOMELAB_URL", "")
+    if not url:
+        return
+    try:
+        req = urllib.request.Request(url, data=json.dumps({"text": text}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            r.read()
+    except Exception as e:  # o Telegram segue mesmo se o WhatsApp falhar
+        log("whatsapp:", e)
+
+
 def telegram(text):
+    whatsapp(text)
     payload = {"chat_id": CFG["TELEGRAM_CHAT_ID"], "text": text, "parse_mode": "HTML",
                "disable_web_page_preview": True}
     if CFG.get("TELEGRAM_THREAD_ID"):

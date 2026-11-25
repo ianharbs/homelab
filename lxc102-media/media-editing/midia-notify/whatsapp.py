@@ -15,6 +15,7 @@ import re
 import sqlite3
 import threading
 import time
+import urllib.parse
 import urllib.request
 import uuid
 
@@ -59,6 +60,10 @@ GROUPS = {  # tipo -> (nome, descrição, só admins enviam)
     "casa": ("🏡 Status/Pedidos Casa", "Pergunte sobre filmes, séries, livros e músicas (\"cadê o livro Trono de "
              "Vidro?\", \"tem o álbum Clube da Esquina?\") e peça filmes e séries (\"quero o filme Duna\" e responda "
              "com o número). /fila, /recentes, /ajuda.", False),
+    # só o Ian: alertas do homelab (stack-watch) e conversa com o Claude Code no pve (telegram-agent),
+    # com confirmação de mudanças respondendo sim/não
+    "homelab": ("🖥️ Homelab", "Só o Ian. Alertas do servidor (Komodo/Proxmox) e conversa com o Claude: escreva o "
+                "pedido; responda sim/não às confirmações (ver mostra o comando); /parar interrompe.", False),
     # só o Ian, FORA da Comunidade: pedidos para aprovar e prazos vencendo (aprovacoes.py)
     "aprovacoes": ("✅ Aprovações", "Só o Ian. Responda a mensagem com ok / não (pedidos) ou manter (prazo). /prazos lista.", False),
 }
@@ -318,6 +323,20 @@ def on_webhook(raw, sig):
     return 200
 
 
+def _para_agente(p, chat, mid, text):
+    url, tok = E("AGENT_URL", "").rstrip("/"), E("AGENT_TOKEN", "")
+    if not (url and tok):
+        send_text(chat, "⚠️ Agente não configurado (AGENT_URL/AGENT_TOKEN).", reply_to=mid)
+        return
+    body = {"id": mid, "text": text, "replied_to_id": p.get("replied_to_id") or "",
+            "quoted_body": p.get("quoted_body") or ""}
+    try:
+        http("POST", f"{url}/whatsapp?token={urllib.parse.quote(tok)}", body=body, timeout=15)
+    except Exception as e:
+        log.warning("agente (whatsapp): %s", e)
+        send_text(chat, f"⚠️ O agente no pve não respondeu ({e}).", reply_to=mid)
+
+
 def _bot_completo(p, chat, mid, text):
     """Grupo 🏡 Status/Pedidos Casa: todos falam com o bot sem restrição (livros e música inclusos), e o Ian
     sem precisar de "/". As respostas do bot vão pela API e não voltam como evento (testado em 25/11): sem loop."""
@@ -362,6 +381,12 @@ def _handle(p):
     import statusbot  # aqui para evitar import circular
     mid, chat, text = p.get("id"), p.get("chat_id") or "", (p.get("body") or "").strip()
     if not text or not mid:
+        return
+    if chat and chat == group_of("homelab"):  # só o Ian: tudo vai para o agente (Claude Code no pve)
+        if not p.get("is_from_me") or mid in _seen:
+            return
+        _seen[mid] = time.time()
+        threading.Thread(target=_para_agente, args=(p, chat, mid, text), daemon=True).start()
         return
     if chat and chat == group_of("casa"):  # Status e Pedidos da casa: modo completo para todos os membros
         if mid in _seen:
