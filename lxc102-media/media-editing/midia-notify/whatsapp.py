@@ -53,6 +53,10 @@ GROUPS = {  # tipo -> (nome, descrição, só admins enviam)
     "musica": ("🎵 Música", "Álbuns novos no Navidrome e lançamentos das bandas favoritas.", True),
     "status": ("🤖 Status e Pedidos", "Pergunte: \"cadê o filme Duna?\", \"status da série Severance\", /fila, /recentes. "
                "Peça: \"quero o filme Duna\" ou \"/pedir Severance temporada 2\" e responda com o número da opção.", False),
+    # só o Ian: o bot em modo completo (status com livros/música, pedidos, /pessoa, /convidar, /prazos),
+    # sem precisar de "/" nas mensagens dele
+    "bot": ("🛠️ Bot iHome", "Só o Ian. Converse direto: status (inclui livros e música), \"quero o filme X\", "
+            "/pessoa, /pessoas, /convidar, /prazos, /fila, /recentes, /ajuda.", False),
     # só o Ian, FORA da Comunidade: pedidos para aprovar e prazos vencendo (aprovacoes.py)
     "aprovacoes": ("✅ Aprovações", "Só o Ian. Responda a mensagem com ok / não (pedidos) ou manter (prazo). /prazos lista.", False),
 }
@@ -312,10 +316,55 @@ def on_webhook(raw, sig):
     return 200
 
 
+def _bot_completo(p, chat, mid, text):
+    """Grupo 🛠️ Bot iHome: o Ian fala com o bot sem restrição. As respostas do bot vão pela API e não voltam
+    como evento (testado em 25/11), então não há loop."""
+    import aprovacoes
+    import pedidos
+    import statusbot
+    dados = None
+    try:
+        out = None
+        rid = p.get("replied_to_id")
+        if rid and text.strip().isdigit():
+            out = pedidos.escolher(rid, text, p)
+        if out is None and rid:
+            out = aprovacoes.on_reply(rid, text)
+        if out is None and text.startswith("/"):
+            out = admin_cmd(text)
+            if out is None and text.split()[0].lower() == "/prazos":
+                out = aprovacoes.on_reply(None, "/prazos")
+        if out is None and pedidos.eh_pedido(text):
+            out, dados = pedidos.pedir(p, text)
+        if out is None:
+            out = statusbot.answer(text, so_video=False)
+            if text.strip().lower() in ("/ajuda", "/help", "/start"):
+                out += ("\n\nSó aqui: /pessoa <usuario> <telefone> [nome], /pessoas, /convidar <usuario>|todos, "
+                        "/prazos. Pedidos: \"quero o filme X\" e responda com o número.")
+    except Exception as e:
+        log.exception("bot completo: %s", e)
+        out = f"⚠️ Erro: {e}"
+    log.info("whatsapp: bot completo: %s", text[:80])
+    try:
+        for i in range(0, max(len(out), 1), 4000):
+            r = send_text(chat, out[i:i + 4000] or "…", reply_to=mid)
+        if dados:
+            import pedidos as _p
+            _p.ligar((r.get("results") or {}).get("message_id"), dados)
+    except Exception as e:
+        log.error("whatsapp: resposta do bot completo falhou: %s", e)
+
+
 def _handle(p):
     import statusbot  # aqui para evitar import circular
     mid, chat, text = p.get("id"), p.get("chat_id") or "", (p.get("body") or "").strip()
     if not text or not mid:
+        return
+    if chat and chat == group_of("bot"):  # grupo só do Ian: tudo, sem precisar de "/"
+        if not p.get("is_from_me") or mid in _seen:
+            return
+        _seen[mid] = time.time()
+        threading.Thread(target=_bot_completo, args=(p, chat, mid, text), daemon=True).start()
         return
     if chat and chat == group_of("aprovacoes"):  # grupo só do Ian: respostas às mensagens do bot
         if not p.get("is_from_me") or mid in _seen:
