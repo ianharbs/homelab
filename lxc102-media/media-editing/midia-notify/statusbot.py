@@ -713,7 +713,8 @@ def handle(u):
 
 
 def worker():
-    if not TG_TOKEN:
+    if not TG_TOKEN or E("TELEGRAM_OFF") == "1":  # grupo do Telegram desativado em 25/11/2026 (tudo no WhatsApp)
+        log.info("status: Telegram desligado (TELEGRAM_OFF=1)")
         return
     init_db()
     try:

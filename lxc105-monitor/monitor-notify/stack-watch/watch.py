@@ -81,8 +81,14 @@ def esc(s):
     return html.escape(str(s), quote=False)
 
 
+def telegram_off():
+    """TELEGRAM_OFF=1 no secrets.env: só WhatsApp (o grupo do Telegram foi desativado em 25/11/2026)."""
+    return CFG.get("TELEGRAM_OFF") == "1" or not CFG.get("TELEGRAM_CHAT_ID")
+
+
 def whatsapp(text):
-    """Também no grupo 🖥️ Homelab do WhatsApp (midia-notify no CT 102). WA_HOMELAB_URL vazio = desligado."""
+    """Grupo 🖥️ Homelab do WhatsApp (midia-notify no CT 102). WA_HOMELAB_URL vazio = desligado.
+    Se for o único canal (Telegram desligado), a falha sobe: o alerta fica pendente e tenta de novo."""
     url = CFG.get("WA_HOMELAB_URL", "")
     if not url:
         return
@@ -91,12 +97,17 @@ def whatsapp(text):
                                      headers={"Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=20) as r:
             r.read()
-    except Exception as e:  # o Telegram segue mesmo se o WhatsApp falhar
+    except Exception as e:
         log("whatsapp:", e)
+        if telegram_off():
+            raise
 
 
 def telegram(text):
+    """Envia o alerta (nome mantido): WhatsApp e, se ligado, Telegram."""
     whatsapp(text)
+    if telegram_off():
+        return
     payload = {"chat_id": CFG["TELEGRAM_CHAT_ID"], "text": text, "parse_mode": "HTML",
                "disable_web_page_preview": True}
     if CFG.get("TELEGRAM_THREAD_ID"):
