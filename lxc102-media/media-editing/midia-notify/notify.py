@@ -31,6 +31,7 @@ import musica  # noqa: E402
 import statusbot  # noqa: E402
 import aprovacoes  # noqa: E402
 import prazo  # noqa: E402
+import embreve  # noqa: E402
 import whatsapp  # noqa: E402
 
 PORT = int(E("PORT", "8095"))
@@ -192,6 +193,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/health"):
             return self.reply(200)
+        if self.path.startswith("/embreve"):  # widget "Em breve" do iHome Player (só títulos/capas: sem token)
+            body = json.dumps(embreve.dados(), ensure_ascii=False).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            return self.wfile.write(body)
         q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         if WEBHOOK_TOKEN and q.get("token", [""])[0] != WEBHOOK_TOKEN:  # porta publicada na LAN desde 25/11
             return self.reply(403, "forbidden")

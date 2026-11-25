@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings version="1">
+  <section id="plugin.video.ihome.embreve">
+    <category id="geral" label="Geral">
+      <group id="1">
+        <setting id="url" type="string" label="Endereço do /embreve (midia-notify)">
+          <level>0</level>
+          <default>http://192.168.10.20:8095/embreve</default>
+          <control type="edit" format="string"/>
+        </setting>
+      </group>
+    </category>
+  </section>
+</settings>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.ihome.embreve" name="iHome · Em breve" version="1.0.0" provider-name="iHome">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="default.py">
+    <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="pt_BR">Filmes e séries que chegam em breve ao iHome</summary>
+    <description lang="pt_BR">Lista os filmes (lançamento em mídia física ou digital) e séries (próximo episódio) que ainda vão chegar ao Jellyfin do iHome, com a data. Feito para widget da tela inicial.</description>
+    <platform>all</platform>
+  </extension>
+</addon>
