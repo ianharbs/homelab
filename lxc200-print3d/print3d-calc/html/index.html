@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora 3D</title>
+<style>
+:root{
+  --bg:#f6f5f2; --card:#ffffff; --ink:#1d1c1a; --muted:#6b6862; --line:#e3e0da;
+  --accent:#e2611b; --accent-ink:#ffffff; --good:#1e7d4f; --warn:#b3261e; --field:#fbfaf8;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#161514; --card:#201f1d; --ink:#ecebe8; --muted:#a19d96; --line:#35332f; --accent:#f07a35; --field:#1a1918; --good:#4cc38a; --warn:#ff8a80;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 16px 8px;max-width:1180px;margin:0 auto;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:22px}
+header span{color:var(--muted);font-size:13px}
+main{max-width:1180px;margin:0 auto;padding:8px 16px 40px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.fil{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr) minmax(0,1fr) 34px;gap:8px;align-items:end;margin-bottom:8px}
+@media (max-width:520px){.fil{grid-template-columns:1fr 1fr 34px}.fil .spool{grid-column:1/-1}}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid var(--line);vertical-align:middle}
+button{font:inherit;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--ink);padding:7px 12px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.icon{padding:7px 0;width:34px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.status{font-size:12.5px;color:var(--muted)}
+.status.err{color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:6px 0;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right}
+tr.sum td{font-weight:700;border-bottom:2px solid var(--ink)}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.big div{border:1px solid var(--line);border-radius:10px;padding:10px}
+.big b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.big small{color:var(--muted);font-size:12px}
+.big .hl{border-color:var(--accent)}
+.good{color:var(--good)} .bad{color:var(--warn)}
+details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-bottom:8px}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0}
+#quote{display:none}
+@media print{
+  body{background:#fff;color:#000}
+  header,main{display:none!important}
+  #quote{display:block;padding:24px 32px;font-size:13px;color:#000}
+  #quote h1{font-size:22px;margin:0}
+  #quote table td{border-bottom:1px solid #ccc;padding:8px 4px}
+  #quote .tot td{font-weight:700;font-size:15px;border-bottom:2px solid #000}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Calculadora de preço — Impressão 3D</h1>
+  <span id="spoolStatus" class="status">carregando carretéis do Spoolman…</span>
+</header>
+
+<main>
+<section>
+  <div class="card">
+    <h2>Peça</h2>
+    <div class="grid">
+      <label style="grid-column:1/-1">Descrição<input id="desc" placeholder="Ex.: Suporte de celular — preto"></label>
+      <label>Quantidade<input id="qty" type="number" min="1" step="1" value="1"></label>
+      <label>Tempo de impressão (h)<input id="hours" type="number" min="0" step="0.05" value="2"></label>
+      <label>Peças por impressão<input id="perPlate" type="number" min="1" step="1" value="1"></label>
+      <label>Purga / troca de cor (g)<input id="purge" type="number" min="0" step="1" value="0"></label>
+    </div>
+    <p class="note">Tempo e gramas vêm do fatiador (OrcaSlicer/Anycubic Slicer), por impressão. A purga das trocas de cor do ACE também aparece lá.</p>
+  </div>
+
+  <div class="card">
+    <h2>Filamentos</h2>
+    <div id="fils"></div>
+    <div class="row"><button id="addFil">+ Adicionar cor</button><button id="reloadSpools">Recarregar Spoolman</button></div>
+    <p class="note">Escolha o carretel do Spoolman (o R$/kg é calculado do preço e peso cadastrados) ou "Manual" e digite o R$/kg.</p>
+  </div>
+
+  <div class="card">
+    <h2>Extras por peça</h2>
+    <div class="grid">
+      <label>Insumos (ímãs, insertos…) R$<input id="supplies" type="number" min="0" step="0.01" value="0"></label>
+      <label>Embalagem R$<input id="packaging" type="number" min="0" step="0.01" value="1.50"></label>
+      <label>Mão de obra (min/peça)<input id="laborMin" type="number" min="0" step="1" value="10"></label>
+    </div>
+  </div>
+
+  <details class="card" id="settingsBox">
+    <summary>Configurações do negócio (salvas neste navegador)</summary>
+    <div class="grid">
+      <label>Potência média (W)<input id="watts" type="number" min="0" step="5" value="150"></label>
+      <label>Tarifa de energia (R$/kWh)<input id="tariff" type="number" min="0" step="0.01" value="0.90"></label>
+      <label>Preço da impressora (R$)<input id="printerCost" type="number" min="0" step="10" value="5000"></label>
+      <label>Vida útil estimada (h)<input id="lifeHours" type="number" min="1" step="100" value="3000"></label>
+      <label>Manutenção (R$/h)<input id="maintH" type="number" min="0" step="0.05" value="0.30"></label>
+      <label>Sua hora de trabalho (R$/h)<input id="laborRate" type="number" min="0" step="1" value="30"></label>
+      <label>Taxa de falha (%)<input id="failPct" type="number" min="0" step="1" value="10"></label>
+      <label>Margem (multiplicador)<input id="markup" type="number" min="1" step="0.1" value="2.5"></label>
+    </div>
+    <h2 style="margin-top:16px">Canais de venda</h2>
+    <div id="channels"></div>
+    <p class="note">As taxas são estimativas editáveis. Confira as taxas atuais de cada marketplace e o frete.</p>
+  </details>
+</section>
+
+<section>
+  <div class="card" style="position:sticky;top:12px">
+    <h2>Resultado</h2>
+    <label>Canal<select id="channel"></select></label>
+    <div class="big">
+      <div><small>Custo por peça</small><b id="unitCost">—</b></div>
+      <div class="hl"><small>Preço sugerido por peça</small><b id="unitPrice">—</b></div>
+      <div><small>Total do pedido</small><b id="totalPrice">—</b></div>
+      <div><small>Lucro do pedido (após taxas)</small><b id="profit">—</b></div>
+    </div>
+    <table id="breakdown"></table>
+    <div class="grid" style="margin-top:12px">
+      <label>Arredondar para<select id="round"><option value="0">não arredondar</option><option value="0.1" selected>,90</option><option value="1">R$ 1</option><option value="5">R$ 5</option></select></label>
+      <label>Preço final (opcional)<input id="override" type="number" min="0" step="0.01" placeholder="usar sugerido"></label>
+    </div>
+    <h2 style="margin-top:18px">Orçamento</h2>
+    <div class="grid">
+      <label>Cliente<input id="client"></label>
+      <label>Validade (dias)<input id="validity" type="number" min="1" value="7"></label>
+      <label>Prazo de produção<input id="lead" value="3 a 5 dias úteis"></label>
+      <label style="grid-column:1/-1">Observações<textarea id="obs" rows="2" placeholder="Cor, acabamento, entrega/retirada, pagamento…"></textarea></label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="printQuote">Gerar orçamento (PDF)</button>
+      <button id="copyQuote">Copiar texto p/ WhatsApp</button>
+    </div>
+    <p id="copied" class="status"></p>
+  </div>
+</section>
+</main>
+
+<div id="quote"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const BRL = v => (isFinite(v)?v:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const num = id => parseFloat($(id).value.replace(',','.')) || 0;
+const SETTINGS = ['watts','tariff','printerCost','lifeHours','maintH','laborRate','failPct','markup','packaging','laborMin','round','lead','validity'];
+const DEFAULT_CHANNELS = [
+  {name:'Venda direta (Pix/retirada)', pct:0, fixed:0},
+  {name:'Cartão (maquininha)', pct:4, fixed:0},
+  {name:'Mercado Livre (estimativa)', pct:14, fixed:6.5},
+  {name:'Shopee (estimativa)', pct:20, fixed:4},
+];
+let spools = [], channels = [];
+
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem('calc3d.settings')||'{}');
+    SETTINGS.forEach(k => { if (s[k]!==undefined) $(k).value = s[k]; });
+    channels = JSON.parse(localStorage.getItem('calc3d.channels')||'null') || DEFAULT_CHANNELS;
+  }catch(e){ channels = DEFAULT_CHANNELS; }
+}
+function save(){
+  try{
+    const s = {}; SETTINGS.forEach(k => s[k] = $(k).value);
+    localStorage.setItem('calc3d.settings', JSON.stringify(s));
+    localStorage.setItem('calc3d.channels', JSON.stringify(channels));
+  }catch(e){}
+}
+
+function renderChannels(){
+  const box = $('channels'); box.innerHTML = '';
+  channels.forEach((c,i) => {
+    const r = document.createElement('div'); r.className='fil';
+    r.innerHTML = `<label class="spool">Nome<input value="${c.name.replace(/"/g,'&quot;')}"></label>
+      <label>Taxa %<input type="number" step="0.1" value="${c.pct}"></label>
+      <label>Fixo R$<input type="number" step="0.01" value="${c.fixed}"></label>
+      <button class="icon" title="remover">×</button>`;
+    const [n,p,f] = r.querySelectorAll('input');
+    n.oninput = () => { c.name=n.value; fillChannelSelect(); save(); };
+    p.oninput = () => { c.pct=parseFloat(p.value)||0; calc(); save(); };
+    f.oninput = () => { c.fixed=parseFloat(f.value)||0; calc(); save(); };
+    r.querySelector('button').onclick = () => { channels.splice(i,1); renderChannels(); fillChannelSelect(); calc(); save(); };
+    box.appendChild(r);
+  });
+  const add = document.createElement('button'); add.textContent='+ Canal';
+  add.onclick = () => { channels.push({name:'Novo canal',pct:0,fixed:0}); renderChannels(); fillChannelSelect(); save(); };
+  box.appendChild(add);
+}
+function fillChannelSelect(){
+  const sel = $('channel'), cur = sel.value;
+  sel.innerHTML = channels.map((c,i)=>`<option value="${i}">${c.name}</option>`).join('');
+  if (cur && cur < channels.length) sel.value = cur;
+}
+
+function spoolPricePerKg(s){
+  const f = s.filament || {};
+  const price = s.price ?? f.price;
+  const weight = s.initial_weight ?? f.weight;
+  return (price && weight) ? price / weight * 1000 : null;
+}
+function spoolLabel(s){
+  const f = s.filament || {};
+  const vendor = f.vendor ? f.vendor.name + ' ' : '';
+  const rest = s.remaining_weight != null ? ` · ${Math.round(s.remaining_weight)} g` : '';
+  return `#${s.id} ${vendor}${f.material||''} ${f.name||''}${rest}`.trim();
+}
+async function loadSpools(){
+  const st = $('spoolStatus');
+  try{
+    const r = await fetch('spoolman/api/v1/spool?allow_archived=false');
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    spools = await r.json();
+    st.className='status';
+    st.textContent = spools.length ? `${spools.length} carretel(is) no Spoolman` : 'Spoolman sem carretéis — cadastre em :7912 ou use "Manual"';
+  }catch(e){ spools=[]; st.className='status err'; st.textContent='Spoolman indisponível — use "Manual"'; }
+  document.querySelectorAll('.fil select').forEach(fillSpoolSelect);
+}
+function fillSpoolSelect(sel){
+  const cur = sel.value;
+  sel.innerHTML = '<option value="manual">Manual (digitar R$/kg)</option>' +
+    spools.map(s => `<option value="${s.id}">${spoolLabel(s)}</option>`).join('');
+  if ([...sel.options].some(o=>o.value===cur)) sel.value = cur;
+}
+function addFil(){
+  const r = document.createElement('div'); r.className='fil';
+  r.innerHTML = `<label class="spool">Carretel<select></select></label>
+    <label>Gramas<input type="number" min="0" step="0.1" value="30"></label>
+    <label>R$/kg<input type="number" min="0" step="1" value="100"></label>
+    <button class="icon" title="remover">×</button>`;
+  const sel = r.querySelector('select'), [g,pk] = r.querySelectorAll('input');
+  fillSpoolSelect(sel);
+  sel.onchange = () => {
+    const s = spools.find(x => String(x.id) === sel.value);
+    if (s){ const p = spoolPricePerKg(s); if (p) pk.value = p.toFixed(2); pk.readOnly = !!p; } else pk.readOnly = false;
+    calc();
+  };
+  g.oninput = pk.oninput = calc;
+  r.querySelector('button').onclick = () => { r.remove(); calc(); };
+  $('fils').appendChild(r); calc();
+}
+function filaments(){
+  return [...document.querySelectorAll('#fils .fil')].map(r => {
+    const sel = r.querySelector('select'), [g,pk] = r.querySelectorAll('input');
+    const s = spools.find(x => String(x.id) === sel.value);
+    return {label: s ? spoolLabel(s) : 'Manual', color: s?.filament?.color_hex, grams: parseFloat(g.value)||0, perKg: parseFloat(pk.value)||0};
+  });
+}
+
+let last = null;
+function roundPrice(v){
+  const r = parseFloat($('round').value);
+  if (!r) return v;
+  if (r === 0.1){ let p = Math.ceil(v) - 0.10; if (p < v) p += 1; return Math.max(p, 0.9); }   // termina em ,90, nunca abaixo
+  return Math.ceil(v / r) * r;
+}
+function calc(){
+  const qty = Math.max(1, Math.round(num('qty')));
+  const perPlate = Math.max(1, Math.round(num('perPlate')));
+  const hoursPlate = num('hours');
+  const fils = filaments();
+  const purge = num('purge');
+  const gramsPlate = fils.reduce((a,f)=>a+f.grams,0);
+  const avgKg = gramsPlate ? fils.reduce((a,f)=>a+f.grams*f.perKg,0)/gramsPlate : (fils[0]?.perKg||0);
+  // valores por peça
+  const material = (fils.reduce((a,f)=>a + f.grams/1000*f.perKg, 0) + purge/1000*avgKg) / perPlate;
+  const h = hoursPlate / perPlate;
+  const energy = h * num('watts')/1000 * num('tariff');
+  const machine = h * (num('printerCost')/Math.max(1,num('lifeHours')) + num('maintH'));
+  const labor = num('laborMin')/60 * num('laborRate');
+  const supplies = num('supplies'), packaging = num('packaging');
+  const sub = material + energy + machine + supplies + packaging + labor;
+  const fail = (material + energy + machine) * num('failPct')/100;   // falha perde material/tempo, não embalagem
+  const cost = sub + fail;
+  const ch = channels[$('channel').value] || {pct:0,fixed:0,name:''};
+  const base = cost * num('markup');
+  let price = (base + ch.fixed) / Math.max(0.01, 1 - ch.pct/100);
+  price = roundPrice(price);
+  const ov = parseFloat($('override').value);
+  if (ov > 0) price = ov;
+  const fees = price * ch.pct/100 + ch.fixed;
+  const profitUnit = price - fees - cost;
+  last = {qty, price, cost, fees, ch, fils, h, gramsPlate, perPlate};
+  $('unitCost').textContent = BRL(cost);
+  $('unitPrice').textContent = BRL(price);
+  $('totalPrice').textContent = BRL(price*qty);
+  $('profit').textContent = BRL(profitUnit*qty);
+  $('profit').className = profitUnit < 0 ? 'bad' : 'good';
+  const rows = [
+    ['Filamento ('+((gramsPlate+purge)/perPlate).toFixed(1)+' g)', material],
+    ['Energia ('+h.toFixed(2)+' h)', energy],
+    ['Desgaste + manutenção', machine],
+    ['Insumos', supplies], ['Embalagem', packaging],
+    ['Mão de obra', labor],
+    ['Reserva p/ falhas ('+num('failPct')+'%)', fail],
+  ];
+  $('breakdown').innerHTML = rows.map(([k,v])=>`<tr><td>${k}</td><td>${BRL(v)}</td></tr>`).join('') +
+    `<tr class="sum"><td>Custo por peça</td><td>${BRL(cost)}</td></tr>` +
+    `<tr><td>Taxas do canal (${ch.pct}% + ${BRL(ch.fixed)})</td><td>${BRL(fees)}</td></tr>` +
+    `<tr><td>Lucro por peça (${price>0?Math.round(profitUnit/price*100):0}% do preço)</td><td>${BRL(profitUnit)}</td></tr>`;
+  save();
+}
+
+function quoteData(){
+  const today = new Date(), valid = new Date(today.getTime() + num('validity')*864e5);
+  return {today: today.toLocaleDateString('pt-BR'), valid: valid.toLocaleDateString('pt-BR'),
+    desc: $('desc').value || 'Peça impressa em 3D', client: $('client').value, obs: $('obs').value, lead: $('lead').value};
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+$('printQuote').onclick = () => {
+  calc(); const q = quoteData(), L = last;
+  const n = 'ORC-' + new Date().toISOString().slice(2,10).replace(/-/g,'') + '-' + String(Math.floor(Math.random()*900)+100);
+  $('quote').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #e2611b;padding-bottom:10px;margin-bottom:18px">
+      <div><h1>Orçamento</h1><div>Impressão 3D sob medida</div></div>
+      <div style="text-align:right">Nº ${n}<br>Data: ${q.today}<br>Válido até: ${q.valid}</div>
+    </div>
+    ${q.client ? `<p><b>Cliente:</b> ${esc(q.client)}</p>` : ''}
+    <table style="width:100%;border-collapse:collapse">
+      <tr style="text-align:left"><td><b>Item</b></td><td style="text-align:right"><b>Qtd</b></td><td style="text-align:right"><b>Unitário</b></td><td style="text-align:right"><b>Total</b></td></tr>
+      <tr><td>${esc(q.desc)}</td><td style="text-align:right">${L.qty}</td><td style="text-align:right">${BRL(L.price)}</td><td style="text-align:right">${BRL(L.price*L.qty)}</td></tr>
+      <tr class="tot"><td colspan="3">Total</td><td style="text-align:right">${BRL(L.price*L.qty)}</td></tr>
+    </table>
+    <p><b>Prazo de produção:</b> ${esc(q.lead)}</p>
+    ${q.obs ? `<p><b>Observações:</b> ${esc(q.obs).replace(/\n/g,'<br>')}</p>` : ''}
+    <p style="color:#555;font-size:11.5px;margin-top:30px">Peças impressas em 3D podem apresentar linhas de camada e pequenas variações de cor e acabamento, próprias do processo. Frete não incluso, salvo indicação.</p>`;
+  window.print();
+};
+$('copyQuote').onclick = async () => {
+  calc(); const q = quoteData(), L = last;
+  const t = `*Orçamento — Impressão 3D*\n${q.client?`Cliente: ${q.client}\n`:''}\n${q.desc}\nQtd: ${L.qty} × ${BRL(L.price)} = *${BRL(L.price*L.qty)}*\nPrazo: ${q.lead}\nVálido até ${q.valid}${q.obs?`\n\n${q.obs}`:''}`;
+  try{ await navigator.clipboard.writeText(t); $('copied').textContent='Copiado!'; }
+  catch(e){ prompt('Copie o texto:', t); }
+};
+
+load(); renderChannels(); fillChannelSelect();
+document.querySelectorAll('input,select,textarea').forEach(el => { if (!el.closest('#fils') && !el.closest('#channels')) el.addEventListener('input', calc); });
+$('addFil').onclick = addFil;
+$('reloadSpools').onclick = loadSpools;
+addFil();
+loadSpools().then(calc);
+</script>
+</body>
+</html>

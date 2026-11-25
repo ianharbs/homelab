@@ -1,0 +1,24 @@
+# Proxy do InvenTree (adaptado do Caddyfile oficial): só HTTP na porta 80 do container (→ 8090 no CT).
+:80 {
+	encode gzip
+	request_body {
+		max_size 100MB
+	}
+
+	handle_path /static/* {
+		header Access-Control-Allow-Origin *
+		root * /var/www/static
+		file_server
+	}
+
+	handle_path /media/* {
+		root * /var/www/media
+		file_server
+		header Content-Disposition attachment
+		forward_auth http://inventree-server:8000 {
+			uri /auth/
+		}
+	}
+
+	reverse_proxy http://inventree-server:8000
+}

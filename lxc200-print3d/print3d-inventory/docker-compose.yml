@@ -1,0 +1,116 @@
+# InvenTree — estoque de insumos, peças de reposição e produtos prontos (com BOM/"receita").
+# Baseado no compose oficial (contrib/container). Segredos e config em ${CONFIG_PATH}/inventree/inventree.env
+# (só no servidor, chmod 600): INVENTREE_DB_PASSWORD, INVENTREE_ADMIN_*, INVENTREE_SITE_URL.
+# Web em :8090 (Caddy serve /static e /media e faz proxy para o gunicorn).
+networks:
+  print3d_net:
+    external: true
+
+x-inventree: &inventree
+  image: inventree/inventree:stable
+  env_file:
+    - ${CONFIG_PATH}/inventree/inventree.env
+  environment: &inv-env
+    INVENTREE_SERVER: http://inventree-server:8000
+    INVENTREE_WEB_PORT: "8000"
+    INVENTREE_DB_ENGINE: postgresql
+    INVENTREE_DB_NAME: inventree
+    INVENTREE_DB_HOST: inventree-db
+    INVENTREE_DB_PORT: "5432"
+    INVENTREE_DB_USER: inventree
+    INVENTREE_CACHE_ENABLED: "True"
+    INVENTREE_CACHE_HOST: inventree-cache
+    INVENTREE_CACHE_PORT: "6379"
+    INVENTREE_USE_X_FORWARDED_HOST: "True"
+    INVENTREE_USE_X_FORWARDED_PORT: "True"
+    INVENTREE_USE_X_FORWARDED_PROTO: "True"
+    INVENTREE_PLUGINS_ENABLED: "True"
+    INVENTREE_AUTO_UPDATE: "True"        # roda migrations ao subir imagem nova
+    INVENTREE_LOG_LEVEL: WARNING
+    INVENTREE_TIMEZONE: ${TZ}
+  volumes:
+    - ${CONFIG_PATH}/inventree/data:/home/inventree/data
+  restart: unless-stopped
+  networks:
+    - print3d_net
+
+services:
+  inventree-db:
+    image: postgres:17
+    container_name: inventree-db
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdb
+      - POSTGRES_USER=inventree
+      - POSTGRES_DB=inventree
+    env_file:
+      - ${CONFIG_PATH}/inventree/inventree.env   # POSTGRES_PASSWORD
+    volumes:
+      - ${CONFIG_PATH}/inventree/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U inventree -d inventree']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - print3d_net
+
+  inventree-cache:
+    image: redis:7-alpine
+    container_name: inventree-cache
+    command: redis-server --save "" --appendonly no
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - print3d_net
+
+  inventree-server:
+    <<: *inventree
+    container_name: inventree-server
+    depends_on:
+      inventree-db:
+        condition: service_healthy
+      inventree-cache:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'invoke server-health --address "http://localhost:8000"']
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+
+  inventree-worker:
+    <<: *inventree
+    container_name: inventree-worker
+    command: invoke worker
+    depends_on:
+      inventree-server:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'invoke worker-health']
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+
+  inventree-proxy:
+    image: caddy:alpine
+    container_name: inventree-proxy
+    depends_on:
+      inventree-server:
+        condition: service_healthy
+    ports:
+      - "8090:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${CONFIG_PATH}/inventree/data/static:/var/www/static:ro
+      - ${CONFIG_PATH}/inventree/data/media:/var/www/media:ro
+    restart: unless-stopped
+    networks:
+      - print3d_net

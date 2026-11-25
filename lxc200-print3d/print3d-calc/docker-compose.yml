@@ -1,0 +1,18 @@
+# Calculadora de preço / orçamento (página estática). O nginx faz proxy de /spoolman/ → Spoolman
+# (mesma origem, sem CORS) para puxar os carretéis e o R$/g. Configurações ficam no navegador (localStorage).
+networks:
+  print3d_net:
+    external: true
+
+services:
+  print3d-calc:
+    image: nginx:alpine
+    container_name: print3d-calc
+    restart: unless-stopped
+    ports:
+      - "8095:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - print3d_net

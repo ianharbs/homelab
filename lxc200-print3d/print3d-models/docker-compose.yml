@@ -1,0 +1,22 @@
+networks:
+  print3d_net:
+    external: true
+
+services:
+  # Biblioteca de modelos 3D (STL/3MF), imagem "solo" = SQLite + Redis embutidos.
+  manyfold:
+    image: ghcr.io/manyfold3d/manyfold-solo:latest
+    container_name: manyfold
+    restart: unless-stopped
+    ports:
+      - "3214:3214"
+    volumes:
+      - ${CONFIG_PATH}/manyfold/config:/config
+      - ${CONFIG_PATH}/manyfold/libraries:/libraries
+    environment:
+      - SECRET_KEY_BASE=${MANYFOLD_SECRET_KEY_BASE}
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    networks:
+      - print3d_net

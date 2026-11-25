@@ -1,0 +1,30 @@
+# Agentes do negócio (Curador, Custo, Anunciante, Estoque, Pedidos, Gerente, Atendente ML) — WhatsApp (GOWA do
+# CT 102, chip do iHome Bot; ver app/wa.py) ou bot do Telegram
+# + agenda. Código em ./app (Python puro, sem dependências). Estado, config.json e segredos em
+# ${CONFIG_PATH}/print3d-agents (secrets.env chmod 600, lido pelo próprio script). Grava os modelos aprovados
+# direto na pasta das bibliotecas do Manyfold. Depois de mudar o código: docker restart print3d-agents.
+networks:
+  print3d_net:
+    external: true
+
+services:
+  print3d-agents:
+    image: python:3.12-alpine
+    container_name: print3d-agents
+    user: "1000:1000"
+    working_dir: /app
+    command: python -u main.py
+    environment:
+      - TZ=${TZ}
+      - STATE_DIR=/state
+      - LIBRARY_DIR=/libraries
+    volumes:
+      - ./app:/app:ro
+      - ${CONFIG_PATH}/print3d-agents:/state
+      - ${CONFIG_PATH}/manyfold/libraries:/libraries
+    ports:
+      # webhook do GOWA (WhatsApp, CT 102) -> POST /whatsapp assinado (HMAC); desde 25/11/2026
+      - "192.168.10.200:8099:8099"
+    networks:
+      - print3d_net
+    restart: unless-stopped
