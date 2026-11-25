@@ -10,6 +10,7 @@ ICONS = {  # arquivo: (emoji codepoint, texto, cor1, cor2)
     'status':  ('1f916', 'Status\ne Pedidos',  (5, 150, 105), (5, 30, 30)),
     'aprovacoes': ('2705', 'Aprovar', (22, 163, 74), (5, 30, 15)),
     'casa':    ('1f3e1', 'Status e\nPedidos Casa', (234, 88, 12), (45, 15, 5)),
+    'homelab': ('1f5a5', 'Homelab', (8, 145, 178), (8, 25, 40)),
     'comunidade': ('1f3e0', 'iHome', (79, 70, 229), (12, 18, 38)),
 }
 S = 640
