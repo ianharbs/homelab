@@ -30,6 +30,7 @@ Variáveis de ambiente têm precedência.
 import html
 import json
 import os
+import re
 import threading
 import time
 import urllib.parse
@@ -62,6 +63,7 @@ GRACE_MIN = float(CFG.get("GRACE_MIN", "15"))
 REPEAT_H = float(CFG.get("REPEAT_H", "6"))
 DIGEST_MIN = float(CFG.get("DIGEST_MIN", "10"))
 DEDUPE_D = float(CFG.get("DEDUPE_D", "7"))
+DISK_MIN_PCT = float(CFG.get("DISK_MIN_PCT", "90"))  # abaixo disso o alerta de disco do Komodo é ignorado
 IGNORE = {x.strip() for x in CFG.get("IGNORE", "").split(",") if x.strip()}
 
 FAIL_ONCE = {"BuildFailed", "RepoBuildFailed", "ProcedureFailed", "ActionFailed",
@@ -187,6 +189,9 @@ def handle_alert(alert):
             close_problem(key)
         else:
             used, total = d.get("used_gb", 0), d.get("total_gb", 1) or 1
+            if used / total * 100 < DISK_MIN_PCT:
+                STATE["problems"].pop(key, None)  # some sem avisar "normalizado"
+                return
             open_problem(key, f"disco <b>{esc(d.get('path'))}</b> em {esc(name)}: "
                               f"{used / total:.0%} ({fmt_size(used, total)})", grace=False)
     elif typ in FAIL_ONCE:
@@ -315,6 +320,13 @@ def check_komodo():
 def tick():
     now = time.time()
     probs = STATE["problems"]
+
+    # disco abaixo do limite (alerta aberto antes do DISK_MIN_PCT ou limite mudou): some sem avisar
+    for k in [k for k, p in probs.items() if kind(k) == "disk" and not p.get("resolved")]:
+        m = re.search(r"(\d+)%", probs[k]["desc"])
+        if m and int(m.group(1)) < DISK_MIN_PCT:
+            log("disco abaixo de", DISK_MIN_PCT, "%:", k)
+            del probs[k]
 
     # resolvidos: avisa só se já tinha alertado
     back = [k for k, p in probs.items() if p.get("resolved") and p["last_alert"]]
