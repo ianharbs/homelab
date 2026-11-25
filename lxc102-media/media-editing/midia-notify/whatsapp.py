@@ -26,6 +26,24 @@ WA_AUTH = E("WA_AUTH", "")  # usuário:senha do APP_BASIC_AUTH do GOWA
 WA_DEVICE = E("WA_DEVICE", "ihome")
 WA_SECRET = E("WA_WEBHOOK_SECRET", "")
 WA_ALLOWED = {re.sub(r"\D", "", x) for x in E("WA_ALLOWED", "").split(",") if x.strip()}
+# Dono (Ian). Até 25/11/2026 a conta do bot ERA o número dele (mensagens "is_from_me" = Ian); desde então o bot
+# usa um chip próprio e o Ian é reconhecido pelo número de quem manda.
+WA_OWNER = re.sub(r"\D", "", E("WA_OWNER", ""))  # número do Ian, no secrets.env (repo é público)
+
+
+def _num(jid):
+    return re.sub(r"\D", "", str(jid or "").split("@")[0].split(":")[0])
+
+
+def conta_do_dono():
+    """True enquanto o bot estiver usando o número do próprio Ian (modo antigo)."""
+    return my_jid() == WA_OWNER
+
+
+def eh_dono(p):
+    if p.get("is_from_me"):
+        return conta_do_dono()
+    return _num(p.get("from")) == WA_OWNER
 
 _seen = {}
 _seen_lock = threading.Lock()
@@ -287,14 +305,14 @@ def post(kind, text, photo=None, photo_bytes=None):
 
 # ---------------------------------------------------------------- perguntas (webhook)
 def my_jid():
-    j = kv_get("wa_my_jid", "")
+    j = kv_get(f"wa_my_jid_{WA_DEVICE}", "")
     if j:
         return j
     try:
         for d in api("GET", "/devices").get("results") or []:
             if d.get("id") == WA_DEVICE and d.get("jid"):
                 j = d["jid"].split(":")[0].split("@")[0]
-                kv_set("wa_my_jid", j)
+                kv_set(f"wa_my_jid_{WA_DEVICE}", j)
     except Exception as e:
         log.warning("whatsapp: /devices: %s", e)
     return j
@@ -318,6 +336,8 @@ def on_webhook(raw, sig):
         return 400
     if E("WA_DEBUG") == "1":
         log.info("whatsapp evento: %s", raw[:1500])
+    if ev.get("device_id") and my_jid() and _num(ev["device_id"]) != my_jid():
+        return 200  # evento de outro aparelho ligado ao GOWA (ex.: o número antigo durante a troca)
     if ev.get("event") == "message":
         threading.Thread(target=_handle, args=(ev.get("payload") or {},), daemon=True).start()
     return 200
@@ -340,7 +360,7 @@ def _para_agente(p, chat, mid, text):
 def _bot_completo(p, chat, mid, text):
     """Grupo 🏡 Status/Pedidos Casa: todos falam com o bot sem restrição (livros e música inclusos), e o Ian
     sem precisar de "/". As respostas do bot vão pela API e não voltam como evento (testado em 25/11): sem loop."""
-    dono = bool(p.get("is_from_me"))
+    dono = eh_dono(p)
     import aprovacoes
     import pedidos
     import statusbot
@@ -382,8 +402,10 @@ def _handle(p):
     mid, chat, text = p.get("id"), p.get("chat_id") or "", (p.get("body") or "").strip()
     if not text or not mid:
         return
+    if p.get("is_from_me") and not conta_do_dono():  # chip do bot: são as próprias mensagens dele
+        return
     if chat and chat == group_of("homelab"):  # só o Ian: tudo vai para o agente (Claude Code no pve)
-        if not p.get("is_from_me") or mid in _seen:
+        if not eh_dono(p) or mid in _seen:
             return
         _seen[mid] = time.time()
         threading.Thread(target=_para_agente, args=(p, chat, mid, text), daemon=True).start()
@@ -395,7 +417,7 @@ def _handle(p):
         threading.Thread(target=_bot_completo, args=(p, chat, mid, text), daemon=True).start()
         return
     if chat and chat == group_of("aprovacoes"):  # grupo só do Ian: respostas às mensagens do bot
-        if not p.get("is_from_me") or mid in _seen:
+        if not eh_dono(p) or mid in _seen:
             return
         _seen[mid] = time.time()
         import aprovacoes
@@ -410,6 +432,7 @@ def _handle(p):
     # Conta do bot = número do Ian (provisório): mensagens "minhas" só contam se forem comando (/fila...).
     # As respostas do bot nunca começam com "/", então não entra em loop.
     if p.get("is_from_me") and not text.startswith("/") and not (p.get("replied_to_id") and text.strip().isdigit()):
+        # (só no modo antigo, conta do bot = número do Ian)
         return
     with _seen_lock:  # o GOWA pode reenviar o mesmo evento
         now = time.time()
@@ -432,7 +455,7 @@ def _handle(p):
             return
     else:
         num = re.sub(r"\D", "", (p.get("from") or chat).split("@")[0].split(":")[0])
-        if num not in WA_ALLOWED:
+        if num not in WA_ALLOWED and num != WA_OWNER:  # privado com o chip: o Ian é o console de admin
             log.info("whatsapp: privado de número não autorizado %s (%s)", num, p.get("from_name"))
             return
     if me:
@@ -459,9 +482,9 @@ def _handle(p):
             return
     log.info("whatsapp: pergunta de %s: %s", p.get("sender_display_name") or p.get("from_name"), text)
     try:
-        out = admin_cmd(text) if p.get("is_from_me") else None
+        out = admin_cmd(text) if eh_dono(p) else None
         if out is None:  # só o Ian vê livros e música
-            out = statusbot.answer(text, so_video=not p.get("is_from_me"))
+            out = statusbot.answer(text, so_video=not eh_dono(p))
     except Exception as e:
         log.exception("whatsapp status: %s", e)
         out = f"Deu erro ao consultar: {e}"

@@ -36,11 +36,9 @@ def _seerr_user(usuario):
 
 def _quem(p):
     """Usuário (Jellyfin/Seerr) de quem mandou a mensagem, pelo telefone."""
-    if p.get("is_from_me"):
-        r = whatsapp.pessoa_por_jid(whatsapp.my_jid())
-    else:
-        r = whatsapp.pessoa_por_jid((p.get("from") or "").split("@")[0].split(":")[0])
-    return r
+    if p.get("is_from_me"):  # modo antigo: conta do bot = número do Ian
+        return whatsapp.pessoa_por_jid(whatsapp.my_jid())
+    return whatsapp.pessoa_por_jid(whatsapp._num(p.get("from")))
 
 
 def pedir(p, text):
