@@ -141,7 +141,7 @@ services:
       - >-
         set -a && . /secrets.env && set +a &&
         exec /app/whatsapp rest --os=iHome --webhook=http://midia-notify:8095/whatsapp
-        --webhook-events=message --mcp-enabled=false --auto-download-media=false --auto-reject-call=true
+        --webhook-events=message,message.reaction --mcp-enabled=false --auto-download-media=false --auto-reject-call=true
     environment:
       - TZ=${TZ}
     volumes:

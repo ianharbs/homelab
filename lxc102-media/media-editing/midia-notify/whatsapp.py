@@ -338,6 +338,9 @@ def on_webhook(raw, sig):
         log.info("whatsapp evento: %s", raw[:1500])
     if ev.get("device_id") and my_jid() and _num(ev["device_id"]) != my_jid():
         return 200  # evento de outro aparelho ligado ao GOWA (ex.: o número antigo durante a troca)
+    if ev.get("event") == "message.reaction":
+        threading.Thread(target=_reacao, args=(ev.get("payload") or {},), daemon=True).start()
+        return 200
     if ev.get("event") == "message":
         threading.Thread(target=_handle, args=(ev.get("payload") or {},), daemon=True).start()
     return 200
@@ -395,6 +398,35 @@ def _bot_completo(p, chat, mid, text):
             _p.ligar((r.get("results") or {}).get("message_id"), dados)
     except Exception as e:
         log.error("whatsapp: resposta do bot completo falhou: %s", e)
+
+
+def emoji_base(e):
+    """Tira tom de pele e seletor de variação: 👍🏽 -> 👍, ❤️ -> ❤."""
+    return re.sub("[\U0001F3FB-\U0001F3FF\uFE0F]", "", e or "").strip()
+
+
+def _reacao(p):
+    """Reação do Ian (emoji) a uma mensagem do bot em Aprovações ou Homelab = resposta com aquele emoji."""
+    emo, alvo, chat = emoji_base(p.get("reaction")), p.get("reacted_message_id"), p.get("chat_id") or ""
+    if not emo or not alvo or not eh_dono(p):  # "" = reação removida
+        return
+    if chat == group_of("aprovacoes"):
+        import aprovacoes
+        try:
+            out = aprovacoes.on_reply(alvo, emo)
+        except Exception as e:
+            log.exception("aprovações (reação): %s", e)
+            out = f"⚠️ Erro: {e}"
+        if out:
+            send_text(chat, to_wa(out) if "<" in out else out, reply_to=alvo)
+    elif chat == group_of("homelab"):
+        url, tok = E("AGENT_URL", "").rstrip("/"), E("AGENT_TOKEN", "")
+        if url and tok:
+            try:  # o agente só usa a reação se ela for numa pergunta de confirmação
+                http("POST", f"{url}/whatsapp?token={urllib.parse.quote(tok)}", timeout=15,
+                     body={"id": p.get("id") or alvo, "text": emo, "replied_to_id": alvo, "reacao": True})
+            except Exception as e:
+                log.warning("agente (reação): %s", e)
 
 
 def _handle(p):

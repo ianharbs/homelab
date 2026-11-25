@@ -358,7 +358,7 @@ def handle_message(m, canal="tg"):
         out_send(job, f"⏳ na fila ({ahead} na frente).", reply_to=m["message_id"])
 
 
-WA_SIM = {"sim", "s", "pode", "ok", "autorizo", "✅", "👍"}
+WA_SIM = {"sim", "s", "pode", "ok", "autorizo", "✅", "👍", "👌"}
 WA_NAO = {"nao", "não", "n", "nega", "negado", "❌", "👎"}
 
 
@@ -369,6 +369,8 @@ def handle_whatsapp(b):
     for cid, p in list(PENDING.items()):
         if rid and str(p.get("msg_id")) == rid:
             w = re.sub(r"[.!]+$", "", text.lower()).strip()
+            if b.get("reacao") and w not in WA_SIM and w not in WA_NAO:
+                return  # reação com outro emoji: não conta
             if w == "ver":
                 out_send({"canal": "wa"}, p["body"] + p["detail"], reply_to=b["id"], raw_html=True)
             elif w in WA_SIM or w in WA_NAO:
@@ -378,6 +380,8 @@ def handle_whatsapp(b):
             else:
                 out_send({"canal": "wa"}, "Responda *sim*, *não* ou *ver*.", reply_to=b["id"])
             return
+    if b.get("reacao"):  # reação (emoji) fora de uma pergunta de confirmação: ignora
+        return
     m = {"message_id": b["id"], "text": text}
     if rid:
         m["reply_to_message"] = {"message_id": rid, "text": b.get("quoted_body") or ""}

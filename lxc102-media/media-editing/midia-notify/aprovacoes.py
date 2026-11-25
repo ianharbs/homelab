@@ -14,9 +14,9 @@ import prazo
 import whatsapp
 
 SEERR, SEERR_KEY = E("SEERR_URL", "http://seerr:5055"), E("SEERR_API_KEY", "")
-SIM = {"ok", "sim", "aprovar", "aprova", "aprovado", "pode", "s", "👍", "✅"}
+SIM = {"ok", "sim", "aprovar", "aprova", "aprovado", "pode", "s", "👍", "✅", "👌", "❤"}
 NAO = {"nao", "não", "recusar", "recusa", "recusado", "n", "👎", "❌"}
-MANTER = {"manter", "mantem", "mantém", "fica", "deixa"}
+MANTER = {"manter", "mantem", "mantém", "fica", "deixa", "📌", "👍", "✅", "❤"}
 
 
 def _send(text, photo=None):
