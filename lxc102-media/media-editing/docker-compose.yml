@@ -130,6 +130,7 @@ services:
 
   # WhatsApp (GOWA, conta do chip do bot pareada como "aparelho conectado"). O midia-notify posta os
   # avisos de mídia nos grupos da Comunidade iHome por aqui e recebe as perguntas pelo webhook.
+  # Eventos vão para o midia-notify e para os agentes da impressão 3D (CT 200, :8099, desde 25/11/2026).
   # Segredos (APP_BASIC_AUTH, WHATSAPP_WEBHOOK_SECRET) em ${CONFIG_PATH}/whatsapp/secrets.env, carregado
   # pelo sh antes de subir (o app não lê .env sozinho; o env_file do compose não chega pelo Komodo).
   # Parear: http://192.168.10.20:3010 (login básico) › Login › ler o QR no WhatsApp do chip.
@@ -140,7 +141,7 @@ services:
     command:
       - >-
         set -a && . /secrets.env && set +a &&
-        exec /app/whatsapp rest --os=iHome --webhook=http://midia-notify:8095/whatsapp
+        exec /app/whatsapp rest --os=iHome --webhook=http://midia-notify:8095/whatsapp,http://192.168.10.200:8099/whatsapp
         --webhook-events=message,message.reaction --mcp-enabled=false --auto-download-media=false --auto-reject-call=true
     environment:
       - TZ=${TZ}
