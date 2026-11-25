@@ -1,0 +1,23 @@
+[
+    {
+        "label": "Todos os desenhos",
+        "icon": "special://skin/extras/icons/tv.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfintvshows7bb6030393de990bbec35da3efd37a61/all.xml,return)",
+        "target": "",
+        "guid": "guid-ihomedsm1"
+    },
+    {
+        "label": "Gêneros",
+        "icon": "special://skin/extras/icons/compass.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfintvshows7bb6030393de990bbec35da3efd37a61/genres.xml,return)",
+        "target": "",
+        "guid": "guid-ihomedsm2"
+    },
+    {
+        "label": "Em andamento",
+        "icon": "special://skin/extras/icons/fire.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfintvshows7bb6030393de990bbec35da3efd37a61/inprogress.xml,return)",
+        "target": "",
+        "guid": "guid-ihomedsm3"
+    }
+]

@@ -1,0 +1,23 @@
+[
+    {
+        "label": "Filmes",
+        "icon": "special://skin/extras/icons/film.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfinmoviesaf92f2d68eea947c7f9df41836afb987/all.xml,return)",
+        "target": "",
+        "guid": "guid-ba3b67df"
+    },
+    {
+        "label": "Séries",
+        "icon": "special://skin/extras/icons/tv.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfintvshowsd565273fd114d77bdf349a2896867069/all.xml,return)",
+        "target": "",
+        "guid": "guid-28ff03bd"
+    },
+    {
+        "label": "Favoritos",
+        "icon": "special://skin/extras/icons/star.png",
+        "path": "ActivateWindow(Favourites)",
+        "target": "",
+        "guid": "guid-f31ae720"
+    }
+]

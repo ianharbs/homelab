@@ -1,0 +1,50 @@
+[
+    {
+        "label": "Adicionados recentemente",
+        "icon": "",
+        "path": "special://skin/extras/playlists/NewMovies.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-a40bf2de"
+    },
+    {
+        "label": "Descobrir e pedir",
+        "icon": "",
+        "path": "plugin://plugin.video.kodiseerr/?mode=popular_movies&widget=1",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-ihomedesc1"
+    },
+    {
+        "label": "Não assistidos",
+        "icon": "",
+        "path": "special://skin/extras/playlists/UnwatchedMovies.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-e434e6c6"
+    },
+    {
+        "label": "Mais bem avaliados",
+        "icon": "",
+        "path": "special://skin/extras/playlists/TopRatedMovies.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-37caf870"
+    },
+    {
+        "label": "Coleções",
+        "icon": "",
+        "path": "videodb://movies/sets/",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-e50365ea"
+    },
+    {
+        "label": "Sugestões aleatórias",
+        "icon": "",
+        "path": "special://skin/extras/playlists/RandomMovies.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-785ff9df"
+    }
+]

@@ -1,0 +1,30 @@
+[
+    {
+        "label": "Todos os filmes",
+        "icon": "special://skin/extras/icons/film.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfinmoviesaf92f2d68eea947c7f9df41836afb987/all.xml,return)",
+        "target": "",
+        "guid": "guid-a416bd29"
+    },
+    {
+        "label": "Gêneros",
+        "icon": "special://skin/extras/icons/compass.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfinmoviesaf92f2d68eea947c7f9df41836afb987/genres.xml,return)",
+        "target": "",
+        "guid": "guid-6d99d29c"
+    },
+    {
+        "label": "Coleções",
+        "icon": "special://skin/extras/icons/star.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfinmoviesaf92f2d68eea947c7f9df41836afb987/sets.xml,return)",
+        "target": "",
+        "guid": "guid-7cf1c085"
+    },
+    {
+        "label": "Meus pedidos",
+        "icon": "special://skin/extras/icons/star.png",
+        "path": "ActivateWindow(Videos,plugin://plugin.video.kodiseerr/,return)",
+        "target": "",
+        "guid": "guid-ihomeped"
+    }
+]

@@ -1,0 +1,66 @@
+[
+    {
+        "label": "Filmes em breve (iHome)",
+        "icon": "",
+        "path": "plugin://plugin.video.ihome.embreve/?tipo=filmes",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-ihomeemb1"
+    },
+    {
+        "label": "Séries em breve (iHome)",
+        "icon": "",
+        "path": "plugin://plugin.video.ihome.embreve/?tipo=series",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-ihomeemb2"
+    },
+    {
+        "label": "Jogos ao vivo",
+        "icon": "",
+        "path": "plugin://plugin.video.mediabox/?action=jogos",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-b41e79b1"
+    },
+    {
+        "label": "Continuar assistindo",
+        "icon": "",
+        "path": "special://skin/extras/playlists/InProgressEpisodes.xsp",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-1481f139"
+    },
+    {
+        "label": "Filmes em andamento",
+        "icon": "",
+        "path": "special://skin/extras/playlists/InProgressMovies.xsp",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-f319c0cf"
+    },
+    {
+        "label": "A seguir",
+        "icon": "",
+        "path": "plugin://plugin.video.jellyfin/?id=d565273fd114d77bdf349a2896867069&mode=nextepisodes&limit=25",
+        "target": "videos",
+        "widget_style": "Card",
+        "guid": "guid-b8ca6965"
+    },
+    {
+        "label": "Séries adicionadas",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-series-novas.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-d64b7813"
+    },
+    {
+        "label": "Filmes adicionados",
+        "icon": "",
+        "path": "special://skin/extras/playlists/NewMovies.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-e403d4a2"
+    }
+]

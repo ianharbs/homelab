@@ -1,0 +1,42 @@
+[
+    {
+        "label": "Continuar assistindo",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-desenhos-em-andamento.xsp",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-ihomedes1"
+    },
+    {
+        "label": "A seguir",
+        "icon": "",
+        "path": "plugin://plugin.video.jellyfin/?id=7bb6030393de990bbec35da3efd37a61&mode=nextepisodes&limit=25",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-ihomedes2"
+    },
+    {
+        "label": "Desenhos novos",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-desenhos-novas.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-ihomedes3"
+    },
+    {
+        "label": "Não assistidos",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-desenhos-nao-assistidas.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-ihomedes4"
+    },
+    {
+        "label": "Sorteio",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-desenhos-aleatorias.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-ihomedes5"
+    }
+]

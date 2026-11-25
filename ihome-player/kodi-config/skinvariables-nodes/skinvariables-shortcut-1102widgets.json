@@ -1,0 +1,50 @@
+[
+    {
+        "label": "Continuar assistindo",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-series-em-andamento.xsp",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-ef729f46"
+    },
+    {
+        "label": "A seguir",
+        "icon": "",
+        "path": "plugin://plugin.video.jellyfin/?id=d565273fd114d77bdf349a2896867069&mode=nextepisodes&limit=25",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-6faaa184"
+    },
+    {
+        "label": "Descobrir e pedir",
+        "icon": "",
+        "path": "plugin://plugin.video.kodiseerr/?mode=popular_tv&widget=1",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-ihomedesc2"
+    },
+    {
+        "label": "Episódios recentes",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-series-episodios-recentes.xsp",
+        "target": "videos",
+        "widget_style": "Landscape",
+        "guid": "guid-cd60c471"
+    },
+    {
+        "label": "Séries adicionadas",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-series-novas.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-050c090c"
+    },
+    {
+        "label": "Não assistidas",
+        "icon": "",
+        "path": "special://videoplaylists/ihome-series-nao-assistidas.xsp",
+        "target": "videos",
+        "widget_style": "Poster",
+        "guid": "guid-9fc5fb35"
+    }
+]

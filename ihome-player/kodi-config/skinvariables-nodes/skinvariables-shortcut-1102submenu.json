@@ -1,0 +1,30 @@
+[
+    {
+        "label": "Todas as séries",
+        "icon": "special://skin/extras/icons/tv.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfintvshowsd565273fd114d77bdf349a2896867069/all.xml,return)",
+        "target": "",
+        "guid": "guid-943fa9bd"
+    },
+    {
+        "label": "Gêneros",
+        "icon": "special://skin/extras/icons/compass.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfintvshowsd565273fd114d77bdf349a2896867069/genres.xml,return)",
+        "target": "",
+        "guid": "guid-eba1ac97"
+    },
+    {
+        "label": "Em andamento",
+        "icon": "special://skin/extras/icons/fire.png",
+        "path": "ActivateWindow(Videos,library://video/jellyfintvshowsd565273fd114d77bdf349a2896867069/inprogress.xml,return)",
+        "target": "",
+        "guid": "guid-5fba22c1"
+    },
+    {
+        "label": "Meus pedidos",
+        "icon": "special://skin/extras/icons/star.png",
+        "path": "ActivateWindow(Videos,plugin://plugin.video.kodiseerr/,return)",
+        "target": "",
+        "guid": "guid-ihomeped"
+    }
+]
