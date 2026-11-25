@@ -120,8 +120,37 @@ services:
       - ./midia-notify:/app:ro
       - ${CONFIG_PATH}/midia-notify:/state
     command: python /app/notify.py
-    expose:
-      - "8095"
+    ports:
+      # publicada desde 25/11/2026 só para o app de cadastro do CT 109 (/cadastro, token próprio; o firewall
+      # do CT 109 libera só 192.168.10.20:8095). Os demais endpoints exigem WEBHOOK_TOKEN.
+      - "8095:8095"
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  # WhatsApp (GOWA, conta do chip do bot pareada como "aparelho conectado"). O midia-notify posta os
+  # avisos de mídia nos grupos da Comunidade iHome por aqui e recebe as perguntas pelo webhook.
+  # Segredos (APP_BASIC_AUTH, WHATSAPP_WEBHOOK_SECRET) em ${CONFIG_PATH}/whatsapp/secrets.env, carregado
+  # pelo sh antes de subir (o app não lê .env sozinho; o env_file do compose não chega pelo Komodo).
+  # Parear: http://192.168.10.20:3010 (login básico) › Login › ler o QR no WhatsApp do chip.
+  whatsapp:
+    image: aldinokemal2104/go-whatsapp-web-multidevice:v9.10.0
+    container_name: whatsapp
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        set -a && . /secrets.env && set +a &&
+        exec /app/whatsapp rest --os=iHome --webhook=http://midia-notify:8095/whatsapp
+        --webhook-events=message --mcp-enabled=false --auto-download-media=false --auto-reject-call=true
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/whatsapp/secrets.env:/secrets.env:ro
+      - ${CONFIG_PATH}/whatsapp/storages:/app/storages
+      - ${CONFIG_PATH}/whatsapp/statics:/app/statics
+    ports:
+      - "3010:3000"
+    mem_limit: 512m
     networks:
       - media_net
     restart: unless-stopped

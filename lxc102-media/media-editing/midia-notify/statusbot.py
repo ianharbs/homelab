@@ -28,7 +28,7 @@ SONARR, SONARR_KEY = E("SONARR_URL", "http://sonarr:8989"), E("SONARR_API_KEY", 
 RADARR, RADARR_KEY = E("RADARR_URL", "http://radarr:7878"), E("RADARR_API_KEY", "")
 BAZARR, BAZARR_KEY = E("BAZARR_URL", "http://bazarr:6767"), E("BAZARR_API_KEY", "")
 SHELFARR, SHELFARR_KEY = E("SHELFARR_URL", "http://shelfarr:80"), E("SHELFARR_API_TOKEN", "")
-JELLYFIN_PUBLIC = E("JELLYFIN_PUBLIC_URL", "https://jf.ihome.dev.br").rstrip("/")
+JELLYFIN_PUBLIC = E("JELLYFIN_PUBLIC_URL", "https://video.ihome.dev.br").rstrip("/")  # Jellyfin público (CT 109)
 SEERR_PUBLIC = E("SEERR_PUBLIC_URL", "https://seerr.ihome.dev.br").rstrip("/")
 LLM_URL, LLM_KEY, LLM_MODEL = E("LLM_URL", "").rstrip("/"), E("LLM_API_KEY", ""), E("LLM_MODEL", "")
 DB_PATH = E("DB_PATH", "/state/notify.db")
@@ -444,7 +444,7 @@ def run_tool(name, args):
 
 
 # ---------------------------------------------------------------- IA
-SYSTEM = """Você é o assistente de status do homelab "iHome" (mídia da casa) e responde no Telegram em português do Brasil.
+SYSTEM = """Você é o assistente de status do homelab "iHome" (mídia da casa) e responde no Telegram ou no WhatsApp em português do Brasil.
 Hoje é {hoje}. Use SEMPRE as ferramentas para responder; nunca invente status, datas ou progresso.
 - "Disponível" = baixado, importado e (quando precisa) legendado em português; dá para assistir no Jellyfin.
 - Se a ferramenta não achar o título, tente de novo com o título original (em inglês) antes de desistir.
@@ -525,7 +525,9 @@ HELP = ("Pergunte o status de qualquer mídia, por exemplo:\n"
         "• cadê o filme Duna parte 2?\n• status da série Severance temporada 2\n• o livro Trono de Vidro já chegou?\n"
         "• tem o álbum Clube da Esquina?\n\nComandos: /fila (o que está baixando), /recentes (o que chegou), "
         "/filme, /serie, /livro, /musica seguidos do nome.\n"
-        "Lançamentos das bandas favoritas: /seguindo (lista), /seguir <banda>, /naoseguir <banda>.")
+        "Lançamentos das bandas favoritas: /seguindo (lista), /seguir <banda>, /naoseguir <banda>.\n\n"
+        "Pedir filme ou série (WhatsApp, grupo Status): \"quero o filme Duna\", \"/pedir Severance temporada 2\" "
+        "e responda com o número da opção.")
 COMMANDS = {"/fila": lambda a: fila_downloads(), "/recentes": lambda a: recentes(int(a) if a.isdigit() else 3),
             "/filme": lambda a: status_filme(a) if a else "Uso: /filme <nome>",
             "/serie": lambda a: fallback("serie " + a) if a else "Uso: /serie <nome> [temporada N]",

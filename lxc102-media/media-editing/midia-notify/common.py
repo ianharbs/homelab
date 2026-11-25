@@ -163,9 +163,26 @@ def tg_photo_upload(chat, photo_bytes, caption, extra=None):
         return json.loads(r.read())
 
 
+# Para onde vão os avisos de mídia: "whatsapp", "telegram" ou os dois ("whatsapp,telegram").
+# Desde 25/11/2026 só WhatsApp (pedido do Ian); o bot do Telegram segue respondendo status e o agente.
+MEDIA_CHANNELS = {x.strip() for x in E("MEDIA_CHANNELS", "telegram").lower().split(",") if x.strip()}
+
+
 def post(kind, text, photo=None, photo_bytes=None):
-    """Manda uma mensagem para a central `kind`. Sem destino configurado, só registra no log."""
+    """Manda o aviso `kind` (series/filmes/livros/musica/status) pelos canais de MEDIA_CHANNELS."""
+    ok = True
+    if "whatsapp" in MEDIA_CHANNELS:
+        import whatsapp  # aqui: whatsapp.py importa este módulo
+        ok = whatsapp.post(kind, text, photo, photo_bytes) and ok
+    if "telegram" in MEDIA_CHANNELS:
+        ok = tg_post(kind, text, photo, photo_bytes) and ok
+    return ok
+
+
+def tg_post(kind, text, photo=None, photo_bytes=None):
+    """Manda uma mensagem para a central `kind` no Telegram. Sem destino configurado, só registra no log."""
     chat, thread = dest(kind)
+    text = re.sub(r'<a href="wa:[^"]*">(.*?)</a>', r"\1", text, flags=re.S)  # menção do WhatsApp vira texto
     if not (TG_TOKEN and chat):
         log.info("[sem central '%s' configurada] mensagem:\n%s", kind, text)
         return True

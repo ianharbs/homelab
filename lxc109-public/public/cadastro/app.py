@@ -31,6 +31,9 @@ PUBLIC_URL = E("PUBLIC_URL", "").rstrip("/")
 SECRET = E("APP_SECRET", "").encode()
 TG_TOKEN = E("TG_TOKEN", "")
 TG_ADMIN = E("TG_ADMIN_CHAT", "")
+# Desde 25/11/2026 os pedidos vão para o grupo "✅ Aprovações" do WhatsApp (midia-notify no CT 102, porta 8095,
+# token próprio). Com WA_NOTIFY_URL definido o Telegram não é usado; vazio = volta ao Telegram.
+WA_NOTIFY_URL = E("WA_NOTIFY_URL", "")
 WIZARR_URL = E("WIZARR_URL", "http://wizarr:5690").rstrip("/")
 WIZARR_KEY = E("WIZARR_API_KEY", "")
 WIZARR_SERVER_ID = int(E("WIZARR_SERVER_ID", "1") or 1)
@@ -211,8 +214,41 @@ def tg_text(p):
     return "\n".join(linhas) + st
 
 
+def wa_post(body):
+    try:  # o midia-notify responde texto ("ok"), não JSON: vale só o código HTTP
+        req = urllib.request.Request(WA_NOTIFY_URL, data=json.dumps(body).encode(), method="POST",
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return r.status == 200
+    except Exception as e:  # noqa: BLE001
+        log.warning("whatsapp (midia-notify): %s", e)
+        return False
+
+
+def wa_status_text(p):
+    nome = html.escape(p["nome"])
+    if p["status"] == "aprovado":
+        t = f"✅ <b>{nome}</b> aprovado — convite na página do pedido."
+    elif p["status"] == "rejeitado":
+        t = f"❌ <b>{nome}</b> rejeitado."
+    elif p["status"] == "concluido":
+        t = f"🎉 <b>{nome}</b> criou a conta <b>{html.escape(p['jf_usuario'] or '')}</b> no Jellyfin."
+    else:
+        return ""
+    em = p["email_status"] if "email_status" in p.keys() else None
+    if em and p["status"] != "concluido":
+        t += "\n📧 e-mail enviado" if em == "enviado" else f"\n⚠️ e-mail falhou: {html.escape(em[:120])}"
+    return t
+
+
 def tg_send_pedido(p):
     base = f"{PUBLIC_URL}/cadastro/admin/{p['id']}"
+    if WA_NOTIFY_URL and wa_post({
+            "evento": "pedido", "id": p["id"], "nome": p["nome"], "email": p["email"], "recado": p["recado"],
+            "ip": p["ip"], "criado": fmt(p["criado"]),
+            "aprovar_url": f"{base}?a=aprovar&s={sign(p['id'], 'aprovar')}",
+            "rejeitar_url": f"{base}?a=rejeitar&s={sign(p['id'], 'rejeitar')}"}):
+        return
     kb = {"inline_keyboard": [[
         {"text": "✅ Aprovar", "url": f"{base}?a=aprovar&s={sign(p['id'], 'aprovar')}"},
         {"text": "❌ Rejeitar", "url": f"{base}?a=rejeitar&s={sign(p['id'], 'rejeitar')}"},
@@ -226,6 +262,12 @@ def tg_send_pedido(p):
 
 def tg_update(pid):
     p = get_pedido(id=pid)
+    if p and WA_NOTIFY_URL:
+        t = wa_status_text(p)
+        if t:
+            wa_post({"evento": "status", "id": pid, "texto": t})
+        if not p["tg_msg"]:
+            return
     if p and p["tg_msg"]:
         tg("editMessageText", {"chat_id": TG_ADMIN, "message_id": p["tg_msg"], "text": tg_text(p),
                                "parse_mode": "HTML", "disable_web_page_preview": True})
@@ -433,8 +475,9 @@ def sincronizar_cadastros():
         with db_lock, db() as con:
             con.execute("UPDATE pedidos SET status='concluido', jf_usuario=? WHERE id=?", (nome, p["id"]))
         tg_update(p["id"])
-        tg("sendMessage", {"chat_id": TG_ADMIN, "parse_mode": "HTML",
-                           "text": f"🎉 <b>{html.escape(p['nome'])}</b> criou a conta <b>{html.escape(nome)}</b> no Jellyfin."})
+        if not WA_NOTIFY_URL:  # no WhatsApp o tg_update já avisou a conta criada
+            tg("sendMessage", {"chat_id": TG_ADMIN, "parse_mode": "HTML",
+                               "text": f"🎉 <b>{html.escape(p['nome'])}</b> criou a conta <b>{html.escape(nome)}</b> no Jellyfin."})
 
 
 def guardiao_prioridade():

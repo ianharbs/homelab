@@ -29,6 +29,9 @@ from common import E, esc, http, post  # noqa: E402  (carrega /state/secrets.env
 import lancamentos  # noqa: E402
 import musica  # noqa: E402
 import statusbot  # noqa: E402
+import aprovacoes  # noqa: E402
+import prazo  # noqa: E402
+import whatsapp  # noqa: E402
 
 PORT = int(E("PORT", "8095"))
 DB_PATH = E("DB_PATH", "/state/notify.db")
@@ -43,7 +46,7 @@ SONARR, SONARR_KEY = E("SONARR_URL", "http://sonarr:8989"), E("SONARR_API_KEY", 
 RADARR, RADARR_KEY = E("RADARR_URL", "http://radarr:7878"), E("RADARR_API_KEY", "")
 BAZARR, BAZARR_KEY = E("BAZARR_URL", "http://bazarr:6767"), E("BAZARR_API_KEY", "")
 JELLYFIN, JELLYFIN_KEY = E("JELLYFIN_URL", "http://jellyfin:8096"), E("JELLYFIN_API_KEY", "")
-JELLYFIN_PUBLIC = E("JELLYFIN_PUBLIC_URL", "https://jf.ihome.dev.br").rstrip("/")
+JELLYFIN_PUBLIC = E("JELLYFIN_PUBLIC_URL", "https://video.ihome.dev.br").rstrip("/")  # Jellyfin público (CT 109)
 SEERR, SEERR_KEY = E("SEERR_URL", "http://seerr:5055"), E("SEERR_API_KEY", "")
 
 
@@ -54,6 +57,7 @@ def kv(s):  # "a=1,b=2" -> {"a": "1", "b": "2"}  (chaves em minúsculas)
 REQ_NAMES = kv(E("REQUESTER_NAMES", ""))  # usuário do Seerr -> nome bonito
 REQ_TG = kv(E("REQUESTER_TELEGRAM", ""))  # usuário do Seerr -> id do Telegram (menciona de verdade)
 SHELFARR_TOKEN = E("SHELFARR_WEBHOOK_TOKEN", "")
+CADASTRO_TOKEN = E("CADASTRO_TOKEN", "")  # só para /cadastro (vem do CT 109, exposto à internet)
 KAVITA_PUBLIC = E("KAVITA_PUBLIC_URL", "https://kavita.ihome.dev.br")
 ABS_PUBLIC = E("ABS_PUBLIC_URL", "https://audiobook.ihome.dev.br")
 PT_AUDIO = {"por", "pob", "pt", "pb"}
@@ -188,6 +192,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/health"):
             return self.reply(200)
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        if WEBHOOK_TOKEN and q.get("token", [""])[0] != WEBHOOK_TOKEN:  # porta publicada na LAN desde 25/11
+            return self.reply(403, "forbidden")
         if self.path.startswith("/chats"):  # canais/grupos onde o bot foi adicionado (para achar os ids)
             body = json.dumps(statusbot.known_chats(), ensure_ascii=False, indent=1)
             self.send_response(200)
@@ -206,6 +213,18 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         url = urllib.parse.urlparse(self.path)
+        if url.path == "/whatsapp":  # GOWA assina o corpo (HMAC), não manda o token na URL
+            raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            return self.reply(whatsapp.on_webhook(raw, self.headers.get("X-Hub-Signature-256")))
+        if url.path == "/cadastro":  # pedidos de acesso do CT 109, com token próprio
+            if not CADASTRO_TOKEN or urllib.parse.parse_qs(url.query).get("token", [""])[0] != CADASTRO_TOKEN:
+                return self.reply(403, "forbidden")
+            try:
+                aprovacoes.on_cadastro(json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}"))
+            except Exception as e:
+                log.exception("cadastro: %s", e)
+                return self.reply(500, "error")
+            return self.reply(200)
         if WEBHOOK_TOKEN and urllib.parse.parse_qs(url.query).get("token", [""])[0] != WEBHOOK_TOKEN:
             return self.reply(403, "forbidden")
         try:
@@ -215,6 +234,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if url.path == "/shelfarr":
                 on_shelfarr(p)
+            elif url.path == "/seerr":
+                aprovacoes.on_seerr(p)
             elif p.get("eventType") == "Test":
                 log.info("teste recebido de %s", url.path)
                 send({"kind": "test", "title": f"Teste do {url.path.strip('/').capitalize()}"}, [])
@@ -354,7 +375,11 @@ def requesters(head, items):
 
 
 def who(name):
-    nice = esc(REQ_NAMES.get(name.lower(), name))
+    """Quem pediu: menção de verdade no WhatsApp (telefone na tabela pessoa) ou no Telegram (REQUESTER_TELEGRAM)."""
+    p = whatsapp.pessoa(name)
+    nice = esc(REQ_NAMES.get(name.lower()) or (p["nome"] if p and p["nome"] else name))
+    if p and p["jid"]:
+        return f'<a href="wa:{p["jid"]}">{nice}</a>'
     tg = REQ_TG.get(name.lower())
     return f'<a href="tg://user?id={tg}">{nice}</a>' if tg else nice
 
@@ -393,7 +418,16 @@ def caption(head, items):
 
 
 def send(head, items):
-    return post("series" if head["kind"] == "ep" else "filmes", caption(head, items), photo=head.get("poster"))
+    pz = prazo.avaliar(head)
+    text = caption(head, items)
+    if pz:  # pedido de convidado: prazo no catálogo vai no aviso
+        lines = text.split("\n")
+        lines.insert(len(lines) - 1, prazo.linha(pz))  # antes do link "Assistir"
+        text = "\n".join(lines)
+    ok = post("series" if head["kind"] == "ep" else "filmes", text, photo=head.get("poster"))
+    if ok and pz:
+        prazo.salvar(pz)
+    return ok
 
 
 def flush_ready():
@@ -436,5 +470,6 @@ if __name__ == "__main__":
     threading.Thread(target=musica.worker, daemon=True).start()
     threading.Thread(target=lancamentos.worker, daemon=True).start()
     threading.Thread(target=statusbot.worker, daemon=True).start()
+    threading.Thread(target=prazo.worker, daemon=True).start()
     log.info("ouvindo em :%d", PORT)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

@@ -1,0 +1,13 @@
+/* Tema ElegantFin (alto contraste) — fixado na versão v26.09.05 */
+@import url("https://cdn.jsdelivr.net/gh/lscambo13/ElegantFin@v26.09.05/Theme/ElegantFin-jellyfin-theme-build-latest-minified.css");
+
+/* Barra superior: Filmes / Séries / Desenhos / TV ao vivo / Coleções / Favoritos / Discover / Request.
+   As bibliotecas já vêm na ordem de "Minhas mídias" do usuário; Favoritos (Jellyfin) e
+   Discover/Requests (SeerrFin) são inseridos antes delas, então vão para o fim via order. */
+.je-header-actions-row .MuiStack-root > a[href="#/"] { order: -1; }
+.je-header-actions-row .MuiStack-root > a[href="#/home?tab=1"] { order: 10; }
+.je-header-actions-row .MuiStack-root > a[data-seerrfin-menu-nav="discover"] { order: 11; }
+.je-header-actions-row .MuiStack-root > a[data-seerrfin-menu-nav="requests"] { order: 12; }
+
+/* Links da barra mais legíveis */
+.je-header-actions-row .MuiStack-root > a { font-size: 1rem; font-weight: 600; letter-spacing: .01em; }
