@@ -53,10 +53,12 @@ GROUPS = {  # tipo -> (nome, descrição, só admins enviam)
     "musica": ("🎵 Música", "Álbuns novos no Navidrome e lançamentos das bandas favoritas.", True),
     "status": ("🤖 Status e Pedidos", "Pergunte: \"cadê o filme Duna?\", \"status da série Severance\", /fila, /recentes. "
                "Peça: \"quero o filme Duna\" ou \"/pedir Severance temporada 2\" e responda com o número da opção.", False),
-    # só o Ian: o bot em modo completo (status com livros/música, pedidos, /pessoa, /convidar, /prazos),
-    # sem precisar de "/" nas mensagens dele
-    "bot": ("🛠️ Bot iHome", "Só o Ian. Converse direto: status (inclui livros e música), \"quero o filme X\", "
-            "/pessoa, /pessoas, /convidar, /prazos, /fila, /recentes, /ajuda.", False),
+    # Status e Pedidos "da casa" (grupo oculto na Comunidade): TODOS os membros têm o modo completo,
+    # com livros e música; comandos de admin (/pessoa, /convidar) só do Ian
+    # nome: o GOWA aceita no máximo 25 BYTES (emoji = 4)
+    "casa": ("🏡 Status/Pedidos Casa", "Pergunte sobre filmes, séries, livros e músicas (\"cadê o livro Trono de "
+             "Vidro?\", \"tem o álbum Clube da Esquina?\") e peça filmes e séries (\"quero o filme Duna\" e responda "
+             "com o número). /fila, /recentes, /ajuda.", False),
     # só o Ian, FORA da Comunidade: pedidos para aprovar e prazos vencendo (aprovacoes.py)
     "aprovacoes": ("✅ Aprovações", "Só o Ian. Responda a mensagem com ok / não (pedidos) ou manter (prazo). /prazos lista.", False),
 }
@@ -317,8 +319,9 @@ def on_webhook(raw, sig):
 
 
 def _bot_completo(p, chat, mid, text):
-    """Grupo 🛠️ Bot iHome: o Ian fala com o bot sem restrição. As respostas do bot vão pela API e não voltam
-    como evento (testado em 25/11), então não há loop."""
+    """Grupo 🏡 Status/Pedidos Casa: todos falam com o bot sem restrição (livros e música inclusos), e o Ian
+    sem precisar de "/". As respostas do bot vão pela API e não voltam como evento (testado em 25/11): sem loop."""
+    dono = bool(p.get("is_from_me"))
     import aprovacoes
     import pedidos
     import statusbot
@@ -328,9 +331,9 @@ def _bot_completo(p, chat, mid, text):
         rid = p.get("replied_to_id")
         if rid and text.strip().isdigit():
             out = pedidos.escolher(rid, text, p)
-        if out is None and rid:
+        if out is None and rid and dono:
             out = aprovacoes.on_reply(rid, text)
-        if out is None and text.startswith("/"):
+        if out is None and text.startswith("/") and dono:
             out = admin_cmd(text)
             if out is None and text.split()[0].lower() == "/prazos":
                 out = aprovacoes.on_reply(None, "/prazos")
@@ -338,7 +341,7 @@ def _bot_completo(p, chat, mid, text):
             out, dados = pedidos.pedir(p, text)
         if out is None:
             out = statusbot.answer(text, so_video=False)
-            if text.strip().lower() in ("/ajuda", "/help", "/start"):
+            if dono and text.strip().lower() in ("/ajuda", "/help", "/start"):
                 out += ("\n\nSó aqui: /pessoa <usuario> <telefone> [nome], /pessoas, /convidar <usuario>|todos, "
                         "/prazos. Pedidos: \"quero o filme X\" e responda com o número.")
     except Exception as e:
@@ -360,8 +363,8 @@ def _handle(p):
     mid, chat, text = p.get("id"), p.get("chat_id") or "", (p.get("body") or "").strip()
     if not text or not mid:
         return
-    if chat and chat == group_of("bot"):  # grupo só do Ian: tudo, sem precisar de "/"
-        if not p.get("is_from_me") or mid in _seen:
+    if chat and chat == group_of("casa"):  # Status e Pedidos da casa: modo completo para todos os membros
+        if mid in _seen:
             return
         _seen[mid] = time.time()
         threading.Thread(target=_bot_completo, args=(p, chat, mid, text), daemon=True).start()
