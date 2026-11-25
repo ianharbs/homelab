@@ -168,11 +168,11 @@ def convidar(usuario):
     link = (api("GET", f"/group/invite-link?group_id={COMMUNITY}").get("results") or {}).get("invite_link")
     primeiro = (p["nome"] or p["usuario"]).split()[0]
     send_text(p["jid"], f"Oi, {primeiro}! 👋 Aqui é o *iHome* 🏠\n\n"
-                        "Criamos uma comunidade no WhatsApp com os avisos do servidor: quando chega filme, série, "
-                        "livro ou música nova, e quando o que você pediu no Seerr fica disponível (você é marcado "
-                        "no aviso).\n\n"
+                        "Criamos uma comunidade no WhatsApp com os avisos do servidor: quando chega filme ou série "
+                        "nova, e quando o que você pediu fica disponível (você é marcado no aviso).\n\n"
                         f"Entre por aqui: {link}\n\n"
-                        "Lá dentro, no grupo 🤖 Status, dá para perguntar: \"cadê o filme Duna?\"")
+                        "Lá dentro, no grupo 🤖 Status e Pedidos, dá para perguntar (\"cadê o filme Duna?\") "
+                        "e pedir filmes e séries (\"quero o filme Duna\").")
     with _db() as c:
         c.execute("UPDATE pessoa SET convite_em=? WHERE usuario=?", (time.time(), p["usuario"]))
     return f"📨 Convite enviado para {p['nome'] or p['usuario']} ({p['jid']})."
@@ -383,8 +383,8 @@ def _handle(p):
     log.info("whatsapp: pergunta de %s: %s", p.get("sender_display_name") or p.get("from_name"), text)
     try:
         out = admin_cmd(text) if p.get("is_from_me") else None
-        if out is None:
-            out = statusbot.answer(text)
+        if out is None:  # só o Ian vê livros e música
+            out = statusbot.answer(text, so_video=not p.get("is_from_me"))
     except Exception as e:
         log.exception("whatsapp status: %s", e)
         out = f"Deu erro ao consultar: {e}"

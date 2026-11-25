@@ -35,6 +35,13 @@ DB_PATH = E("DB_PATH", "/state/notify.db")
 ALLOWED = {x.strip() for x in E("STATUS_ALLOWED_USERS", "").split(",") if x.strip()} | {
     p.split("=", 1)[1].strip() for p in E("REQUESTER_TELEGRAM", "").split(",") if "=" in p}
 BOT_NAME = {"username": ""}
+# "Só filmes e séries": no WhatsApp, para todo mundo menos o Ian (livros e música são de uso particular dele).
+# Cada pergunta roda na sua própria thread, então o modo vale só para ela.
+_ctx = threading.local()
+
+
+def so_video():
+    return getattr(_ctx, "so_video", False)
 # Agente do homelab (pve-host/telegram-agent): mensagens dos AGENT_ADMINS no tópico AGENT_THREAD
 # (Homelab) e cliques nos botões "ag:…" vão para o Claude Code no pve em vez da central de status.
 AGENT_URL, AGENT_TOKEN = E("AGENT_URL", "").rstrip("/"), E("AGENT_TOKEN", "")
@@ -376,7 +383,7 @@ def fila_downloads():
             lines.append(f"📺 {title} ({eps}{'…' if len(qs) > 6 else ''}): {fmt_queue(qs[0])}")
     except Exception as e:
         lines.append(f"(Sonarr indisponível: {e})")
-    if SHELFARR_KEY:
+    if SHELFARR_KEY and not so_video():
         try:
             for r in shelfarr_requests():
                 if r.get("status") in ("pending", "searching", "downloading", "processing") or r.get("attention_needed"):
@@ -403,6 +410,8 @@ def recentes(dias=3):
     with db() as c:
         rows = [dict(r) for r in c.execute("SELECT * FROM item WHERE sent_at >= ? ORDER BY sent_at DESC", (since,))]
         try:
+            if so_video():
+                raise sqlite3.OperationalError("só filmes e séries")
             albums = [dict(r) for r in c.execute(
                 "SELECT * FROM album WHERE sent_at >= ? AND first_seen < sent_at ORDER BY sent_at DESC", (since,))]
         except sqlite3.OperationalError:
@@ -459,6 +468,10 @@ def llm(question):
              for n, (_, d, p, r) in TOOLS.items()]
     msgs = [{"role": "system", "content": SYSTEM.format(hoje=time.strftime("%d/%m/%Y %H:%M"))},
             {"role": "user", "content": question}]
+    if so_video():
+        tools = [t for t in tools if t["function"]["name"] not in ("status_livro", "status_musica")]
+        msgs[0]["content"] += ("\n- Aqui você só fala de FILMES e SÉRIES. Nunca mencione livros, audiolivros, "
+                               "músicas ou álbuns; se perguntarem, diga que aqui é só filme e série.")
     for _ in range(6):
         res = http("POST", f"{LLM_URL}/chat/completions", {"Authorization": f"Bearer {LLM_KEY}"},
                    {"model": LLM_MODEL, "messages": msgs, "tools": tools, "temperature": 0.2}, timeout=90)
@@ -473,7 +486,8 @@ def llm(question):
                 args = json.loads(c["function"].get("arguments") or "{}")
             except ValueError:
                 args = {}
-            out = run_tool(name, args) if name in TOOLS else f"ferramenta desconhecida: {name}"
+            ok = name in TOOLS and not (so_video() and name in ("status_livro", "status_musica"))
+            out = run_tool(name, args) if ok else f"ferramenta indisponível: {name}"
             log.info("IA chamou %s(%s)", name, args)
             msgs.append({"role": "tool", "tool_call_id": c.get("id", name), "name": name, "content": out[:6000]})
     return ""
@@ -509,6 +523,8 @@ def fallback(question):
         return status_filme(title)
     if kind == "serie":
         return status_serie(title, int(season.group(1)) if season else None)
+    if kind in ("livro", "musica") and so_video():
+        return SO_VIDEO_MSG
     if kind == "livro":
         return status_livro(title)
     if kind == "musica":
@@ -518,6 +534,8 @@ def fallback(question):
         r = run_tool(fn.__name__, {"titulo": title})
         if not r.startswith("Nenhum"):
             parts.append(r)
+    if so_video():
+        return "\n\n".join(parts) or f"Não achei '{title}' como filme nem como série."
     return "\n\n".join(parts) or f"Não achei '{title}' como filme nem como série. Tente /livro ou /musica."
 
 
@@ -538,13 +556,31 @@ COMMANDS = {"/fila": lambda a: fila_downloads(), "/recentes": lambda a: recentes
             "/seguindo": lambda a: lancamentos.cmd_list()}
 
 
-def answer(text):
+SO_VIDEO_MSG = "Aqui eu só cuido de filmes e séries. 🎬📺"
+HELP_VIDEO = ("Pergunte sobre filmes e séries, por exemplo:\n• cadê o filme Duna parte 2?\n"
+              "• status da série Severance temporada 2\n\nComandos: /fila (o que está baixando), "
+              "/recentes (o que chegou), /filme e /serie seguidos do nome.\n\n"
+              "Pedir: \"quero o filme Duna\" ou \"/pedir Severance temporada 2\" e responda com o número da opção.")
+SO_IAN = {"/livro", "/musica", "/seguir", "/naoseguir", "/seguindo"}
+
+
+def answer(text, so_video=False):
+    _ctx.so_video = so_video
+    try:
+        return _answer(text)
+    finally:
+        _ctx.so_video = False
+
+
+def _answer(text):
     text = text.strip()
     if text.startswith("/"):
         cmd, _, arg = text.partition(" ")
         cmd = cmd.split("@")[0].lower()
         if cmd in ("/start", "/ajuda", "/help"):
-            return HELP
+            return HELP_VIDEO if so_video() else HELP
+        if so_video() and cmd in SO_IAN:
+            return SO_VIDEO_MSG
         if cmd in COMMANDS:
             return COMMANDS[cmd](arg.strip())
         text = arg or cmd[1:]
