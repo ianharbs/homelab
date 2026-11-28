@@ -8,6 +8,8 @@ A ligação mensagem -> pedido/prazo fica no kv (wa_msg_<id da mensagem>).
 """
 import json
 import re
+import threading
+import time
 
 from common import E, http, kv_get, kv_set, log, norm
 import prazo
@@ -90,6 +92,8 @@ def on_cadastro(p):
         linhas = ["🎬 <b>Pedido de acesso ao Jellyfin</b>", f"Nome: <b>{esc(p.get('nome') or '?')}</b>"]
         if p.get("email"):
             linhas.append(f"E-mail: {esc(p['email'])}")
+        if p.get("telefone"):
+            linhas.append(f"WhatsApp: {esc(p['telefone'])}")
         if p.get("recado"):
             linhas.append(f"Recado: {esc(p['recado'])}")
         linhas.append(f"<i>#{p.get('id')} · {esc(p.get('criado') or '')} · IP {esc(p.get('ip') or '?')}</i>")
@@ -100,6 +104,27 @@ def on_cadastro(p):
         log.info("aprovações: pedido de acesso #%s de %s", p.get("id"), p.get("nome"))
     elif p.get("evento") == "status" and p.get("texto"):
         _send(p["texto"])
+    elif p.get("evento") == "conta" and p.get("usuario") and p.get("telefone"):
+        # em thread: resolve_jid espera entre tentativas e o cadastro só aguarda 20 s pela resposta
+        threading.Thread(target=_conta_nova, args=(p,), daemon=True).start()
+
+
+def _conta_nova(p):
+    """Conta criada pelo cadastro: grava o telefone na tabela pessoa e manda o link da Comunidade no privado."""
+    usuario, nome = p["usuario"], (p.get("nome") or "").strip() or None
+    try:
+        r = whatsapp.pessoa_set(usuario, p["telefone"], nome)
+        if r.startswith("❌"):
+            _send(f"⚠️ {whatsapp.html.escape(nome or usuario)} criou a conta, mas o número não tem WhatsApp: "
+                  f"{whatsapp.html.escape(r[2:])}\nCorrija com /pessoa {whatsapp.html.escape(usuario)} &lt;telefone&gt;.")
+            return
+        time.sleep(3)
+        r = whatsapp.convidar(usuario)
+        _send(whatsapp.html.escape(r))
+        log.info("cadastro: %s", r)
+    except Exception as e:
+        log.exception("cadastro: convite do WhatsApp para %s: %s", usuario, e)
+        _send(f"⚠️ Falhou o convite do WhatsApp para {whatsapp.html.escape(usuario)}: {whatsapp.html.escape(str(e)[:150])}")
 
 
 def on_reply(replied_to, text):
