@@ -53,7 +53,7 @@ services:
       - PUBLIC_URL=https://video.ihome.dev.br
       - WIZARR_URL=http://wizarr:5690
       - JELLYFIN_URL=http://192.168.10.20:8096
-      - LIBRARIES=Filmes,Séries,Coleções
+      - LIBRARIES=Filmes,Séries,Desenhos,Coleções
       - MAX_SESSIONS=2
       - PRIORITY_USERS=ianharbs,Anapgo
       - MAX_GUEST_TRANSCODES=2

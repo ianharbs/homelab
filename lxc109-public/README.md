@@ -27,7 +27,7 @@ Cloudflare ── túnel próprio "ihome_viewer" (d570db09-…) ── cloudflar
 2. DM do @iHomeSCbot para o Ian (chat 1199930908) com **Aprovar/Rejeitar** = links assinados (HMAC) que abrem
    uma confirmação (POST). Não usa getUpdates porque o statusbot (CT 102) já faz polling desse bot.
 3. Aprovado → convite de uso único no Wizarr (7 dias, downloads) e o botão aparece na página de status.
-4. Conta criada no Wizarr → o app aplica no Jellyfin **só nessa conta**: Filmes+Séries+Coleções, download,
+4. Conta criada no Wizarr → o app aplica no Jellyfin **só nessa conta**: Filmes+Séries+Desenhos+Coleções, download,
    2 telas, sem Live TV/exclusão/compartilhamento, oculta no login. Avisa no Telegram.
    O Wizarr importa todos os usuários do Jellyfin; o app guarda um *baseline* (Anapgo, ianharbs, jeffejh,
    robsonjfelicio) e só age em contas novas casadas com o `used_at` do convite.
